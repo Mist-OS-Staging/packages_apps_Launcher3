@@ -51,6 +51,7 @@ import com.android.launcher3.BuildConfig;
 import com.android.launcher3.LauncherFiles;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
+import com.android.launcher3.lineage.trust.TrustAppsActivity;
 import com.android.launcher3.states.RotationHelper;
 import com.android.launcher3.util.DisplayController;
 import com.android.launcher3.util.SettingsCache;
@@ -75,6 +76,8 @@ public class SettingsMisc extends CollapsingToolbarBaseActivity
 
     private static final int DELAY_HIGHLIGHT_DURATION_MILLIS = 600;
     public static final String SAVE_HIGHLIGHTED_KEY = "android:preference_highlighted";
+
+    public static final String KEY_TRUST_APPS = "pref_trust_apps";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -249,6 +252,39 @@ public class SettingsMisc extends CollapsingToolbarBaseActivity
                         preference.setOrder(0);
                     }
                     return mDeveloperOptionsEnabled;
+                case FIXED_LANDSCAPE_MODE:
+                    if (!Flags.oneGridSpecs()
+                            // adding this condition until fixing b/378972567
+                            || InvariantDeviceProfile.INSTANCE.get(getContext()).deviceType
+                            == TYPE_MULTI_DISPLAY
+                            || InvariantDeviceProfile.INSTANCE.get(getContext()).deviceType
+                            == TYPE_TABLET) {
+                        return false;
+                    }
+                    // When the setting changes rotate the screen accordingly to showcase the result
+                    // of the setting
+                    preference.setOnPreferenceChangeListener(
+                            (pref, newValue) -> {
+                                getActivity().setRequestedOrientation(
+                                        (boolean) newValue
+                                                ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                                                : ActivityInfo.SCREEN_ORIENTATION_USER
+                                );
+                                return true;
+                            }
+                    );
+                    return !info.isTablet(info.realBounds);
+
+                case KEY_TRUST_APPS:
+                    preference.setOnPreferenceClickListener(p -> {
+                        Utilities.showLockScreen(getActivity(),
+                                getString(R.string.trust_apps_manager_name), () -> {
+                            Intent intent = new Intent(getActivity(), TrustAppsActivity.class);
+                            startActivity(intent);
+                        });
+                        return true;
+                    });
+                    return true;
             }
 
             return true;
