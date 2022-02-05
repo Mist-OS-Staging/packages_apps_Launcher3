@@ -38,4 +38,7 @@
     
     <!-- Wallpaper carousel -->
     <dimen name="wallpaper_carousel_height">120dp</dimen>
+
+    <!-- Overview scrolling scale animation -->
+    <dimen name="overview_scroll_scale">0.9</dimen>
 </resources>

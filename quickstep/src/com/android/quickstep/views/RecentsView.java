@@ -20,6 +20,8 @@ import static android.app.ActivityTaskManager.INVALID_TASK_ID;
 import static android.app.WindowConfiguration.WINDOWING_MODE_FULLSCREEN;
 import static android.os.Trace.traceBegin;
 import static android.os.Trace.traceEnd;
+import static android.view.Surface.ROTATION_0;
+import static android.view.Surface.ROTATION_180;
 import static android.view.View.MeasureSpec.EXACTLY;
 import static android.view.View.MeasureSpec.makeMeasureSpec;
 
@@ -41,6 +43,7 @@ import static com.android.launcher3.Flags.enableOverviewBackgroundWallpaperBlur;
 import static com.android.launcher3.Flags.enableOverviewDesktopTileWallpaperBackground;
 import static com.android.launcher3.Flags.enablePreventOverviewMouseDrag;
 import static com.android.launcher3.Flags.enableRefactorTaskThumbnail;
+import static com.android.launcher3.LauncherAnimUtils.SCALE_PROPERTY;
 import static com.android.launcher3.LauncherAnimUtils.SUCCESS_TRANSITION_PROGRESS;
 import static com.android.launcher3.LauncherAnimUtils.VIEW_ALPHA;
 import static com.android.launcher3.LauncherAnimUtils.VIEW_BACKGROUND_COLOR;
@@ -641,6 +644,8 @@ public abstract class RecentsView<
 
     protected Map<TaskView, Integer> mTaskViewsDismissPrimaryTranslations = new HashMap<>();
 
+    private float mScrollScale = 1f;
+
     /**
      * TODO: Call reloadIdNeeded in onTaskStackChanged.
      */
@@ -1014,6 +1019,8 @@ public abstract class RecentsView<
         mContainer.getViewCache().setCacheSize(R.layout.digital_wellbeing_toast, 5);
 
         mTintingColor = getForegroundScrimDimColor(context);
+
+        mScrollScale = getResources().getFloat(R.dimen.overview_scroll_scale);
 
         // if multi-instance feature is enabled
         if (FeatureFlags.ENABLE_MULTI_INSTANCE.get()) {
@@ -3994,6 +4001,16 @@ public abstract class RecentsView<
                 }
             } else if (!showAsGrid || (dismissedTaskView != null && dismissedTaskView.isLargeTile()
                     && nextFocusedTaskView == null && !dismissingForSplitSelection)) {
+
+                if (i == dismissedIndex + 1 ||
+                        dismissedIndex == taskCount -1 && i == dismissedIndex - 1) {
+                    if (child.getScaleX() <= dismissedTaskView.getScaleX())
+                        anim.setFloat(child, SCALE_PROPERTY,
+                            dismissedTaskView.getScaleX(), LINEAR);
+                    else
+                        anim.setFloat(child, SCALE_PROPERTY, 1f, LINEAR);
+                }
+
                 int offset = getOffsetToDismissedTask(scrollDiffPerPage, dismissedIndex,
                         lastTaskViewIndex);
                 int scrollDiff = newScroll[i] - oldScroll[i] + offset;
@@ -5004,6 +5021,7 @@ public abstract class RecentsView<
         setImportantForAccessibility(isModal() ? IMPORTANT_FOR_ACCESSIBILITY_NO
                 : IMPORTANT_FOR_ACCESSIBILITY_AUTO);
         recalculateTaskViewScreenEdgeIntersections();
+        doScrollScale();
     }
 
     private void updatePivots() {
@@ -6937,6 +6955,32 @@ public abstract class RecentsView<
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
         dispatchScrollChanged();
+        doScrollScale();
+    }
+
+    private void doScrollScale() {
+        if (showAsGrid())
+            return;
+
+        boolean isInLandscape = mOrientationState.getTouchRotation() != ROTATION_0
+                                && mOrientationState.getTouchRotation() != ROTATION_180;
+        int childCount = Math.min(mPageScrolls.length, getChildCount());
+        int curScroll = isInLandscape ? getScrollY() : getScrollX();
+
+        for (int i = 0; i < childCount; i++) {
+            View child = getChildAt(i);
+            int scaleArea = child.getWidth() + mPageSpacing;
+            int childPosition = mPageScrolls[i];
+            int scrollDelta = Math.abs(curScroll - childPosition);
+            if (scrollDelta > scaleArea) {
+                child.setScaleX(mScrollScale);
+                child.setScaleY(mScrollScale);
+            } else {
+                float scale = mapToRange(scrollDelta, 0, scaleArea, 1f, mScrollScale, LINEAR);
+                child.setScaleX(scale);
+                child.setScaleY(scale);
+            }
+        }
     }
 
     /**
