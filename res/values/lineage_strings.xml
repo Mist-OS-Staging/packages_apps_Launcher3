@@ -13,7 +13,7 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <!-- Application name -->
     <string name="lineageos_app_name" translatable="false">Trebuchet</string>
@@ -141,4 +141,8 @@
 
     <!-- Background opacity -->
     <string name="background_opacity_title">Background opacity</string>
+
+    <!-- App drawer searchbar -->
+    <string name="drawer_search_title">App search bar</string>
+    <string name="drawer_search_summary">Search bar on top of the app drawer</string>
 </resources>
