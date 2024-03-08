@@ -6985,7 +6985,7 @@ public abstract class RecentsView<
     }
 
     private void doScrollScale() {
-        if (showAsGrid())
+        if (showAsGrid() || mContainer.getDeviceProfile().isTablet)
             return;
 
         //nick@lmo-20231004 if rotating launcher is enabled, rotation works differently
