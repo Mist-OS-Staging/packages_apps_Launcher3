@@ -1089,6 +1089,10 @@ public final class Utilities {
         return LauncherPrefs.BLUR_DEPTH.get(context);
     }
 
+    public static int getLauncher() {
+        return android.os.SystemProperties.getInt("persist.sys.default_launcher", 0);
+    }
+
     public static int getRecentsOpacity(Context context) {
         return LauncherPrefs.RECENTS_OPACITY.get(context);
     }
