@@ -166,14 +166,8 @@ public class AllAppsState extends LauncherState {
 
     @Override
     public int getVisibleElements(Launcher launcher) {
-        int elements = ALL_APPS_CONTENT | FLOATING_SEARCH_BAR;
-        // Only add HOTSEAT_ICONS for tablets in ALL_APPS state.
-        if (launcher.getDeviceProfile().isTablet) {
-            elements |= HOTSEAT_ICONS;
-        }
-        return elements;
+        return ALL_APPS_CONTENT | FLOATING_SEARCH_BAR;
     }
-
     @Override
     public int getFloatingSearchBarRestingMarginBottom(Launcher launcher) {
         return 0;
