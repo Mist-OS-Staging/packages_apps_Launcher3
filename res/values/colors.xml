@@ -307,4 +307,6 @@
     <color name="homepage_background">@color/homepage_grey_bg</color>
     <color name="homepage_grey_fg">@color/m3_ref_palette_grey30</color>
     <color name="homepage_grey_bg">@color/m3_ref_palette_grey90</color>
+    <color name="primaryBackground">#ffffffff</color>
+    <color name="primaryForeground">#ff000000</color>
 </resources>

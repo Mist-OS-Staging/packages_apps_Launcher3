@@ -601,4 +601,5 @@
     <!-- Dashboard foreground image inset (from background edge to foreground edge) -->
     <dimen name="dashboard_tile_foreground_image_inset">8dp</dimen>
 
+    <dimen name="theme_icon_size">24.0dip</dimen>
 </resources>
