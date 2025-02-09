@@ -189,6 +189,7 @@ public final class Utilities {
     public static final String KEY_ALLOW_WALLPAPER_ZOOMING = "pref_allow_wallpaper_zooming";
     public static final String KEY_STATUS_BAR = "pref_show_statusbar";
     public static final String KEY_RECENTS_MEMINFO = "pref_recents_meminfo";
+    public static final String KEY_RECENTS_MEMINFO_ZRAM = "pref_recents_meminfo_zram";
     public static final String KEY_RECENTS_OPACITY = "pref_recents_opacity";
     public static final String KEY_APP_DRAWER_OPACITY = "pref_app_drawer_opacity";
     public static final String KEY_BLUR_DEPTH = "pref_blur_depth";
@@ -1129,6 +1130,11 @@ public final class Utilities {
     public static int getLauncher() {
         return android.os.SystemProperties.getInt("persist.sys.default_launcher", 0);
     }
+
+    public static boolean isShowMeminfoZram(Context context) {
+        SharedPreferences prefs = LauncherPrefs.getPrefs(context.getApplicationContext());
+        return prefs.getBoolean(KEY_RECENTS_MEMINFO_ZRAM, false);
+   }
 
     public static int getRecentsOpacity(Context context) {
         return getLauncher() == 2 ? 100 : 40;
