@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-     Copyright (C) 2016-2023 crDroid Android Project
+     Copyright (C) 2016-2023 Mist Android Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -169,8 +169,8 @@
     <string name="show_quickspace_title">Přehled událostí</string>
     <string name="show_quickspace_summary">Zobrazit v horní části Domovské obrazovky</string>
     <!-- QuickSpace: QuickEvent: Device Intro Event -->
-    <string name="quick_event_rom_intro_welcome">Vítejte v\u00a0crDroidu!</string>
-    <string name="quick_event_rom_intro_welcome_ext">Čas na crDroid!</string>
+    <string name="quick_event_rom_intro_welcome">Vítejte v\u00a0Mistu!</string>
+    <string name="quick_event_rom_intro_welcome_ext">Čas na Mist!</string>
     <string-array name="welcome_message_variants">
         <item>Děkujeme, že jste si vybrali právě nás</item>
         <item>Máte nás rádi? Pošlete nám příspěvek na pivo :)</item>
@@ -311,12 +311,12 @@
         <item>Hej hola, jak je?</item>
         <item>Vítej ve skutečném Matrixu!</item>
         <item>Kolik snímků obrazovky vytvoříš?</item>
-        <item>S crDroidem zpřístupníš lecjaké vychytávky</item>
+        <item>S Mistem zpřístupníš lecjaké vychytávky</item>
         <item>Šiř lásku, nikoliv chaos</item>
         <item>Nezahájili jsme palbu!</item>
         <item>Je čas na nějakou dobrou hudbu</item>
         <item>\u003C\u003C\u003C\u003C\u003C\u003C\u003C HROT</item>
-        <item>Pro zobrazení tohoto obsahu potřebuješ mít crDroid Premium</item>
+        <item>Pro zobrazení tohoto obsahu potřebuješ mít Mist Premium</item>
         <item>Pamatuj na Lineage of the Unicorn</item>
         <item>Užij si Xtended výdrž baterie</item>
         <item>Začínáme od píky</item>
