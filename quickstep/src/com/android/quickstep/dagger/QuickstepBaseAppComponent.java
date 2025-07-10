@@ -33,6 +33,7 @@ import com.android.quickstep.logging.SettingsChangeLogger;
 import com.android.quickstep.util.AsyncClockEventDelegate;
 import com.android.quickstep.util.ContextualSearchHapticManager;
 import com.android.quickstep.util.ContextualSearchStateManager;
+import com.android.quickstep.util.AppLockHelper;
 
 /**
  * Launcher Quickstep base component for Dagger injection.
@@ -73,4 +74,6 @@ public interface QuickstepBaseAppComponent extends LauncherBaseAppComponent {
     SimpleOrientationTouchTransformer getSimpleOrientationTouchTransformer();
 
     SystemDecorationChangeObserver getSystemDecorationChangeObserver();
+
+    AppLockHelper getAppLockHelper();
 }
