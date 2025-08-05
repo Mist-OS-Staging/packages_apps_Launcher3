@@ -171,49 +171,53 @@ public class AppsSearchContainerLayout extends ExtendedEditText
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     float touchX = event.getRawX();
-                    int rightDrawableWidth = getCompoundDrawables()[2].getBounds().width();
-                    int leftDrawableWidth = getCompoundDrawables()[0].getBounds().width();
+                    
+                    Drawable[] drawables = getCompoundDrawables();
+                    Drawable rightDrawable = drawables[2];
+                    Drawable leftDrawable = drawables[0];
+                    
                     int paddingEnd = getPaddingEnd();
                     int paddingLeft = getPaddingLeft();
                 
-                    // Check if the touch is outside the bounds of the right drawable
-                    if (touchX >= (getWidth() - rightDrawableWidth - paddingEnd)) {
-                        // Handle touch on the right drawable (lens icon)
-                        // launch lens app
-                        Intent lensIntent = new Intent();
-                        Bundle bundle = new Bundle();
-                        bundle.putString("caller_package", Utilities.GSA_PACKAGE);
-                        bundle.putLong("start_activity_time_nanos", SystemClock.elapsedRealtimeNanos());
-                        lensIntent.setComponent(new ComponentName(Utilities.GSA_PACKAGE, Utilities.LENS_ACTIVITY))
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                .setPackage(Utilities.GSA_PACKAGE)
-                                .setData(Uri.parse(Utilities.LENS_URI))
-                                .putExtra("lens_activity_params", bundle);
-                        getContext().startActivity(lensIntent);
-                        return true;
+                    if (rightDrawable != null) {
+                        int rightDrawableWidth = rightDrawable.getBounds().width();
+                        if (touchX >= (getWidth() - rightDrawableWidth - paddingEnd)) {
+                            Intent lensIntent = new Intent();
+                            Bundle bundle = new Bundle();
+                            bundle.putString("caller_package", Utilities.GSA_PACKAGE);
+                            bundle.putLong("start_activity_time_nanos", SystemClock.elapsedRealtimeNanos());
+                            lensIntent.setComponent(new ComponentName(Utilities.GSA_PACKAGE, Utilities.LENS_ACTIVITY))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    .setPackage(Utilities.GSA_PACKAGE)
+                                    .setData(Uri.parse(Utilities.LENS_URI))
+                                    .putExtra("lens_activity_params", bundle);
+                            getContext().startActivity(lensIntent);
+                            return true;
+                        }
                     }
-                    // Check if the touch is outside the bounds of the left drawable
-                    // TODO: fix this for drawable detection for tablets/large screen devices
-                    else if (touchX <= (leftDrawableWidth + paddingLeft + searchSideMargin)) {
-                        // Handle touch on the left drawable (Google icon)
-                        // launch google app
-                        Intent gIntent = getContext().getPackageManager().getLaunchIntentForPackage(Utilities.GSA_PACKAGE);
-                        gIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                        getContext().startActivity(gIntent);
-                        return true;
+                    
+                    if (leftDrawable != null) {
+                        int leftDrawableWidth = leftDrawable.getBounds().width();
+                        if (touchX <= (leftDrawableWidth + paddingLeft + searchSideMargin)) {
+                            Intent gIntent = getContext().getPackageManager().getLaunchIntentForPackage(Utilities.GSA_PACKAGE);
+                            gIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            getContext().startActivity(gIntent);
+                            return true;
+                        }
                     }
-                    // Check if the touch is in the middle part of the Search bar
-                    else if (touchX > (leftDrawableWidth + paddingLeft) && touchX < (getWidth() - rightDrawableWidth - paddingEnd)) {
-                        // Launch Pixel search directly if installed 
-                        // to produce a similar search experience like pixel launcher
+                    
+                    int leftBoundary = leftDrawable != null ? 
+                        (leftDrawable.getBounds().width() + paddingLeft) : paddingLeft;
+                    int rightBoundary = rightDrawable != null ? 
+                        (getWidth() - rightDrawable.getBounds().width() - paddingEnd) : (getWidth() - paddingEnd);
+                        
+                    if (touchX > leftBoundary && touchX < rightBoundary) {
                         Intent pixelSearchIntent = getContext().getPackageManager().getLaunchIntentForPackage("rk.android.app.pixelsearch");
                         if (pixelSearchIntent != null) {
-                            // The app is installed, launch it
                             pixelSearchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             getContext().startActivity(pixelSearchIntent);
                             return true;
                         } else {
-                            // Use normal behavior if pixel search is not installed.
                             return false;
                         }
                     }
