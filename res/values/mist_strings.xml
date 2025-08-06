@@ -217,6 +217,19 @@
     <string name="quickspace_date_format" translatable="false">EEE, MMM d</string>
     <string name="quickspace_date_format_minimalistic" translatable="false">EEEE, MMMM d</string>
 
+<!-- Quickspace new style -->
+<string name="quickspace_style_title">At A Glance style</string>
+<string-array name="quickspace_style_entries">
+    <item>Default</item>
+    <item>Extended</item>
+    <item>Mistify</item>
+</string-array>
+<string-array name="quickspace_style_values" translatable="false">
+    <item>0</item>
+    <item>1</item>
+    <item>2</item>
+</string-array>
+
     <!-- QuickSpace: QuickEvent: Greetings -->
     <string name="quickspace_grt_morning">Good morning.</string>
     <string name="quickspace_grt_evening">Good evening.</string>
@@ -387,26 +400,26 @@
 	<item>You\'re off the Grid. For real.</item>
 	<item>No Google, no mercy.</item>
 	<item>Privacy is not a feature. It\'s the weapon.</item>
-	<item>VoltageOS: Because trust issues are valid.</item>
-	<item>Flashing VoltageOS voids surveillance.</item>
+	<item>MistOS: Because trust issues are valid.</item>
+	<item>Flashing MistOS voids surveillance.</item>
 	<item>This ROM deletes cookies... and tracks.</item>
 	<item>Goodbye Play Store, hello black mirror.</item>
 	<item>De-Googled like it\’s 1984.</item>
-	<item>VoltageOS knows nothing. And that\’s good.</item>
+	<item>MistOS knows nothing. And that\’s good.</item>
 	<item>They can\’t track you if you never existed.</item>
 	<item>You chose privacy... and 17 manual setups.</item>
-	<item>VoltageOS: because suffering is freedom.</item>
+	<item>MistOS: because suffering is freedom.</item>
 	<item>Welcome to the ROM that hates convenience.</item>
 	<item>No trackers. Just your own paranoia.</item>
 	<item>You disabled Play Services. Bold of you.</item>
 	<item>Updates? When the stars align.</item>
 	<item>This ROM respects your privacy... maybe too much.</item>
-	<item>Running VoltageOS? You must love pain.</item>
+	<item>Running MistOS? You must love pain.</item>
 	<item>Battery optimized. Sanity not included.</item>
-	<item>VoltageOS: where even the bugs fear telemetry.</item>
+	<item>MistOS: where even the bugs fear telemetry.</item>
 	<item>Your OS is clean. Unlike your conscience.</item>
 	<item>De-Googled? You\'re just harder to monetize.</item>
-	<item>VoltageOS: perfect for hiding from yourself.</item>
+	<item>MistOS: perfect for hiding from yourself.</item>
 	<item>Don\'t worry, the void can\'t track you.</item>
 	<item>Flashed again? That\'s commitment... or boredom.</item>
 	<item>Custom ROMs: breaking things since Android Eclair.</item>
@@ -416,39 +429,39 @@
 	<item>Your warranty died for this. Respect.</item>
 	<item>99 problems but bloatware ain\'t one.</item>
 	<item>This ROM is powered by caffeine and blind optimism.</item>
-	<item>VoltageOS: because normal roms are too mainstream.</item>
+	<item>MistOS: because normal roms are too mainstream.</item>
 	<item>Welcome to the club. We have no OTA updates.</item>
 	<item>Pixel UI: Now with 12 identical ROMs!</item>
 	<item>Pixel ROMs: Like Google, but with more bootloops.</item>
-	<item>Pixel ROMs give you the look. Voltage gives you control.</item>
+	<item>Pixel ROMs give you the look. MistOS gives you control.</item>
 	<item>Pixel UI is pretty. So is surveillance.</item>
-	<item>Voltage strips the fluff. Pixel just paints it beige.</item>
-	<item>VoltageOS: less Play Services, more peace of mind.</item>
+	<item>Mistify strips the fluff. Pixel just paints it beige.</item>
+	<item>MistOS: less Play Services, more peace of mind.</item>
 	<item>Pixel clones optimize for aesthetic. We optimize for autonomy.</item>
 	<item>Pixel-based ROMs: same Google, different wallpaper.</item>
-	<item>Voltage doesn\’t simulate freedom. It compiles it.</item>
-	<item>VoltageOS: freedom with a price tag of sanity</item>
+	<item>Mist doesn\’t simulate freedom. It compiles it.</item>
+	<item>MistOS: freedom with a price tag of sanity</item>
 	<item>You left Google, but the void found you</item>
 	<item>Not a Pixel, not a problem</item>
 	<item>Surveillance detox starts here</item>
 	<item>This ROM bites back</item>
 	<item>Welcome to the dark side of AOSP</item>
 	<item>No ads, no trackers, no hope</item>
-	<item>VoltageOS: clean, cold, and indifferent</item>
+	<item>MistOS: clean, cold, and indifferent</item>
 	<item>Where privacy meets paranoia</item>
 	<item>Use sandboxed GApps, microG, or nothing at all</item>
-	<item>VoltageOS plays nice with your choice of GApps</item>
+	<item>MistOS plays nice with your choice of GApps</item>
 	<item>Sandboxed, microG, or stock — your rules</item>
 	<item>Pick your poison: GApps, microG, or clean air</item>
-	<item>Google? microG? None? VoltageOS doesn\’t judge</item>
+	<item>Google? microG? None? MistOS doesn\’t judge</item>
 	<item>Some ROMs ship with spyware, they call it a feature</item>
 	<item>Preinstalled Play Services — because choice is scary</item>
 	<item>Flash once, get Google forever</item>
 	<item>They promise freedom, then boot with Gmail</item>
 	<item>Custom ROM life: flashing more than you\’re texting.</item>
-	<item>Pixel users get updates. Voltage users get surprises.</item>
-	<item>VoltageOS: because stable is just a myth anyway.</item>
-	<item>You flash VoltageOS for privacy, then tweet your location.</item>
+	<item>Pixel users get updates. Mist users get surprises.</item>
+	<item>MistOS: because stable is just a myth anyway.</item>
+	<item>You flash MistOS for privacy, then tweet your location.</item>
 	<item>Custom ROM users: experts at troubleshooting what they broke.</item>
 	<item>Flashing ROMs so often, your phone has trust issues.</item>
 	<item>Flashed for privacy, broadcasted your life.</item>
@@ -457,21 +470,21 @@
 	<item>Updates delayed, patience not included.</item>
 	<item>Battery saver off, flashing mode on.</item>
 	<item>Rooted phone, unrooted life skills.</item>
-	<item>Play Integrity says no. VoltageOS says yes anyway.</item>
+	<item>Play Integrity says no. MistOS says yes anyway.</item>
 	<item>Your phone is safe. Your soul? Not so much.</item>
 	<item>Privacy promised, paranoia delivered.</item>
 	<item>Flashed a privacy ROM, now Googling how to install GApps.</item>
 	<item>Asked for Pixel UI on a de-Googled ROM. Bold move.</item>
-	<item>Flashes VoltageOS, complains about no Play Store.</item>
+	<item>Flashes MistOS, complains about no Play Store.</item>
 	<item>Wants privacy but keeps reinstalling GApps</item>
 	<item>Flashed for privacy, Googled how to reinstall Google.</item>
 	<item>Privacy ROM user, but addicted to Play Store.</item>
 	<item>Wants freedom, begs for Pixel launcher.</item>
 	<item>Google knows you better than you know yourself.</item>
 	<item>Life\’s too short for boring stock ROMs.</item>
-	<item>VoltageOS: privacy and fun, hand in hand.</item>
+	<item>MistOS: privacy and fun, hand in hand.</item>
 	<item>Custom ROM life: 99% flashing, 1% actual use.</item>
-	<item>VoltageOS: because other ROMs was too mainstream.</item>
+	<item>MistOS: because other ROMs was too mainstream.</item>
 	<item>When your phone restarts more than you do.</item>
 	<item>Flashing so much, even your charger is tired.</item>
 	<item>Breaking things just to fix them better.</item>
@@ -490,7 +503,7 @@
 	<item>Battery life: myth or legend?</item>
 	<item>Updates coming... someday</item>
 	<item>Where bugs become features</item>
-	<item>Pixel wannabe, Voltage ready</item>
+	<item>Pixel wannabe, Mistify ready</item>
 	<item>Bricked? Try turning it off and on</item>
 	<item>Uninstall your worries here</item>
 	<item>Google who? Not us.</item>
