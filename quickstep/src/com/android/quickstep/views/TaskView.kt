@@ -63,6 +63,7 @@ import com.android.launcher3.testing.TestLogging
 import com.android.launcher3.testing.shared.TestProtocol
 import com.android.launcher3.util.CancellableTask
 import com.android.launcher3.util.Executors
+import com.android.launcher3.util.Executors.MAIN_EXECUTOR
 import com.android.launcher3.util.KFloatProperty
 import com.android.launcher3.util.MultiPropertyDelegate
 import com.android.launcher3.util.MultiPropertyFactory
@@ -320,8 +321,12 @@ container: RecentsViewContainer =
     protected var fullscreenProgress = 0f
         set(value) {
             if (value == field && enableOverviewIconMenu()) return
-            field = Utilities.boundToRange(value, 0f, 1f)
-            onFullscreenProgressChanged(field)
+            val bounded = Utilities.boundToRange(value, 0f, 1f)
+
+            MAIN_EXECUTOR.execute {
+                field = bounded
+                onFullscreenProgressChanged(field)
+            }
         }
 
     // gridProgress 0 = carousel; 1 = 2 row grid.
@@ -1805,15 +1810,19 @@ container: RecentsViewContainer =
     }
 
     protected open fun onFullscreenProgressChanged(fullscreenProgress: Float) {
-        taskContainers.forEach {
-            if (!enableOverviewIconMenu()) {
-                it.iconView.setVisibility(if (fullscreenProgress < 1) VISIBLE else INVISIBLE)
+        MAIN_EXECUTOR.execute {
+            taskContainers.forEach {
+                if (!enableOverviewIconMenu()) {
+                    it.iconView.setVisibility(
+                        if (fullscreenProgress < 1) View.VISIBLE else View.INVISIBLE
+                    )
+                }
+                it.overlay.setFullscreenProgress(fullscreenProgress)
             }
-            it.overlay.setFullscreenProgress(fullscreenProgress)
+            settledProgressFullscreen =
+                SETTLED_PROGRESS_FAST_OUT_INTERPOLATOR.getInterpolation(1 - fullscreenProgress)
+            updateFullscreenParams()
         }
-        settledProgressFullscreen =
-            SETTLED_PROGRESS_FAST_OUT_INTERPOLATOR.getInterpolation(1 - fullscreenProgress)
-        updateFullscreenParams()
     }
 
     protected open fun updateFullscreenParams() {
