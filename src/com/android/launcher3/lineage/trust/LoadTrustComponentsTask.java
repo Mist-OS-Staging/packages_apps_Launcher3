@@ -26,7 +26,7 @@ import android.os.Build;
 
 import androidx.annotation.NonNull;
 
-import com.android.internal.util.lunaris.Utils;
+import com.android.internal.util.mist.Utils;
 import com.android.launcher3.lineage.trust.db.TrustComponent;
 
 import java.util.ArrayList;
