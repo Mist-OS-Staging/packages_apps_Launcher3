@@ -41,6 +41,7 @@ import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Flags;
 import com.android.launcher3.Insettable;
 import com.android.launcher3.LauncherPrefs;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.R;
 import com.android.launcher3.anim.AnimatorListeners;
 import com.android.launcher3.anim.PendingAnimation;
@@ -133,7 +134,7 @@ public class TaskbarAllAppsSlideInView extends AbstractSlideInView<TaskbarOverla
             animation.setViewAlpha(mAppsView, 1 - mToTranslationShift, allAppsFadeInterpolator);
         }
 
-        if (Flags.allAppsBlur()) {
+        if (Utilities.shouldEnableAllAppsBlur(mActivityContext)) {
             Interpolator blurInterpolator = isOpening ? LINEAR : DECELERATED_EASE;
             animation.addOnFrameListener(a -> {
                 float blurProgress =
@@ -251,8 +252,12 @@ public class TaskbarAllAppsSlideInView extends AbstractSlideInView<TaskbarOverla
 
     @Override
     protected int getScrimColor(Context context) {
+        int scrimColor = Utilities.shouldEnableAllAppsBlur(context)
+                ? Themes.getAttrColor(context, R.attr.allAppsScrimColorOverBlur)
+                : Themes.getAttrColor(context, R.attr.allAppsScrimColor);
+
         return ColorUtils.setAlphaComponent(
-                Themes.getAttrColor(context, R.attr.allAppsScrimColor),
+                scrimColor,
                 LauncherPrefs.APP_DRAWER_OPACITY.get(context) * 255 / 100);
     }
 

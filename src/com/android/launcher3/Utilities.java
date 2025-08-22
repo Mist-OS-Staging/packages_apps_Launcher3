@@ -90,6 +90,8 @@ import androidx.core.graphics.ColorUtils;
 
 import com.android.launcher3.R;
 import com.android.launcher3.dragndrop.FolderAdaptiveIcon;
+import com.android.launcher3.Flags;
+import com.android.launcher3.LauncherFiles;
 import com.android.launcher3.graphics.ThemeManager;
 import com.android.launcher3.graphics.TintedDrawableSpan;
 import com.android.launcher3.icons.BitmapInfo;
@@ -1130,12 +1132,24 @@ public final class Utilities {
         startLmoFreeform(context, activity, UserHandle.myUserId());
     }
 
+    public static int getAllAppsOpacity(Context context) {
+        return LauncherPrefs.APP_DRAWER_OPACITY.get(context);
+    }
+
+    public static int getBlurRadius(Context context) {
+        return LauncherPrefs.BLUR_DEPTH.get(context);
+    }
+
     public static boolean blurBackgroundAtAppLaunch(Context context) {
         return LauncherPrefs.BLUR_BACKGROUND_AT_APP_LAUNCH.get(context);
     }
 
     public static boolean shouldForceAllAppsOnBottomSheet(Context context) {
         return LauncherPrefs.KEY_FORCE_ALL_APPS_ON_BOTTOM_SHEET.get(context);
+    }
+    
+    public static boolean shouldEnableAllAppsBlur(Context context) {
+        return LauncherPrefs.KEY_ALL_APPS_BLUR.get(context);
     }
 
 }

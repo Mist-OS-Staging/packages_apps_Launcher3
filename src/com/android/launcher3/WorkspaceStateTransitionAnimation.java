@@ -64,6 +64,7 @@ import com.android.launcher3.graphics.SysUiScrim;
 import com.android.launcher3.states.EditModeState;
 import com.android.launcher3.states.SpringLoadedState;
 import com.android.launcher3.states.StateAnimationConfig;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.util.DynamicResource;
 import com.android.systemui.plugins.ResourceProvider;
 
@@ -210,6 +211,14 @@ public class WorkspaceStateTransitionAnimation {
         propertySetter.setViewBackgroundColor(mLauncher.getScrimView(),
                 state.getWorkspaceScrimColor(mLauncher),
                 config.getInterpolator(ANIM_SCRIM_FADE, ACCELERATE_2));
+        
+        // Set scrim view alpha to allow blur to show through when all apps blur is enabled
+        if (state == LauncherState.ALL_APPS && Utilities.shouldEnableAllAppsBlur(mLauncher)) {
+            float dynamicAlpha = Utilities.getAllAppsOpacity(mLauncher) / 100f;
+            propertySetter.setFloat(mLauncher.getScrimView(), VIEW_ALPHA, dynamicAlpha, LINEAR);
+        } else {
+            propertySetter.setFloat(mLauncher.getScrimView(), VIEW_ALPHA, 1f, LINEAR);
+        }
     }
 
     public void applyChildState(LauncherState state, CellLayout cl, int childIndex) {
