@@ -173,6 +173,9 @@ public class MemInfoView extends TextView {
     }
 
     private long getZramSize() {
+        if (!LauncherPrefs.RECENTS_MEMINFO_ZRAM.get(getContext()))
+            return 0;
+
         long zramSize = 0;
 
         try (BufferedReader reader = new BufferedReader(new FileReader("/sys/block/zram0/disksize"))) {
