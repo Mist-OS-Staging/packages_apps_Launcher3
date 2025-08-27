@@ -21,12 +21,15 @@ import static com.android.launcher3.logging.StatsLogManager.LAUNCHER_STATE_ALLAP
 
 import android.content.Context;
 
+import androidx.core.graphics.ColorUtils;
+
 import com.android.internal.jank.Cuj;
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Flags;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherState;
 import com.android.launcher3.R;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.util.Themes;
 import com.android.launcher3.views.ActivityContext;
 import com.android.quickstep.util.BaseDepthController;
@@ -207,11 +210,13 @@ public class AllAppsState extends LauncherState {
     @Override
     public int getWorkspaceScrimColor(Launcher launcher) {
         if (!launcher.getDeviceProfile().shouldShowAllAppsOnSheet()) {
-            return Themes.getAttrColor(launcher, R.attr.allAppsScrimColor);
-        }
-        if (Flags.allAppsBlur()) {
-            return Themes.getAttrColor(launcher, R.attr.allAppsScrimColorOverBlur);
-        }
-        return launcher.getResources().getColor(R.color.widgets_picker_scrim);
+           int color = Themes.getAttrColor(launcher, R.attr.allAppsScrimColor);
+        int alpha = (int) ((Utilities.getAllAppsOpacity(launcher) * 255) / 100f);
+        return ColorUtils.setAlphaComponent(color, alpha);
     }
+    if (Flags.allAppsBlur()) {
+        return Themes.getAttrColor(launcher, R.attr.allAppsScrimColorOverBlur);
+    }
+    return launcher.getResources().getColor(R.color.widgets_picker_scrim);
+}
 }

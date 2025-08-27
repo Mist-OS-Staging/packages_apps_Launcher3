@@ -1099,4 +1099,12 @@ public final class Utilities {
         SharedPreferences prefs = LauncherPrefs.getPrefs(context.getApplicationContext());
         return prefs.getInt(KEY_HOTSEAT_QSB_STROKE_WIDTH, 0);
     }
+
+    public static int getRecentsOpacity(Context context) {
+        return LauncherPrefs.RECENTS_OPACITY.get(context);
+    }
+
+    public static int getAllAppsOpacity(Context context) {
+        return LauncherPrefs.APP_DRAWER_OPACITY.get(context);
+    }
 }

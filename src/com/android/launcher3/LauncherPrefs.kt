@@ -242,6 +242,8 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
 
         @JvmField
         val ENABLE_TWOLINE_ALLAPPS_TOGGLE = backedUpItem("pref_enable_two_line_toggle", false)
+        @JvmField val RECENTS_OPACITY = backedUpItem("pref_recents_opacity", 100)
+        @JvmField val APP_DRAWER_OPACITY = backedUpItem("pref_app_drawer_opacity", 100)
         @JvmField val PROMISE_ICON_IDS = backedUpItem(InstallSessionHelper.PROMISE_ICON_IDS, "")
         @JvmField val WORK_EDU_STEP = backedUpItem("showed_work_profile_edu", 0)
         @JvmField val RECENTS_MEMINFO = backedUpItem("pref_recents_meminfo", false)
