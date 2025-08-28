@@ -276,29 +276,6 @@ public class SettingsMisc extends CollapsingToolbarBaseActivity
                         preference.setOrder(0);
                     }
                     return mDeveloperOptionsEnabled;
-                case FIXED_LANDSCAPE_MODE:
-                    if (!Flags.oneGridSpecs()
-                            // adding this condition until fixing b/378972567
-                            || InvariantDeviceProfile.INSTANCE.get(getContext()).deviceType
-                            == TYPE_MULTI_DISPLAY
-                            || InvariantDeviceProfile.INSTANCE.get(getContext()).deviceType
-                            == TYPE_TABLET) {
-                        return false;
-                    }
-                    // When the setting changes rotate the screen accordingly to showcase the result
-                    // of the setting
-                    preference.setOnPreferenceChangeListener(
-                            (pref, newValue) -> {
-                                getActivity().setRequestedOrientation(
-                                        (boolean) newValue
-                                                ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                                                : ActivityInfo.SCREEN_ORIENTATION_USER
-                                );
-                                return true;
-                            }
-                    );
-                    return !info.isTablet(info.realBounds);
-
                 case KEY_TRUST_APPS:
                     preference.setOnPreferenceClickListener(p -> {
                         Utilities.showLockScreen(getActivity(),
