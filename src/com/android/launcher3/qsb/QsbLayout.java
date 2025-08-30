@@ -27,8 +27,7 @@ import com.android.launcher3.util.Themes;
 import com.android.launcher3.views.ActivityContext;
 import android.view.View;
 
-public class QsbLayout extends FrameLayout implements Reorderable,
-        SharedPreferences.OnSharedPreferenceChangeListener {
+public class QsbLayout extends FrameLayout {
 
     private ImageView micIcon;
     private ImageView gIcon;
@@ -53,7 +52,6 @@ public class QsbLayout extends FrameLayout implements Reorderable,
         micIcon = findViewById(R.id.mic_icon);
         gIcon = findViewById(R.id.g_icon);
         lensIcon = findViewById(R.id.lens_icon);
-        inner = findViewById(R.id.inner);
         mAiModeButton = findViewById(R.id.ai_mode_button);
 
         setUpMainSearch();
@@ -106,11 +104,6 @@ public class QsbLayout extends FrameLayout implements Reorderable,
             strokeDrawable.setCornerRadius(cornerRadius);
             LayerDrawable combinedDrawable = new LayerDrawable(new Drawable[]{backgroundDrawable, strokeDrawable});
 
-            inner.setClipToOutline(cornerRadius > 0);
-            inner.setBackground(combinedDrawable);
-        } else {
-            inner.setClipToOutline(cornerRadius > 0);
-            inner.setBackground(backgroundDrawable);
         }
     }
 
