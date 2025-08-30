@@ -23,6 +23,7 @@ import static androidx.preference.PreferenceFragmentCompat.ARG_PREFERENCE_ROOT;
 import static com.android.launcher3.BuildConfig.IS_DEBUG_DEVICE;
 import static com.android.launcher3.BuildConfig.IS_STUDIO_BUILD;
 import static com.android.launcher3.states.RotationHelper.ALLOW_ROTATION_PREFERENCE_KEY;
+import static com.android.launcher3.states.RotationHelper.ALLOW_ROTATION_PREFERENCE_KEY;
 
 import android.app.Activity;
 import android.content.Context;
@@ -254,10 +255,7 @@ public class SettingsMisc extends CollapsingToolbarBaseActivity
 
             DisplayController.Info info = DisplayController.INSTANCE.get(getContext()).getInfo();
             switch (preference.getKey()) {
-
-                case ALLOW_ROTATION_PREFERENCE_KEY:
-                    DisplayController.Info info =
-                            DisplayController.INSTANCE.get(getContext()).getInfo();
+                    case ALLOW_ROTATION_PREFERENCE_KEY:
                     if (info.isTablet(info.realBounds)) {
                         // Launcher supports rotation by default. No need to show this setting.
                         return false;
@@ -270,7 +268,6 @@ public class SettingsMisc extends CollapsingToolbarBaseActivity
                     // Initialize the UI once
                     preference.setDefaultValue(RotationHelper.getAllowRotationDefaultValue(info));
                     return true;
-
                 case DEVELOPER_OPTIONS_KEY:
                     if (IS_STUDIO_BUILD) {
                         preference.setOrder(0);
@@ -290,7 +287,6 @@ public class SettingsMisc extends CollapsingToolbarBaseActivity
                     // Show if Device Personalization Services is present.
                     return isDPSEnabled(getContext());
             }
-
             return true;
         }
 
