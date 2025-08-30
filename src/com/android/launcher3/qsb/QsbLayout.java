@@ -16,6 +16,7 @@ import android.util.AttributeSet;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import androidx.core.view.ViewCompat;
+import com.android.launcher3.Reorderable;
 import com.android.launcher3.BaseActivity;
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.LauncherPrefs;
@@ -26,12 +27,14 @@ import com.android.launcher3.util.Themes;
 import com.android.launcher3.views.ActivityContext;
 import android.view.View;
 
-public class QsbLayout extends FrameLayout {
+public class QsbLayout extends FrameLayout implements Reorderable,
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     private ImageView micIcon;
     private ImageView gIcon;
     private ImageView lensIcon;
     private Context mContext;
+    private ImageView mAiModeButton;
     private FrameLayout inner;
 
     public QsbLayout(Context context, AttributeSet attrs) {
@@ -51,6 +54,7 @@ public class QsbLayout extends FrameLayout {
         gIcon = findViewById(R.id.g_icon);
         lensIcon = findViewById(R.id.lens_icon);
         inner = findViewById(R.id.inner);
+        mAiModeButton = findViewById(R.id.ai_mode_button);
 
         setUpMainSearch();
         setUpBackground();
@@ -65,6 +69,7 @@ public class QsbLayout extends FrameLayout {
         }
         gIcon.setImageResource(isThemed ? R.drawable.ic_super_g_themed : R.drawable.ic_super_g_color);
         lensIcon.setImageResource(isThemed ? R.drawable.ic_lens_themed : R.drawable.ic_lens_color);
+        mAiModeButton.setImageResource(R.drawable.ic_ai_mode_color);
 
         setupGIcon();
         setupLensIcon();
