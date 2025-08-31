@@ -26,11 +26,11 @@ import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.qsb.QsbContainerView;
 import com.android.launcher3.util.Themes;
+import com.android.launcher3.graphics.ThemeManager;
 import com.android.launcher3.views.ActivityContext;
 import android.view.View;
 
-public class QsbLayout extends FrameLayout implements Reorderable,
-        SharedPreferences.OnSharedPreferenceChangeListener {
+public class QsbLayout extends FrameLayout implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private ImageView micIcon;
     private ImageView gIcon;
@@ -60,6 +60,8 @@ public class QsbLayout extends FrameLayout implements Reorderable,
         setUpMainSearch();
         setUpBackground();
         clipIconRipples();
+
+        LauncherPrefs.getPrefs(mContext).registerOnSharedPreferenceChangeListener(this);
 
         boolean isThemed = LauncherPrefs.DOCK_THEME.get(mContext);
 
@@ -140,7 +142,7 @@ public class QsbLayout extends FrameLayout implements Reorderable,
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-          if (key.equals(LauncherPrefs.QSB_OUTER_OPACITY.getKey())) {
+          if (key.equals(LauncherPrefs.QSB_OUTER_OPACITY.getSharedPrefKey())) {
             // Update the drawable if it's already set
             View parent = (View) getParent();
             if (parent != null && parent.getBackground() instanceof QsbOuterDrawable) {
