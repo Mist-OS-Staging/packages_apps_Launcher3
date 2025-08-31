@@ -47,6 +47,8 @@
     <string name="search_bar_category_title">Search bar</string>
     <string name="actions_category_title">Quick actions</string>
 
+    <!-- Proper seekbar -->
+    <string name="proper_seekbar_value">Wert: <xliff:g id="v">%s</xliff:g></string>
     <string name="proper_seekbar_default_value">Default</string>
     <string name="proper_seekbar_default_value_to_set">Default value: <xliff:g id="v">%s</xliff:g>\nLong press to set</string>
     <string name="proper_seekbar_default_value_is_set">Default value is set</string>
