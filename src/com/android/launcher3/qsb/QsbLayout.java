@@ -1,8 +1,10 @@
 package com.android.launcher3.qsb;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -27,7 +29,8 @@ import com.android.launcher3.util.Themes;
 import com.android.launcher3.views.ActivityContext;
 import android.view.View;
 
-public class QsbLayout extends FrameLayout {
+public class QsbLayout extends FrameLayout implements Reorderable,
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     private ImageView micIcon;
     private ImageView gIcon;
@@ -71,6 +74,15 @@ public class QsbLayout extends FrameLayout {
 
         setupGIcon();
         setupLensIcon();
+
+        // Set the custom background drawable
+        post(() -> {
+            View parent = (View) getParent();
+            if (parent != null) {
+                QsbOuterDrawable customDrawable = new QsbOuterDrawable(mContext);
+                parent.setBackground(customDrawable);
+            }
+        });
     }
 
     private void clipIconRipples() {
@@ -122,6 +134,17 @@ public class QsbLayout extends FrameLayout {
             final View child = getChildAt(i);
             if (child != null) {
                 measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);
+            }
+        }
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+          if (key.equals(LauncherPrefs.QSB_OUTER_OPACITY.getKey())) {
+            // Update the drawable if it's already set
+            View parent = (View) getParent();
+            if (parent != null && parent.getBackground() instanceof QsbOuterDrawable) {
+                ((QsbOuterDrawable) parent.getBackground()).updateOpacity();
             }
         }
     }

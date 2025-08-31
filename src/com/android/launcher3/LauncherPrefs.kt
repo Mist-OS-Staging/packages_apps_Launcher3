@@ -289,6 +289,7 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
         @JvmField val APP_DRAWER_OPACITY = backedUpItem("pref_app_drawer_opacity", 100)
         @JvmField val BLUR_BACKGROUND_AT_APP_LAUNCH = backedUpItem("pref_blur_background_at_app_launch", true)
         @JvmField val SINGLE_PAGE_CENTER = backedUpItem("pref_single_page_center", false)
+        @JvmField val QSB_OUTER_OPACITY = backedUpItem("pref_qsb_outer_opacity", 70)
         @JvmField val PROMISE_ICON_IDS = backedUpItem(InstallSessionHelper.PROMISE_ICON_IDS, "")
         @JvmField val WALLPAPER_SCROLLING = backedUpItem("pref_allow_wallpaper_scrolling", true)
         @JvmField val WORK_EDU_STEP = backedUpItem("showed_work_profile_edu", 0)

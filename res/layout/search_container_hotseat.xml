@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="start|center_vertical"
-            android:layout_marginStart="@dimen/qsb_g_icon_marginStart"
+            android:layout_marginStart="30dp"
             android:src="@drawable/ic_super_g_color" />
 
         <LinearLayout

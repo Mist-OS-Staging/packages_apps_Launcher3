@@ -171,6 +171,7 @@ public final class Utilities {
     public static final String LENS_ACTIVITY = "com.google.android.apps.search.lens.LensExportedActivity";
     public static final String LENS_URI = "google://lens";
     public static final String LENS_SHARE_ACTIVITY = "com.google.android.apps.search.lens.LensShareEntryPointActivity";
+    public static final String KEY_QSB_OUTER_OPACITY = "pref_qsb_outer_opacity";
 
     /**
      * Returns true if theme is dark.
@@ -1096,6 +1097,11 @@ public final class Utilities {
 
     public static int getAllAppsOpacity(Context context) {
         return LauncherPrefs.APP_DRAWER_OPACITY.get(context);
+    }
+
+    public static int getQsbOuterOpacity(Context context) {
+        SharedPreferences prefs = LauncherPrefs.getPrefs(context.getApplicationContext());
+        return prefs.getInt(KEY_QSB_OUTER_OPACITY, 70);
     }
 
     public static boolean blurBackgroundAtAppLaunch(Context context) {
