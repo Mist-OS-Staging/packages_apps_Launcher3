@@ -149,6 +149,17 @@
             android:persistent="true"
             launcher:iconSpaceReserved="false" />
 
+        <ListPreference
+            android:key="pref_homescreen_clock_style"
+            android:title="@string/homescreen_clock_style_title"
+            android:summary="@string/homescreen_clock_style_summary"
+            android:dependency="pref_quickspace"
+            android:entries="@array/homescreen_clock_style_entries"
+            android:entryValues="@array/homescreen_clock_style_values"
+            android:defaultValue="0"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
 <ListPreference
     android:key="pref_quickspace_style"
     android:title="@string/quickspace_style_title"

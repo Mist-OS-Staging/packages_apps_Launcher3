@@ -270,6 +270,26 @@
     <string name="quickspace_psa_title">Random messages</string>
     <string name="quickspace_psa_summary">Make your companion more lively with random messages</string>
 
+    <!-- Homescreen Clock Style -->
+    <string name="homescreen_clock_style_title">Homescreen clock style</string>
+    <string name="homescreen_clock_style_summary">Choose your preferred clock style for the homescreen</string>
+    <string-array name="homescreen_clock_style_entries">
+        <item>Default</item>
+        <item>OneUI</item>
+        <item>OxygenOS</item>
+        <item>HyperOS</item>
+        <item>iOS</item>
+        <item>Modern</item>
+    </string-array>
+    <string-array name="homescreen_clock_style_values" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
     <string-array name="quickspace_psa_morning">
         <item>Good morning!</item>
         <item>Good morning, time to rock!</item>

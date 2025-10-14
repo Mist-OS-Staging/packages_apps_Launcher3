@@ -46,6 +46,7 @@ import com.android.launcher3.util.Themes;
 
 import com.android.launcher3.quickspace.QuickspaceController.OnDataListener;
 import com.android.launcher3.quickspace.receivers.QuickSpaceActionReceiver;
+import com.android.launcher3.quickspace.ClockStyleManager;
 
 public class QuickSpaceView extends FrameLayout implements OnDataListener {
 
@@ -93,12 +94,15 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
 
     private QuickSpaceActionReceiver mActionReceiver;
     public QuickspaceController mController;
+    private ClockStyleManager mClockStyleManager;
 
     private int mCurrentStyle = -1;
+    private int mCurrentClockStyle = -1;
 
     public QuickSpaceView(Context context, AttributeSet set) {
         super(context, set);
         mController = new QuickspaceController(context);
+        mClockStyleManager = new ClockStyleManager(context);
         mColorStateList = ColorStateList.valueOf(Themes.getAttrColor(getContext(), R.attr.workspaceTextColor));
         mQuickspaceBackgroundRes = R.drawable.bg_quickspace;
         setClipChildren(false);
@@ -108,14 +112,21 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     public void onDataUpdated() {
         int style = Integer.parseInt(LauncherPrefs.QUICKSPACE_UI_STYLE.get(getContext()));
         boolean styleChanged = mCurrentStyle != style;
-        if (!mViewsLoaded || styleChanged) {
+        
+        // Check for clock style changes
+        mClockStyleManager.updateStyle();
+        int clockStyle = mClockStyleManager.getCurrentStyle();
+        boolean clockStyleChanged = mCurrentClockStyle != clockStyle;
+        
+        if (!mViewsLoaded || styleChanged || clockStyleChanged) {
             prepareLayout(style);
             mViewsLoaded = true;
+            mCurrentClockStyle = clockStyle;
         }
         mIsQuickEvent = mController.isQuickEvent();
         mWeatherAvailable = mController.isWeatherAvailable();
 
-        if (styleChanged || !mViewsLoaded || hasDataChanged()) {
+        if (styleChanged || clockStyleChanged || !mViewsLoaded || hasDataChanged()) {
             updateView(style);
         }
     }
@@ -375,6 +386,24 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
                 mLastAccentState = accentEnabled;
             }
         }
+        
+        // Update custom clock if present
+        if (mClockStyleManager.isCustomStyle()) {
+            View customClock = findViewById(R.id.quickspace_clock);
+            if (customClock != null) {
+                mClockStyleManager.updateClockTime(customClock);
+                
+                // Update contextual info for custom clocks
+                boolean isNowPlaying = mController.getEventController().isNowPlaying();
+                boolean shouldShowPsa = mIsQuickEvent && LauncherPrefs.SHOW_QUICKSPACE_PSONALITY.get(getContext()) && !isNowPlaying;
+                
+                String psaMessage = shouldShowPsa ? mController.getEventController().getActionTitle() : "";
+                String nowPlayingText = isNowPlaying ? 
+                    (mController.getEventController().getTitle() + " - " + mController.getEventController().getActionTitle()) : "";
+                
+                mClockStyleManager.updateContextualInfo(customClock, shouldShowPsa, psaMessage, isNowPlaying, nowPlayingText);
+            }
+        }
 
         String dayOfWeek = QuickEventsController.getDayOfWeek(getContext());
         updateTextViewIfNeeded(mQuickspaceDayOfWeek, dayOfWeek, false);
@@ -408,7 +437,11 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
             }
         };
 
-        mQuickspaceClock.setOnClickListener(openClockListener);
+        // Set click listeners for both default and custom clocks
+        View clockView = findViewById(R.id.quickspace_clock);
+        if (clockView != null) {
+            clockView.setOnClickListener(openClockListener);
+        }
         mQuickspaceDayOfWeek.setOnClickListener(openClockListener); // Both clock and day open the Clock app
         mQuickspaceDate.setOnClickListener(openCalendarListener);
 
@@ -503,7 +536,38 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
 
         if (mCurrentStyle == 2) { // Large style
             mQuickspaceDayOfWeek = findViewById(R.id.quickspace_day_of_week);
-            mQuickspaceClock = (AccentedTextClock) findViewById(R.id.quickspace_clock);
+            
+            // Handle custom clock styles
+            if (mClockStyleManager.isCustomStyle()) {
+                // Remove existing clock if present
+                View existingClock = findViewById(R.id.quickspace_clock);
+                if (existingClock != null && existingClock.getParent() == mQuickspaceContent) {
+                    mQuickspaceContent.removeView(existingClock);
+                }
+                
+                // Create and add custom clock
+                View customClock = mClockStyleManager.createClockView();
+                customClock.setId(R.id.quickspace_clock);
+                
+                // Add the custom clock to the layout
+                if (mQuickspaceContent instanceof androidx.constraintlayout.widget.ConstraintLayout) {
+                    androidx.constraintlayout.widget.ConstraintLayout.LayoutParams params = 
+                        new androidx.constraintlayout.widget.ConstraintLayout.LayoutParams(
+                            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.MATCH_CONSTRAINT,
+                            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.WRAP_CONTENT);
+                    params.startToStart = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+                    params.endToEnd = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+                    params.topToBottom = R.id.quickspace_day_of_week;
+                    params.setMarginStart(16);
+                    customClock.setLayoutParams(params);
+                }
+                
+                mQuickspaceContent.addView(customClock);
+                mQuickspaceClock = null; // Custom clock doesn't use AccentedTextClock
+            } else {
+                mQuickspaceClock = (AccentedTextClock) findViewById(R.id.quickspace_clock);
+            }
+            
             mQuickspaceDate = findViewById(R.id.quickspace_date);
             mPSAMessage = findViewById(R.id.quickspace_psa_message);
             mNowPlayingContent = findViewById(R.id.now_playing_content);
