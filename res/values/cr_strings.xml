@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-     Copyright (C) 2016-2025 Lunaris Android Project
+     Copyright (C) 2024-2025 MistOS
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <!-- Application name -->
-    <string name="lunaris_app_name" translatable="false">Lunaris Launcher</string>
+    <string name="mist_app_name" translatable="false">Mist Launcher</string>
 
     <!-- Folder titles -->
     <string name="google_folder_title" translatable="false">Google</string>
@@ -350,12 +350,12 @@
         <item>Oh hey, what\'s up?</item>
         <item>Welcome to real Matrix!</item>
         <item>How many screenshots do you take?</item>
-        <item>Open goodness with Lunaris</item>
+        <item>Open goodness with MistOS!!</item>
         <item>Spread love, not havoc</item>
         <item>We didn\'t start the fire!</item>
         <item>Time for some good music</item>
         <item>\u003C\u003C\u003C\u003C\u003C\u003C\u003C HEAD</item>
-        <item>You need Lunaris Premium to see this</item>
+        <item>You need Mistify Premium to see this</item>
         <item>Remember the Lineage of the Unicorn</item>
         <item>Enjoy Xtended battery life</item>
         <item>Starting from the ground zero</item>
