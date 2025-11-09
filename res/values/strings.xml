@@ -550,4 +550,11 @@
     <!-- Content description for install app icon -->
     <string name="ps_add_button_content_description">Install apps to Private Space</string>
     <string name="ps_app_content_description">Add files and more to Private Space</string>
+
+    <!-- App Library -->
+    <string name="app_library_state">App Library</string>
+    <string name="app_library_title">App Library</string>
+    <string name="app_library_search_hint">Search apps</string>
+    <string name="enable_app_library">Enable App Library</string>
+    <string name="enable_app_library_summary">Automatically organize apps into categories</string>
 </resources>

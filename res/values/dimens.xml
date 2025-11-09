@@ -590,4 +590,10 @@
     <dimen name="app_title_pill_round_rect_padding">2dp</dimen>
 
     <dimen name="theme_icon_size">24.0dip</dimen>
+
+    <!-- App Library dimensions -->
+    <dimen name="app_library_icon_size">48dp</dimen>
+    <dimen name="app_library_card_margin">16dp</dimen>
+    <dimen name="app_library_card_padding">16dp</dimen>
+    <dimen name="app_library_card_radius">16dp</dimen>
 </resources>

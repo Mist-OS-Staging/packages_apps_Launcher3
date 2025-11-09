@@ -178,6 +178,7 @@ import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
 import com.android.launcher3.allapps.ActivityAllAppsContainerView;
 import com.android.launcher3.allapps.AllAppsTransitionController;
 import com.android.launcher3.allapps.DiscoveryBounce;
+import com.android.launcher3.applibrary.AppLibraryPrefs;
 import com.android.launcher3.anim.AnimationSuccessListener;
 import com.android.launcher3.anim.PropertyListBuilder;
 import com.android.launcher3.apppairs.AppPairIcon;
@@ -231,6 +232,7 @@ import com.android.launcher3.testing.shared.TestProtocol;
 import com.android.launcher3.touch.AllAppsSwipeController;
 import com.android.launcher3.touch.ItemClickHandler;
 import com.android.launcher3.touch.ItemLongClickListener;
+import com.android.launcher3.applibrary.AppLibraryGestureHandler;
 import com.android.launcher3.util.AxCpuBindController;
 import com.android.launcher3.util.ActivityResultInfo;
 import com.android.launcher3.util.BackPressHandler;
@@ -1749,6 +1751,12 @@ public class Launcher extends StatefulActivity<LauncherState>
         }
     }
 
+    private void toggleAppLibrary(boolean alreadyOnHome) {
+        // Removed - using direct overlay instead
+    }
+
+    // Removed showAppLibrary - using direct overlay call
+
     protected void showAllAppsFromIntent(boolean alreadyOnHome) {
         showAllAppsWithSelectedTabFromIntent(alreadyOnHome,
                 ActivityAllAppsContainerView.AdapterHolder.MAIN);
@@ -2760,7 +2768,11 @@ public class Launcher extends StatefulActivity<LauncherState>
     }
 
     public TouchController[] createTouchControllers() {
-        return new TouchController[] {getDragController(), new AllAppsSwipeController(this)};
+        return new TouchController[] {
+            getDragController(), 
+            new AllAppsSwipeController(this),
+            new AppLibraryGestureHandler(this)
+        };
     }
 
     public void onDragLayerHierarchyChanged() {

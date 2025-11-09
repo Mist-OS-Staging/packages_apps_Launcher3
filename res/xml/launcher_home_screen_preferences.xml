@@ -288,4 +288,16 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="@string/app_library_title">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="app_library_enabled"
+            android:persistent="true"
+            android:title="@string/enable_app_library"
+            android:summary="@string/enable_app_library_summary" />
+
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

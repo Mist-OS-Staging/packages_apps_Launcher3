@@ -305,4 +305,9 @@
     <color name="primaryBackground">#ffffffff</color>
     <color name="primaryForeground">#ff000000</color>
 
+    <!-- App Library colors -->
+    <color name="app_library_scrim">#80000000</color>
+    <color name="app_library_card_background">#FFFFFF</color>
+    <color name="app_library_card_background_dark">#2C2C2C</color>
+
 </resources>
