@@ -11,7 +11,7 @@ import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherState;
 import com.android.launcher3.R;
 import com.android.launcher3.statemanager.StateManager;
-import com.android.launcher3.util.ActivityContext;
+import com.android.launcher3.views.ActivityContext;
 
 public class AppLibraryState extends LauncherState {
     
