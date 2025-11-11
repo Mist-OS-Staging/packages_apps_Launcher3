@@ -1,6 +1,6 @@
 package com.android.launcher3.applibrary;
 
-import static com.android.launcher3.anim.Interpolators.DECELERATE_2;
+import static com.android.app.animation.Interpolators.DECELERATE_2;
 
 import android.content.Context;
 import android.graphics.Rect;
@@ -9,38 +9,35 @@ import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherState;
 import com.android.launcher3.R;
+import com.android.launcher3.statemanager.StateManager;
+import com.android.launcher3.util.ActivityContextWrapper;
 
 public class AppLibraryState extends LauncherState {
     
-    private static final int STATE_FLAGS = FLAG_MULTI_PAGE | FLAG_DISABLE_ACCESSIBILITY;
+    private static final int STATE_FLAGS = FLAG_MULTI_PAGE;
     
     public AppLibraryState(int id) {
-        super(id, LauncherState.NORMAL.containerType, LauncherState.NORMAL.transitionDuration, STATE_FLAGS);
+        super(id, NORMAL.containerType, NORMAL.transitionDuration, STATE_FLAGS);
     }
     
     @Override
-    public String getDescription(Launcher launcher) {
-        return "App Library";
+    public int getTransitionDuration(Context context, boolean isToState) {
+        return 300;
     }
     
     @Override
-    public int getVisibleElements(Launcher launcher) {
-        return NONE;
+    public ScaleAndTranslation getWorkspaceScaleAndTranslation(Launcher launcher) {
+        return new ScaleAndTranslation(0.9f, 0f, 0f);
     }
     
     @Override
-    public float[] getWorkspaceScaleAndTranslation(Launcher launcher) {
-        return new float[] {0.9f, 0, 0};
+    public ScaleAndTranslation getHotseatScaleAndTranslation(Launcher launcher) {
+        return new ScaleAndTranslation(0.9f, 0f, 0f);
     }
     
     @Override
-    public float getWorkspaceScrimAlpha(Launcher launcher) {
+    public float getWorkspaceBackgroundAlpha(Launcher launcher) {
         return 0.5f;
-    }
-    
-    @Override
-    public Rect getInsets(Launcher launcher, DeviceProfile dp) {
-        return dp.getInsets();
     }
     
     @Override
@@ -48,15 +45,8 @@ public class AppLibraryState extends LauncherState {
         return new PageAlphaProvider(DECELERATE_2) {
             @Override
             public float getPageAlpha(int pageIndex) {
-                return 0;
+                return 0.5f;
             }
         };
     }
-    
-    @Override
-    public int getWorkspaceScrimColor(Launcher launcher) {
-        return 0x80000000; // Semi-transparent black
-    }
-    
-    public static final LauncherState APP_LIBRARY = new AppLibraryState(6);
 }

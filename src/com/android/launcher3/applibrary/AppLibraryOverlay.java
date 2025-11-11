@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -13,6 +14,8 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SearchView;
+
+import com.android.launcher3.LauncherAppState;
 import android.widget.TextView;
 
 import com.android.launcher3.AbstractFloatingView;
@@ -70,7 +73,7 @@ public class AppLibraryOverlay extends AbstractFloatingView {
         
         // Load apps
         Launcher launcher = Launcher.getLauncher(getContext());
-        mAppLibrary = AppLibrary.getInstance(getContext(), launcher.getIconCache());
+        mAppLibrary = AppLibrary.getInstance(getContext(), LauncherAppState.getInstance(getContext()).getIconCache());
         mAppLibrary.loadApps(categories -> {
             mAllCategories = categories;
             displayCategories(categories);
@@ -162,8 +165,8 @@ public class AppLibraryOverlay extends AbstractFloatingView {
             ImageView imageView = new ImageView(getContext());
             AppInfo app = mApps.get(position);
             
-            if (app.iconBitmap != null) {
-                imageView.setImageBitmap(app.iconBitmap.icon);
+            if (app.bitmap != null) {
+                imageView.setImageDrawable(app.bitmap.newIcon(getContext()));
             }
             
             imageView.setLayoutParams(new GridView.LayoutParams(80, 80));
@@ -205,6 +208,10 @@ public class AppLibraryOverlay extends AbstractFloatingView {
     }
     
     @Override
+    public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
+        return false;
+    }
+    
     public void logActionCommand(int command) {}
     
     @Override
@@ -213,7 +220,7 @@ public class AppLibraryOverlay extends AbstractFloatingView {
     }
     
     public static void show(Launcher launcher) {
-        if (!AppLibraryPrefs.isAppLibraryEnabled(launcher)) return;
+        if (!AppLibraryPrefs.INSTANCE.isAppLibraryEnabled(launcher)) return;
         
         AppLibraryOverlay overlay = new AppLibraryOverlay(launcher);
         launcher.getDragLayer().addView(overlay, new ViewGroup.LayoutParams(

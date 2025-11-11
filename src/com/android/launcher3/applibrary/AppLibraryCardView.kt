@@ -44,7 +44,7 @@ class AppLibraryCardView @JvmOverloads constructor(
                     height = resources.getDimensionPixelSize(R.dimen.app_library_icon_size)
                     setMargins(8, 8, 8, 8)
                 }
-                setImageDrawable(app.iconBitmap)
+                setImageDrawable(app.bitmap.newIcon(context))
                 scaleType = ImageView.ScaleType.CENTER_CROP
             }
             appGrid.addView(iconView)

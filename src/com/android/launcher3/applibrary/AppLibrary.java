@@ -121,7 +121,7 @@ public class AppLibrary {
             
             // Load icon using IconCache
             ComponentKey key = new ComponentKey(appInfo.componentName, appInfo.user);
-            appInfo.iconBitmap = mIconCache.getIconBitmap(key);
+            appInfo.bitmap = mIconCache.getIconInfo(key);
             
             return appInfo;
         } catch (Exception e) {

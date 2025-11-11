@@ -17,7 +17,7 @@ public class AppLibraryTouchController extends AbstractStateChangeTouchControlle
     
     @Override
     protected boolean canInterceptTouch(MotionEvent ev) {
-        if (!AppLibraryPrefs.isAppLibraryEnabled(mLauncher)) {
+        if (!AppLibraryPrefs.INSTANCE.isAppLibraryEnabled(mLauncher)) {
             return false;
         }
         
@@ -37,7 +37,7 @@ public class AppLibraryTouchController extends AbstractStateChangeTouchControlle
     protected LauncherState getTargetState(LauncherState fromState, boolean isDragTowardPositive) {
         if (fromState == NORMAL && isDragTowardPositive) {
             // Show App Library floating view instead of state transition
-            mLauncher.showAppLibrary();
+            AppLibraryOverlay.show(mLauncher);
             return NORMAL; // Stay in normal state
         }
         return fromState;
@@ -49,7 +49,7 @@ public class AppLibraryTouchController extends AbstractStateChangeTouchControlle
         return 0f;
     }
     
-    private float getShiftRange() {
+    protected float getShiftRange() {
         return mLauncher.getDeviceProfile().widthPx;
     }
 }

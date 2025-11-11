@@ -15,7 +15,7 @@ public class AppLibraryGestureHandler implements TouchController {
     
     @Override
     public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
-        if (!AppLibraryPrefs.isAppLibraryEnabled(mLauncher)) {
+        if (!AppLibraryPrefs.INSTANCE.isAppLibraryEnabled(mLauncher)) {
             return false;
         }
         

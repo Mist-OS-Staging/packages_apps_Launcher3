@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.SearchView;
@@ -162,6 +163,10 @@ public class AppLibraryView extends AbstractFloatingView {
     }
     
     @Override
+    public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
+        return false;
+    }
+    
     public void logActionCommand(int command) {
         // Log action if needed
     }
