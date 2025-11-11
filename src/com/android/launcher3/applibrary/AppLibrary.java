@@ -2,6 +2,8 @@ package com.android.launcher3.applibrary;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.LauncherActivityInfo;
+import android.content.pm.LauncherApps;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.Intent;
@@ -22,6 +24,7 @@ public class AppLibrary {
     
     private final Context mContext;
     private final PackageManager mPm;
+    private final LauncherApps mLauncherApps;
     private final IconCache mIconCache;
     private final Map<String, List<AppInfo>> mCategories = new ConcurrentHashMap<>();
     private final Map<String, String> mKeywords = new HashMap<>();
@@ -29,6 +32,7 @@ public class AppLibrary {
     private AppLibrary(Context context, IconCache iconCache) {
         mContext = context.getApplicationContext();
         mPm = mContext.getPackageManager();
+        mLauncherApps = (LauncherApps) mContext.getSystemService(Context.LAUNCHER_APPS_SERVICE);
         mIconCache = iconCache;
         initKeywords();
     }
@@ -113,15 +117,10 @@ public class AppLibrary {
     
     private AppInfo createAppInfo(ResolveInfo info) {
         try {
-            AppInfo appInfo = new AppInfo();
-            appInfo.componentName = new android.content.ComponentName(
-                info.activityInfo.packageName, info.activityInfo.name);
-            appInfo.title = info.loadLabel(mPm);
-            appInfo.user = android.os.Process.myUserHandle();
-            
-            // Load icon using IconCache
-            ComponentKey key = new ComponentKey(appInfo.componentName, appInfo.user);
-            appInfo.bitmap = mIconCache.getIconInfo(key);
+            // Create LauncherActivityInfo from ResolveInfo
+            LauncherActivityInfo activityInfo = mLauncherApps.getActivityList(
+                info.activityInfo.packageName, android.os.Process.myUserHandle()).get(0);
+            AppInfo appInfo = new AppInfo(mContext, activityInfo, android.os.Process.myUserHandle());
             
             return appInfo;
         } catch (Exception e) {
