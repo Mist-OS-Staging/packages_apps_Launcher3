@@ -51,6 +51,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sign
+import kotlin.math.sqrt
 
 /**
  * Helper class for [RecentsView]. This util class contains refactored and extracted functions from
@@ -152,6 +153,14 @@ constructor(
                     ),
                 )
             }
+
+        if (isDismissing && dismissedTaskViewSpring != null && dismissedTaskView != null) {
+            createNextTaskScaleUpSpringAnimation(
+                dismissedTaskView,
+                dismissedTaskViewSpring,
+                dismissedTaskData,
+            )
+        }
 
         // SpringSet tracking all dismiss springs before running end-snapping and relayout.
         var springSet =
@@ -263,7 +272,7 @@ constructor(
         val dismissedTaskViewSpringAnimation =
             SpringAnimation(dismissedTaskView, taskDismissFloatProperty)
                 .setSpring(
-                    createExpressiveDismissSpringForce()
+                    createDismissedTaskViewSpringForce()
                         .setFinalPosition(dismissedTaskData.finalPosition)
                 )
                 .setStartVelocity(dismissedTaskData.startVelocity)
@@ -277,6 +286,13 @@ constructor(
                         msdlPlayerWrapper.playToken(MSDLToken.SWIPE_THRESHOLD_INDICATOR)
                     }
                     previousDisplacement = currentDisplacement
+
+                    val dismissFraction =
+                        (abs(currentDisplacement) / dismissedTaskData.dismissLength.coerceAtLeast(1))
+                            .coerceIn(0f, 1f)
+                    val curved = sqrt(dismissFraction.toDouble()).toFloat()
+                    dismissedTaskView.scaleX = 1f - curved * 0.12f
+                    dismissedTaskView.alpha = 1f - curved * 0.4f
 
                     if (dismissedTaskView.isRunningTask && recentsView.enableDrawingLiveTile) {
                         recentsView.runActionOnRemoteHandles { remoteTargetHandle ->
@@ -294,6 +310,35 @@ constructor(
                     }
                 }
         return dismissedTaskViewSpringAnimation
+    }
+
+    private fun createNextTaskScaleUpSpringAnimation(
+        dismissedTaskView: TaskView,
+        dismissedTaskViewSpring: SpringAnimation,
+        dismissedTaskData: DismissedTaskData,
+    ) {
+        val nextTask =
+            recentsView.mUtils.taskViews
+                .firstOrNull { it != dismissedTaskView && !it.isBeingDismissed }
+                ?: return
+
+        val targetScale = 1f
+        val startScale = nextTask.scaleX
+        val startAlpha = nextTask.alpha
+
+        dismissedTaskViewSpring.addUpdateListener { _, currentDisplacement, _ ->
+            val dismissFraction =
+                (abs(currentDisplacement) / dismissedTaskData.dismissLength.coerceAtLeast(1))
+                    .coerceIn(0f, 1f)
+            val scaleStartThreshold = 0.3f
+            val scaleFraction =
+                ((dismissFraction - scaleStartThreshold) / (1f - scaleStartThreshold))
+                    .coerceIn(0f, 1f)
+            val curved = scaleFraction * scaleFraction
+            nextTask.scaleX = startScale + curved * (targetScale - startScale)
+            nextTask.scaleY = nextTask.scaleX
+            nextTask.alpha = startAlpha + curved * (1f - startAlpha)
+        }
     }
 
     private fun getDefaultDismissedTaskData(dismissedTaskView: TaskView): DismissedTaskData {
@@ -373,7 +418,7 @@ constructor(
                 previousNeighbor =
                     createNeighboringTaskViewSpringAnimation(
                         taskView,
-                        offset * ADDITIONAL_DISMISS_DAMPING_RATIO,
+                        (1f / (1f + offset)) * ADDITIONAL_DISMISS_DAMPING_RATIO,
                         previousNeighbor,
                         isSpringDirectionVertical,
                         neighborSettlingSpringSet,
@@ -388,7 +433,7 @@ constructor(
                 previousNeighbor =
                     createNeighboringTaskViewSpringAnimation(
                         taskView,
-                        offset * ADDITIONAL_DISMISS_DAMPING_RATIO,
+                        (1f / (1f + offset)) * ADDITIONAL_DISMISS_DAMPING_RATIO,
                         previousNeighbor,
                         isSpringDirectionVertical,
                         neighborSettlingSpringSet,
@@ -1209,6 +1254,12 @@ constructor(
                 )
             }
             .apply { animateToFinalPosition(RECENTS_SCALE_SPRING_MULTIPLIER * scale) }
+    }
+
+    private fun createDismissedTaskViewSpringForce(): SpringForce {
+        return SpringForce()
+            .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY)
+            .setStiffness(SpringForce.STIFFNESS_MEDIUM)
     }
 
     private fun createExpressiveDismissSpringForce(dampingRatioOffset: Float = 0f): SpringForce {
