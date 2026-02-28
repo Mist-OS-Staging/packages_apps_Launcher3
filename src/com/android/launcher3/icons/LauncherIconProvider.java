@@ -29,7 +29,7 @@ import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Log;
 
-import com.android.internal.util.lunaris.Utils;
+import com.android.internal.util.mist.Utils;
 import com.android.launcher3.R;
 import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.dagger.ApplicationContext;
