@@ -55,4 +55,6 @@
     <dimen name="mist_top_icon_max">24dp</dimen>
     <dimen name="mist_vertical_padding">20dp</dimen>
 
+    <!-- App drawer searchbar -->
+    <dimen name="all_apps_search_bar_bottom_padding_extra">16dp</dimen>
 </resources>
