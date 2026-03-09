@@ -46,4 +46,18 @@
     <!-- App drawer searchbar -->
     <dimen name="all_apps_search_bar_bottom_padding_extra">16dp</dimen>
     <dimen name="all_apps_page_indicator_bottom_margin">32dp</dimen>
+
+    <!-- Mistify -->
+    <dimen name="mist_branding_half_height">40dp</dimen>
+    <dimen name="mist_card_radius">22dp</dimen>
+    <dimen name="mist_card_side_margin">18dp</dimen>
+    <dimen name="mist_cardview_margin_list">16dp</dimen>
+    <dimen name="mist_cardview_padding">16dp</dimen>
+    <dimen name="mist_pref_vert">5.5dp</dimen>
+    <dimen name="mist_top_icon">24dp</dimen>
+    <dimen name="mist_top_icon_home">42dp</dimen>
+    <dimen name="mist_top_icon_home_max">52.5dp</dimen>
+    <dimen name="mist_top_icon_max">24dp</dimen>
+    <dimen name="mist_vertical_padding">20dp</dimen>
+
 </resources>
