@@ -42,4 +42,17 @@
     <!-- Burn-in protection shift amounts -->
     <dimen name="burn_in_protection_horizontal_shift">12dp</dimen>
     <dimen name="burn_in_protection_vertical_shift">6dp</dimen>
+
+    <dimen name="mist_branding_half_height">40dp</dimen>
+    <dimen name="mist_card_radius">22dp</dimen>
+    <dimen name="mist_card_side_margin">18dp</dimen>
+    <dimen name="mist_cardview_margin_list">16dp</dimen>
+    <dimen name="mist_cardview_padding">16dp</dimen>
+    <dimen name="mist_pref_vert">5.5dp</dimen>
+    <dimen name="mist_top_icon">24dp</dimen>
+    <dimen name="mist_top_icon_home">42dp</dimen>
+    <dimen name="mist_top_icon_home_max">52.5dp</dimen>
+    <dimen name="mist_top_icon_max">24dp</dimen>
+    <dimen name="mist_vertical_padding">20dp</dimen>
+
 </resources>
