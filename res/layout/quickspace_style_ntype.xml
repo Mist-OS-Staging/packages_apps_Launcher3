@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/quickspace_content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal|top"
+    android:gravity="center_horizontal|top"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:orientation="vertical">
+        
+        <!-- Date and Weather Row -->
+        <LinearLayout
+            android:id="@+id/date_weather_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+            
+            <com.android.launcher3.quickspace.views.DoubleShadowTextView
+                android:id="@+id/quickspace_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:singleLine="true"
+                android:tag="text1|nolineheight"
+                android:includeFontPadding="false"
+                android:textAlignment="center"
+                android:textColor="?workspaceTextColor"
+                android:textSize="22dp" />
+
+            <include layout="@layout/quickspace_weather_content" />
+        </LinearLayout>
+
+        <!-- Time Layout -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="-4dp"
+            android:gravity="center">
+
+            <!-- Hour TextClock -->
+            <TextClock
+                android:id="@+id/quickspace_clock_hour"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.9"
+                android:fontFamily="sans-serif-condensed"
+                android:format12Hour="h"
+                android:format24Hour="H"
+                android:gravity="center"
+                android:singleLine="true"
+                android:tag="text1"
+                android:textAlignment="center"
+                android:textColor="?workspaceTextColor"
+                android:textSize="150dp" />
+
+            <!-- Colon TextView -->
+            <TextView
+                android:id="@+id/quickspace_clock_colon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.9"
+                android:gravity="center"
+                android:singleLine="true"
+                android:text=":"
+                android:fontFamily="sans-serif-condensed"
+                android:textAlignment="center"
+                android:textColor="?workspaceTextColor"
+                android:textSize="145dp" />
+
+            <!-- Minute TextClock -->
+            <TextClock
+                android:id="@+id/quickspace_clock_minute"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.9"
+                android:fontFamily="sans-serif-condensed" 
+                android:format12Hour="mm"
+                android:format24Hour="mm"
+                android:gravity="center"
+                android:singleLine="true"
+                android:tag="text1"
+                android:textAlignment="center"
+                android:textColor="?workspaceTextColor"
+                android:textSize="150dp" />
+        </LinearLayout>
+        
+        <!-- Contextual Info -->
+        <FrameLayout
+            android:id="@+id/contextual_info_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp">
+            <LinearLayout
+                android:id="@+id/now_playing_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone">
+                <ImageView
+                    android:id="@+id/now_playing_icon"
+                    android:layout_width="20dp" android:layout_height="20dp"
+                    android:src="@drawable/ic_music_note_24dp"
+                    android:tint="?workspaceTextColor" android:layout_marginEnd="6dp"/>
+                <TextView
+                    android:id="@+id/now_playing_text"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:textColor="?workspaceTextColor"
+                    android:textSize="@dimen/quickspace_subtitle_size"
+                    android:textAlignment="center"
+                    android:singleLine="true"/>
+            </LinearLayout>
+            <com.android.launcher3.quickspace.views.DoubleShadowTextView
+                android:id="@+id/quickspace_psa_message"
+                style="@style/QuickSpaceSubText"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textAlignment="center"
+                android:textColor="?workspaceTextColor"
+                android:textSize="@dimen/quickspace_subtitle_size"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -670,7 +670,7 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
         try {
             String styleValue = LauncherPrefs.QUICKSPACE_UI_STYLE.get(getContext());
             int style = Integer.parseInt(styleValue);
-            if (style == 2) { // Large style needs more vertical space
+            if (style >= 2) { // Large styles (2-10) need more vertical space
                 cellVSpan = 2;
             }
         } catch (NumberFormatException e) {

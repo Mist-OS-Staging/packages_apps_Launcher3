@@ -57,20 +57,48 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         @Override
         public void run() {
             try {
+                String colorStr = LauncherPrefs.QUICKSPACE_HOUR_COLOR.get(getContext());
+                int hourColor = -1376215; // default red
+                try {
+                    hourColor = Integer.parseInt(colorStr);
+                } catch (NumberFormatException e) {
+                    // Ignore, use default
+                }
+                // Apply hour color to the unified clock (style 2 uses spannable, style 3 colors all)
                 if (mQuickspaceClock != null) {
-                    CharSequence text = mQuickspaceClock.getText();
-                    if (text != null) {
-                        String time = text.toString();
-                        int colon = time.indexOf(':');
-                        if (colon > 0) {
-                            int hourColor = Color.parseColor("#EB0029");
-                            int minuteColor = mQuickspaceClock.getCurrentTextColor();
-                            SpannableString styled = new SpannableString(time);
-                            styled.setSpan(new ForegroundColorSpan(hourColor), 0, colon, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            styled.setSpan(new ForegroundColorSpan(minuteColor), colon, styled.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            mQuickspaceClock.setText(styled);
+                    if (mCurrentStyle == 2) {
+                        CharSequence text = mQuickspaceClock.getText();
+                        if (!TextUtils.isEmpty(text)) {
+                            SpannableString spannableString = new SpannableString(text);
+                            int colonIndex = TextUtils.indexOf(text, ':');
+                            if (colonIndex != -1) {
+                                spannableString.setSpan(new ForegroundColorSpan(hourColor), 0, colonIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                mQuickspaceClock.setText(spannableString);
+                            }
                         }
+                    } else if (mCurrentStyle == 3) {
+                        mQuickspaceClock.setTextColor(hourColor);
                     }
+                }
+                
+                // Exact Replica Color mappings for new styles:
+                // Style 4 (Bold Split): Both Hour & Min colored
+                // Style 5 (Digital Stack): Hour white, Min & Sec colored
+                // Style 6 (Centered Mirror): Both colored
+                // Style 7 (Vertical Date): Both colored
+                // Style 8 (Outlined): Both colored (via setTextColor, OutlineTextClock uses this for stroke)
+                // Style 9 (Dual Tone): Hour white, Min colored
+                // Style 10 (Classic Split): Both colored
+                // Style 11 (N-Type): Hour colored
+                
+                if (mClockHour != null && (mCurrentStyle == 4 || mCurrentStyle == 6 || mCurrentStyle == 7 || mCurrentStyle == 8 || mCurrentStyle == 10 || mCurrentStyle == 11)) {
+                    mClockHour.setTextColor(hourColor);
+                }
+                if (mClockMinute != null && (mCurrentStyle >= 4 && mCurrentStyle <= 10)) {
+                    mClockMinute.setTextColor(hourColor);
+                }
+                if (mClockSeconds != null && mCurrentStyle == 5) {
+                    mClockSeconds.setTextColor(hourColor);
                 }
             } catch (Throwable t) {
                 // ignore to avoid crashing UI
@@ -111,6 +139,11 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     public ViewGroup mDateWeatherRow;
     public ViewGroup mContextualInfoRow;
 
+    // Fields for split clock styles (styles 4-10)
+    public TextClock mClockHour;
+    public TextClock mClockMinute;
+    public TextClock mClockSeconds;
+
     public boolean mIsQuickEvent;
     public boolean mWeatherAvailable;
     private boolean mFinishedInflate;
@@ -140,7 +173,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         // Determine current style with backward compatibility
         int style = getCurrentStyle();
         
-        if (mEventTitle == null || mCurrentStyle != style) {
+        if (mCurrentStyle != style || mQuickspaceContent == null) {
             prepareLayout(style);
         }
         mIsQuickEvent = mController.isQuickEvent();
@@ -162,6 +195,16 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         switch (style) {
             case 2:
                 loadLargeStyle();
+                break;
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+                loadNewStyle(style);
                 break;
             case 1: // Extended
             case 0: // Default
@@ -188,6 +231,78 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
 
         bindWeather(mWeatherContentSub, mWeatherTempSub, mWeatherIconSub);
 
+        boolean isNowPlaying = mController.getEventController().isNowPlaying();
+        if (isNowPlaying && mNowPlayingContent != null) {
+            if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.VISIBLE);
+            if (mPSAMessage != null) mPSAMessage.setVisibility(View.GONE);
+            mNowPlayingContent.setVisibility(View.VISIBLE);
+            String nowPlaying = mController.getEventController().getTitle() + " - " + mController.getEventController().getActionTitle();
+            if (mNowPlayingText != null) mNowPlayingText.setText(nowPlaying);
+            mNowPlayingContent.setOnClickListener(mController.getEventController().getAction());
+        } else {
+            if (mNowPlayingContent != null) mNowPlayingContent.setVisibility(View.GONE);
+            if (mIsQuickEvent && LauncherPrefs.SHOW_QUICKSPACE_PSONALITY.get(getContext()) && mPSAMessage != null) {
+                if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.VISIBLE);
+                mPSAMessage.setVisibility(View.VISIBLE);
+                mPSAMessage.setText(mController.getEventController().getActionTitle());
+                mPSAMessage.setOnClickListener(mController.getEventController().getAction());
+                maybeSetMarquee(mPSAMessage);
+            } else {
+                if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private void loadNewStyle(int style) {
+        if (mDestroyed || mController == null) return;
+
+        // Set day of week for styles that have it
+        if (mQuickspaceDayOfWeek != null) {
+            switch (style) {
+                case 5: // Digital Stack uses full date format
+                    mQuickspaceDayOfWeek.setText(QuickEventsController.getFullDate(getContext()));
+                    break;
+                case 7: // Vertical Date uses short day + date
+                    mQuickspaceDayOfWeek.setText(QuickEventsController.getDayOfWeek(getContext()));
+                    break;
+                default:
+                    mQuickspaceDayOfWeek.setText(QuickEventsController.getDayOfWeek(getContext()) 
+                        + ", " + QuickEventsController.getShortDate(getContext()));
+                    break;
+            }
+        }
+
+        // Set date for styles that have a separate date view
+        if (mQuickspaceDate != null) {
+            switch (style) {
+                case 5: // Digital Stack - date is in day_of_week already
+                    mQuickspaceDate.setText(QuickEventsController.getFullDate(getContext()));
+                    break;
+                case 6: // Centered Mirror
+                case 9: // Dual Tone
+                    mQuickspaceDate.setText(QuickEventsController.getFullDayDate(getContext()));
+                    break;
+                case 8: // Outlined
+                case 11: // N-Type Clock
+                    mQuickspaceDate.setText(QuickEventsController.getDayOfWeek(getContext()) 
+                        + ", " + QuickEventsController.getShortDate(getContext()));
+                    break;
+                default:
+                    mQuickspaceDate.setText(QuickEventsController.getShortDate(getContext()));
+                    break;
+            }
+        }
+
+        // Bind weather
+        if (mWeatherContentSub != null) {
+            mWeatherContentSub.setVisibility(View.VISIBLE);
+        }
+        if (mDateWeatherRow != null) {
+            mDateWeatherRow.setVisibility(View.VISIBLE);
+        }
+        bindWeather(mWeatherContentSub, mWeatherTempSub, mWeatherIconSub);
+
+        // Handle Now Playing / PSA
         boolean isNowPlaying = mController.getEventController().isNowPlaying();
         if (isNowPlaying && mNowPlayingContent != null) {
             if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.VISIBLE);
@@ -397,7 +512,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         if (mCurrentStyle == 1) { // Extended style
             mGreetingsExtClock = (TextView) findViewById(R.id.extended_greetings_clock);
             mGreetingsExt = (TextView) findViewById(R.id.extended_greetings);
-        } else if (mCurrentStyle == 2) { // Large style
+        } else if (mCurrentStyle == 2) { // Large style (Mistify Clock)
             mQuickspaceDayOfWeek = findViewById(R.id.quickspace_day_of_week);
             mQuickspaceClock = findViewById(R.id.quickspace_clock);
             mQuickspaceDate = findViewById(R.id.quickspace_date);
@@ -406,6 +521,20 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
             mNowPlayingText = findViewById(R.id.now_playing_text);
             mDateWeatherRow = findViewById(R.id.date_weather_row);
             mContextualInfoRow = findViewById(R.id.contextual_info_row);
+        } else if (mCurrentStyle >= 3 && mCurrentStyle <= 11) { // New styles
+            mQuickspaceDate = findViewById(R.id.quickspace_date);
+            mPSAMessage = findViewById(R.id.quickspace_psa_message);
+            mNowPlayingContent = findViewById(R.id.now_playing_content);
+            mNowPlayingText = findViewById(R.id.now_playing_text);
+            mDateWeatherRow = findViewById(R.id.date_weather_row);
+            mContextualInfoRow = findViewById(R.id.contextual_info_row);
+            mClockHour = findViewById(R.id.quickspace_clock_hour);
+            mClockMinute = findViewById(R.id.quickspace_clock_minute);
+            mClockSeconds = findViewById(R.id.quickspace_clock_seconds);
+            // Some styles have day of week
+            mQuickspaceDayOfWeek = findViewById(R.id.quickspace_day_of_week);
+            // Style 3 has a unified clock
+            mQuickspaceClock = findViewById(R.id.quickspace_clock);
         }
         
         // Fallback for backward compatibility
@@ -418,7 +547,10 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     private void clearOldViewState() {
         View[] vs = new View[]{ mEventTitle, mEventTitleSub, mEventTitleSubColored,
                 mNowPlayingIcon, mEventSubIcon, mWeatherContentSub, mWeatherIconSub, 
-                mWeatherTempSub, mGreetingsExt, mGreetingsExtClock };
+                mWeatherTempSub, mGreetingsExt, mGreetingsExtClock,
+                mClockHour, mClockMinute, mClockSeconds,
+                mQuickspaceDayOfWeek, mQuickspaceClock, mQuickspaceDate,
+                mPSAMessage, mNowPlayingText };
         
         for (View v : vs) {
             if (v != null) {
@@ -470,6 +602,33 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
                 break;
             case 2:
                 layoutId = R.layout.quickspace_large_style;
+                break;
+            case 3:
+                layoutId = R.layout.quickspace_style_bold_single;
+                break;
+            case 4:
+                layoutId = R.layout.quickspace_style_bold_split;
+                break;
+            case 5:
+                layoutId = R.layout.quickspace_style_digital_stack;
+                break;
+            case 6:
+                layoutId = R.layout.quickspace_style_centered_mirror;
+                break;
+            case 7:
+                layoutId = R.layout.quickspace_style_vertical_date;
+                break;
+            case 8:
+                layoutId = R.layout.quickspace_style_outlined;
+                break;
+            case 9:
+                layoutId = R.layout.quickspace_style_dual_tone;
+                break;
+            case 10:
+                layoutId = R.layout.quickspace_style_classic_split;
+                break;
+            case 11:
+                layoutId = R.layout.quickspace_style_ntype;
                 break;
             default:
                 layoutId = R.layout.quickspace_doubleline;
@@ -618,6 +777,17 @@ super.onDetachedFromWindow();
         mWeatherTempSub = null;
         mEventTitle = null;
         mColorStateList = null;
+        mClockHour = null;
+        mClockMinute = null;
+        mClockSeconds = null;
+        mQuickspaceDayOfWeek = null;
+        mQuickspaceClock = null;
+        mQuickspaceDate = null;
+        mPSAMessage = null;
+        mNowPlayingContent = null;
+        mNowPlayingText = null;
+        mDateWeatherRow = null;
+        mContextualInfoRow = null;
     }
 
     public void setPadding(int n, int n2, int n3, int n4) {

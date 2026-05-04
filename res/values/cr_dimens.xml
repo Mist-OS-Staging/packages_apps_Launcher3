@@ -30,6 +30,16 @@
     <dimen name="quickspace_subtitle_size">16sp</dimen>
     <dimen name="quickspace_alternate_title_size">18sp</dimen>
     <dimen name="quickspace_alternate_subtitle_size">16sp</dimen>
+        <!-- Custom Clock Styles Dimensions -->
+    <dimen name="quickspace_large_clock_size">100sp</dimen>
+    <dimen name="quickspace_stack_clock_size">110sp</dimen>
+    <dimen name="quickspace_centered_clock_size">150sp</dimen>
+    <dimen name="quickspace_vertical_clock_size">140sp</dimen>
+    <dimen name="quickspace_classic_clock_size">160sp</dimen>
+    <dimen name="quickspace_dual_clock_size">130sp</dimen>
+    <dimen name="quickspace_day_text_size">22sp</dimen>
+    <dimen name="quickspace_day_text_large_size">24sp</dimen>
+    <dimen name="quickspace_outline_stroke_width">3dp</dimen>
 
     <!-- Search bar margins -->
     <dimen name="all_apps_search_bar_margin_side">38dp</dimen>

@@ -244,11 +244,29 @@
         <item>Default</item>
         <item>Extended</item>
         <item>Mistify Clock</item>
+        <item>Bold Single</item>
+        <item>Bold Split</item>
+        <item>Digital Stack</item>
+        <item>Centered Mirror</item>
+        <item>Vertical Date</item>
+        <item>Outlined</item>
+        <item>Dual Tone</item>
+        <item>Classic Split</item>
+        <item>N-Type Clock</item>
     </string-array>
     <string-array name="quickspace_style_values" translatable="false">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
     </string-array>
 
     <!-- Quickspace PSA - Custom messages for the glance -->
@@ -404,6 +422,30 @@
         <item>We love you 3000</item>
     </string-array>
     <string name="intent_no_app_clock_found">Unable to find calendar or clock activity</string>
+
+    <!-- Quickspace hour color -->
+    <string name="quickspace_hour_color_title">Clock hour color</string>
+    <string name="quickspace_hour_color_summary">Custom color for the hour digits in clock styles</string>
+        <string-array name="quickspace_hour_color_entries">
+        <item>Red</item>
+        <item>Blue</item>
+        <item>Green</item>
+        <item>Yellow</item>
+        <item>Purple</item>
+        <item>Teal</item>
+        <item>Pink</item>
+        <item>White</item>
+    </string-array>
+    <string-array name="quickspace_hour_color_values" translatable="false">
+        <item>-3263155</item> <!-- #CE434D (Red from Baymax) -->
+        <item>-6433549</item> <!-- #9DC4F3 (Blue from Rabbit) -->
+        <item>-11438314</item> <!-- #516B16 (Green from Tom/Jerry) -->
+        <item>-25256</item> <!-- #F9D558 (Yellow from Kid) -->
+        <item>-6936853</item> <!-- #9627EB -->
+        <item>-16728833</item> <!-- #00BFFF -->
+        <item>-219086</item> <!-- #FF2872 -->
+        <item>-1</item> <!-- #FFFFFF -->
+    </string-array>
 
     <!-- QuickSpace: QuickEvent: Weather -->
     <string name="quickspace_weather_provider_title">Weather provider</string>

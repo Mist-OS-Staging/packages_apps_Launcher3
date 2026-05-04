@@ -132,6 +132,18 @@ public class QuickEventsController {
         return format.format(System.currentTimeMillis());
     }
 
+    public static String getFullDate(Context context) {
+        DateFormat format = DateFormat.getInstanceForSkeleton("MMddyyyy", Locale.getDefault());
+        format.setContext(DisplayContext.CAPITALIZATION_FOR_STANDALONE);
+        return format.format(System.currentTimeMillis());
+    }
+
+    public static String getFullDayDate(Context context) {
+        DateFormat format = DateFormat.getInstanceForSkeleton("EEEEdMMMM", Locale.getDefault());
+        format.setContext(DisplayContext.CAPITALIZATION_FOR_STANDALONE);
+        return format.format(System.currentTimeMillis());
+    }
+
     private static String formatDateTime(Context context) {
         // Check if new style preference exists and use it, otherwise fall back to old preference
         String styleValue = LauncherPrefs.QUICKSPACE_UI_STYLE.get(context);
