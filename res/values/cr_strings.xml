@@ -233,7 +233,7 @@
     <string-array name="quickspace_style_entries">
         <item>Default</item>
         <item>Extended</item>
-        <item>OOS Clock</item>
+        <item>Mistify Clock</item>
     </string-array>
     <string-array name="quickspace_style_values" translatable="false">
         <item>0</item>
