@@ -135,6 +135,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     }
 
     private void startClockColorUpdater() {
+        if (mCurrentStyle != 2) return; // Only apply to Mistify Clock
         if (!mClockColorUpdateActive) {
             mClockColorUpdateActive = true;
             mClockColorHandler.removeCallbacks(mClockColorRunnable);
@@ -219,24 +220,29 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         bindWeather(mWeatherContentSub, mWeatherTempSub, mWeatherIconSub);
 
         boolean isNowPlaying = mController.getEventController().isNowPlaying();
+        
+        if (mContextualInfoRow != null) {
+            mContextualInfoRow.setVisibility(View.GONE);
+        }
+
         if (isNowPlaying && mNowPlayingContent != null) {
             if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.VISIBLE);
-            if (mPSAMessage != null) mPSAMessage.setVisibility(View.GONE);
             mNowPlayingContent.setVisibility(View.VISIBLE);
             String nowPlaying = mController.getEventController().getTitle() + " - " + mController.getEventController().getActionTitle();
             if (mNowPlayingText != null) mNowPlayingText.setText(nowPlaying);
             mNowPlayingContent.setOnClickListener(mController.getEventController().getAction());
         } else {
             if (mNowPlayingContent != null) mNowPlayingContent.setVisibility(View.GONE);
-            if (mIsQuickEvent && LauncherPrefs.SHOW_QUICKSPACE_PSONALITY.get(getContext()) && mPSAMessage != null) {
-                if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.VISIBLE);
-                mPSAMessage.setVisibility(View.VISIBLE);
-                mPSAMessage.setText(mController.getEventController().getActionTitle());
-                mPSAMessage.setOnClickListener(mController.getEventController().getAction());
-                maybeSetMarquee(mPSAMessage);
-            } else {
-                if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.GONE);
-            }
+        }
+        
+        if (mIsQuickEvent && LauncherPrefs.SHOW_QUICKSPACE_PSONALITY.get(getContext()) && mPSAMessage != null) {
+            if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.VISIBLE);
+            mPSAMessage.setVisibility(View.VISIBLE);
+            mPSAMessage.setText(mController.getEventController().getActionTitle());
+            mPSAMessage.setOnClickListener(mController.getEventController().getAction());
+            maybeSetMarquee(mPSAMessage);
+        } else {
+            if (mPSAMessage != null) mPSAMessage.setVisibility(View.GONE);
         }
     }
 

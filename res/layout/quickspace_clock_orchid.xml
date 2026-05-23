@@ -58,7 +58,7 @@
             android:gravity="center"
             android:singleLine="true"
             android:rotation="-90"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="100dp"
             launcher:ambientShadowBlur="2dp"
             launcher:ambientShadowColor="#446B6232"
             launcher:keyShadowBlur="1dp"
@@ -126,10 +126,11 @@
         </LinearLayout>
 
         <!-- Contextual: Now Playing / PSA -->
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/contextual_info_row"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:layout_gravity="end"
             android:layout_marginTop="4dp">
 
@@ -173,7 +174,7 @@
                 launcher:keyShadowColor="#226B6232"
                 launcher:keyShadowOffsetX="0.5dip" />
 
-        </FrameLayout>
+        </LinearLayout>
 
     </LinearLayout>
 

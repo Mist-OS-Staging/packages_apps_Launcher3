@@ -9,7 +9,7 @@
     android:layout_height="wrap_content"
     android:layout_gravity="start|center_vertical"
     android:orientation="vertical"
-    android:background="#FF001A00"
+    android:background="@drawable/matrix_bg"
     android:clipChildren="false"
     android:clipToPadding="false"
     android:paddingStart="16dp"
@@ -78,10 +78,11 @@
     </LinearLayout>
 
     <!-- Contextual Info: Now Playing / PSA -->
-    <FrameLayout
+    <LinearLayout
         android:id="@+id/contextual_info_row"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_marginTop="4dp">
 
         <!-- Now Playing -->
@@ -124,6 +125,6 @@
             launcher:keyShadowColor="#2200FF00"
             launcher:keyShadowOffsetX="0.5dip" />
 
-    </FrameLayout>
+    </LinearLayout>
 
 </LinearLayout>
