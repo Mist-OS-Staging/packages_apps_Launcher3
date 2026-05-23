@@ -220,7 +220,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         bindWeather(mWeatherContentSub, mWeatherTempSub, mWeatherIconSub);
 
         boolean isNowPlaying = mController.getEventController().isNowPlaying();
-        
+
         if (mContextualInfoRow != null) {
             mContextualInfoRow.setVisibility(View.GONE);
         }
@@ -234,12 +234,13 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         } else {
             if (mNowPlayingContent != null) mNowPlayingContent.setVisibility(View.GONE);
         }
-        
-        if (mIsQuickEvent && LauncherPrefs.SHOW_QUICKSPACE_PSONALITY.get(getContext()) && mPSAMessage != null) {
+
+        String psaMessage = mController.getEventController().getPSAMessage();
+        if (psaMessage != null && mPSAMessage != null) {
             if (mContextualInfoRow != null) mContextualInfoRow.setVisibility(View.VISIBLE);
             mPSAMessage.setVisibility(View.VISIBLE);
-            mPSAMessage.setText(mController.getEventController().getActionTitle());
-            mPSAMessage.setOnClickListener(mController.getEventController().getAction());
+            mPSAMessage.setText(psaMessage);
+            mPSAMessage.setOnClickListener(QuickSpaceActionReceiver.getCalendarAction());
             maybeSetMarquee(mPSAMessage);
         } else {
             if (mPSAMessage != null) mPSAMessage.setVisibility(View.GONE);

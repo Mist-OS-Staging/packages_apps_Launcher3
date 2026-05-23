@@ -40,14 +40,14 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/ios"
         android:textColor="#FFFFFFFF"
-        android:textSize="96sp"
+        android:textSize="76sp"
         android:format12Hour="hh"
         android:format24Hour="HH"
         android:includeFontPadding="false"
         android:lineSpacingMultiplier="0.88"
         android:autoSizeTextType="uniform"
         android:autoSizeMinTextSize="48sp"
-        android:autoSizeMaxTextSize="96sp"
+        android:autoSizeMaxTextSize="76sp"
         android:autoSizeStepGranularity="2sp" />
 
     <!-- Minutes in red — re-uses date view for minute display -->
@@ -57,15 +57,15 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/ios"
         android:textColor="#FFCC0000"
-        android:textSize="96sp"
+        android:textSize="76sp"
         android:format12Hour="mm"
         android:format24Hour="mm"
         android:includeFontPadding="false"
         android:lineSpacingMultiplier="0.88"
-        android:layout_marginTop="-8dp"
+        android:layout_marginTop="-16dp"
         android:autoSizeTextType="uniform"
         android:autoSizeMinTextSize="48sp"
-        android:autoSizeMaxTextSize="96sp"
+        android:autoSizeMaxTextSize="76sp"
         android:autoSizeStepGranularity="2sp" />
 
     <!-- Date + Weather row -->

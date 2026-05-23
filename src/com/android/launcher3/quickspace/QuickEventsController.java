@@ -62,6 +62,8 @@ public class QuickEventsController {
     private String mNowPlayingTitle;
     private String mNowPlayingArtist;
     private boolean mPlayingActive = false;
+    
+    private String mPSAMessageText;
 
     public QuickEventsController(Context context) {
         mAppContext = context.getApplicationContext();
@@ -76,13 +78,35 @@ public class QuickEventsController {
     public void updateQuickEvents() {
         if (mDestroyed) return;
         nowPlayingEvent();
+        calculatePSAMessage();
         initNowPlayingEvent();
         psonalityEvent();
     }
 
     public void updatePsonality() {
         if (mDestroyed) return;
+        calculatePSAMessage();
         psonalityEvent();
+    }
+
+    private void calculatePSAMessage() {
+        mPSAMessageText = null;
+        if (!LauncherPrefs.SHOW_QUICKSPACE_PSONALITY.get(mAppContext)) return;
+
+        int luckNumber = getLuckyNumber(13);
+        if (luckNumber < 7) {
+            return;
+        } else if (luckNumber == 7) {
+            String[] psaStr = mResources.getStringArray(R.array.quickspace_psa_random);
+            mPSAMessageText = psaStr[getLuckyNumber(0, psaStr.length - 1)];
+            return;
+        }
+
+        int hourOfDay = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        String[] psaStr = getPSAStr(hourOfDay);
+        if (psaStr != null) {
+            mPSAMessageText = psaStr[getLuckyNumber(0, psaStr.length - 1)];
+        }
     }
 
     private void nowPlayingEvent() {
@@ -242,6 +266,10 @@ public class QuickEventsController {
 
     public String getActionTitle() {
         return mDestroyed ? "" : mEventTitleSub;
+    }
+
+    public String getPSAMessage() {
+        return mDestroyed ? null : mPSAMessageText;
     }
 
     public String getClockExt() {

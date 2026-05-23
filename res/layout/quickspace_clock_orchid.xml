@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:gravity="center_horizontal|top"
+        android:gravity="start|top"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:paddingTop="56dp"
@@ -40,6 +40,7 @@
             android:gravity="center"
             android:singleLine="true"
             android:rotation="-90"
+            android:layout_marginStart="-40dp"
             launcher:ambientShadowBlur="2dp"
             launcher:ambientShadowColor="#446B6232"
             launcher:keyShadowBlur="1dp"
@@ -51,7 +52,7 @@
             android:id="@+id/quickspace_date"
             android:layout_width="110dp"
             android:layout_height="18dp"
-            android:textColor="#FF8B7A4A"
+            android:textColor="#A90606"
             android:textSize="11sp"
             android:fontFamily="@font/ios"
             android:letterSpacing="0.1"
@@ -59,6 +60,7 @@
             android:singleLine="true"
             android:rotation="-90"
             android:layout_marginTop="100dp"
+            android:layout_marginStart="-40dp"
             launcher:ambientShadowBlur="2dp"
             launcher:ambientShadowColor="#446B6232"
             launcher:keyShadowBlur="1dp"
@@ -76,7 +78,7 @@
         android:gravity="end"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:paddingEnd="12dp">
+        android:paddingEnd="5dp">
 
         <!-- Hour — auto-sizes to prevent clipping -->
         <TextClock
@@ -101,7 +103,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/ios"
-            android:textColor="#FF8B7A4A"
+            android:textColor="#FF0000"
             android:textSize="120sp"
             android:format12Hour="mm"
             android:format24Hour="mm"
