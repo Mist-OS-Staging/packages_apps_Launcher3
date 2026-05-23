@@ -241,11 +241,19 @@
         <item>Default</item>
         <item>Extended</item>
         <item>Mistify Clock</item>
+        <item>Baymax Stacked</item>
+        <item>Matrix Terminal</item>
+        <item>Flip Block</item>
+        <item>Orchid Floral</item>
     </string-array>
     <string-array name="quickspace_style_values" translatable="false">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
     </string-array>
 
     <!-- Quickspace PSA - Custom messages for the glance -->

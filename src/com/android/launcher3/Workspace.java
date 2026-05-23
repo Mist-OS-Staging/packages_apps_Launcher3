@@ -666,11 +666,12 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
         int cellHSpan = mLauncher.getDeviceProfile().inv.numSearchContainerColumns;
 
         // Determine cell vertical span based on quickspace style
+        // Styles 2-6 are all large/clock styles that need 2 rows of vertical space
         int cellVSpan = 1; // Default
         try {
             String styleValue = LauncherPrefs.QUICKSPACE_UI_STYLE.get(getContext());
             int style = Integer.parseInt(styleValue);
-            if (style == 2) { // Large style needs more vertical space
+            if (style >= 2) { // Mistify(2), Baymax(3), Matrix(4), Flip(5), Orchid(6)
                 cellVSpan = 2;
             }
         } catch (NumberFormatException e) {

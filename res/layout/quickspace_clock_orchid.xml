@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CLOCK 7 — Orchid Floral | Style value: 6 -->
+<!-- Font: res/font/ios.ttf -->
+<!-- Background: transparent — sits over wallpaper -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:launcher="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/quickspace_content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="start|center_vertical"
+    android:orientation="horizontal"
+    android:background="@android:color/transparent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:gravity="top">
+
+    <!-- LEFT: Vertical date column (1/3 width) -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_horizontal|top"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingTop="56dp"
+        android:paddingBottom="16dp">
+
+        <!-- Day of Week — rotated vertical -->
+        <com.android.launcher3.quickspace.views.DoubleShadowTextView
+            android:id="@+id/quickspace_day_of_week"
+            android:layout_width="110dp"
+            android:layout_height="18dp"
+            android:textColor="#FF6B6232"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/ios"
+            android:letterSpacing="0.15"
+            android:gravity="center"
+            android:singleLine="true"
+            android:rotation="-90"
+            launcher:ambientShadowBlur="2dp"
+            launcher:ambientShadowColor="#446B6232"
+            launcher:keyShadowBlur="1dp"
+            launcher:keyShadowColor="#226B6232"
+            launcher:keyShadowOffsetX="0.5dip" />
+
+        <!-- Date — rotated vertical below day -->
+        <com.android.launcher3.quickspace.views.DoubleShadowTextView
+            android:id="@+id/quickspace_date"
+            android:layout_width="110dp"
+            android:layout_height="18dp"
+            android:textColor="#FF8B7A4A"
+            android:textSize="11sp"
+            android:fontFamily="@font/ios"
+            android:letterSpacing="0.1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:rotation="-90"
+            android:layout_marginTop="16dp"
+            launcher:ambientShadowBlur="2dp"
+            launcher:ambientShadowColor="#446B6232"
+            launcher:keyShadowBlur="1dp"
+            launcher:keyShadowColor="#226B6232"
+            launcher:keyShadowOffsetX="0.5dip" />
+
+    </LinearLayout>
+
+    <!-- RIGHT: Clock + weather + contextual (2/3 width) -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:orientation="vertical"
+        android:gravity="end"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingEnd="12dp">
+
+        <!-- Hour — auto-sizes to prevent clipping -->
+        <TextClock
+            android:id="@+id/quickspace_clock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ios"
+            android:textColor="#FF6B6232"
+            android:textSize="120sp"
+            android:format12Hour="hh"
+            android:format24Hour="HH"
+            android:includeFontPadding="false"
+            android:lineSpacingMultiplier="0.85"
+            android:gravity="end"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="60sp"
+            android:autoSizeMaxTextSize="120sp"
+            android:autoSizeStepGranularity="2sp" />
+
+        <!-- Minute — auto-sizes to prevent clipping -->
+        <TextClock
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ios"
+            android:textColor="#FF8B7A4A"
+            android:textSize="120sp"
+            android:format12Hour="mm"
+            android:format24Hour="mm"
+            android:includeFontPadding="false"
+            android:lineSpacingMultiplier="0.85"
+            android:gravity="end"
+            android:layout_marginTop="-10dp"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="60sp"
+            android:autoSizeMaxTextSize="120sp"
+            android:autoSizeStepGranularity="2sp" />
+
+        <!-- Weather row -->
+        <LinearLayout
+            android:id="@+id/date_weather_row"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical|end"
+            android:layout_marginTop="4dp">
+            <include layout="@layout/quickspace_weather_content" />
+        </LinearLayout>
+
+        <!-- Contextual: Now Playing / PSA -->
+        <FrameLayout
+            android:id="@+id/contextual_info_row"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="4dp">
+
+            <!-- Now Playing -->
+            <LinearLayout
+                android:id="@+id/now_playing_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone">
+                <ImageView
+                    android:id="@+id/now_playing_icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_music_note_24dp"
+                    android:tint="#FF6B6232"
+                    android:layout_marginEnd="6dp" />
+                <TextView
+                    android:id="@+id/now_playing_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FF6B6232"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/ios"
+                    android:singleLine="true" />
+            </LinearLayout>
+
+            <!-- PSA Message -->
+            <com.android.launcher3.quickspace.views.DoubleShadowTextView
+                android:id="@+id/quickspace_psa_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FF8B7A4A"
+                android:textSize="13sp"
+                android:fontFamily="@font/ios"
+                android:visibility="gone"
+                launcher:ambientShadowBlur="2dp"
+                launcher:ambientShadowColor="#446B6232"
+                launcher:keyShadowBlur="1dp"
+                launcher:keyShadowColor="#226B6232"
+                launcher:keyShadowOffsetX="0.5dip" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -182,7 +182,11 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
 
     private void updateView(int style) {
         switch (style) {
-            case 2:
+            case 2: // Mistify Clock
+            case 3: // Baymax Stacked
+            case 4: // Matrix Terminal
+            case 5: // Flip Block
+            case 6: // Orchid Floral
                 loadLargeStyle();
                 break;
             case 1: // Extended
@@ -423,7 +427,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         if (mCurrentStyle == 1) { // Extended style
             mGreetingsExtClock = (TextView) findViewById(R.id.extended_greetings_clock);
             mGreetingsExt = (TextView) findViewById(R.id.extended_greetings);
-        } else if (mCurrentStyle == 2) { // Large style
+        } else if (mCurrentStyle >= 2) { // Large/clock styles: Mistify(2), Baymax(3), Matrix(4), Flip(5), Orchid(6)
             mQuickspaceDayOfWeek = findViewById(R.id.quickspace_day_of_week);
             mQuickspaceClock = findViewById(R.id.quickspace_clock);
             mQuickspaceDate = findViewById(R.id.quickspace_date);
@@ -496,6 +500,18 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
                 break;
             case 2:
                 layoutId = R.layout.quickspace_large_style;
+                break;
+            case 3:
+                layoutId = R.layout.quickspace_clock_baymax;
+                break;
+            case 4:
+                layoutId = R.layout.quickspace_clock_matrix;
+                break;
+            case 5:
+                layoutId = R.layout.quickspace_clock_flip;
+                break;
+            case 6:
+                layoutId = R.layout.quickspace_clock_orchid;
                 break;
             default:
                 layoutId = R.layout.quickspace_doubleline;

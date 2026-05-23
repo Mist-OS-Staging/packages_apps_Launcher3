@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CLOCK 3 — Matrix Terminal | Style value: 4 -->
+<!-- Font: res/font/ios.ttf -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:launcher="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/quickspace_content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="start|center_vertical"
+    android:orientation="vertical"
+    android:background="#FF001A00"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp">
+
+    <!-- Day of the Week -->
+    <com.android.launcher3.quickspace.views.DoubleShadowTextView
+        android:id="@+id/quickspace_day_of_week"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FF00AA20"
+        android:textSize="12sp"
+        android:fontFamily="@font/ios"
+        android:letterSpacing="0.2"
+        launcher:ambientShadowBlur="3dp"
+        launcher:ambientShadowColor="#4400FF00"
+        launcher:keyShadowBlur="2dp"
+        launcher:keyShadowColor="#2200FF00"
+        launcher:keyShadowOffsetX="0.5dip" />
+
+    <!-- Clock — HH:MM:SS terminal style -->
+    <TextClock
+        android:id="@+id/quickspace_clock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/ios"
+        android:textColor="#FF00FF41"
+        android:textSize="48sp"
+        android:format12Hour="hh:mm:ss"
+        android:format24Hour="HH:mm:ss"
+        android:includeFontPadding="false"
+        android:letterSpacing="0.08"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="24sp"
+        android:autoSizeMaxTextSize="48sp"
+        android:autoSizeStepGranularity="2sp" />
+
+    <!-- Date + Weather row -->
+    <LinearLayout
+        android:id="@+id/date_weather_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="4dp">
+
+        <com.android.launcher3.quickspace.views.DoubleShadowTextView
+            android:id="@+id/quickspace_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FF00AA20"
+            android:textSize="12sp"
+            android:fontFamily="@font/ios"
+            android:letterSpacing="0.12"
+            android:paddingEnd="10dp"
+            launcher:ambientShadowBlur="3dp"
+            launcher:ambientShadowColor="#4400FF00"
+            launcher:keyShadowBlur="2dp"
+            launcher:keyShadowColor="#2200FF00"
+            launcher:keyShadowOffsetX="0.5dip" />
+
+        <include layout="@layout/quickspace_weather_content" />
+
+    </LinearLayout>
+
+    <!-- Contextual Info: Now Playing / PSA -->
+    <FrameLayout
+        android:id="@+id/contextual_info_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp">
+
+        <!-- Now Playing -->
+        <LinearLayout
+            android:id="@+id/now_playing_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+            <ImageView
+                android:id="@+id/now_playing_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_music_note_24dp"
+                android:tint="#FF00FF41"
+                android:layout_marginEnd="6dp" />
+            <TextView
+                android:id="@+id/now_playing_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FF00FF41"
+                android:textSize="12sp"
+                android:fontFamily="@font/ios"
+                android:singleLine="true" />
+        </LinearLayout>
+
+        <!-- PSA Message -->
+        <com.android.launcher3.quickspace.views.DoubleShadowTextView
+            android:id="@+id/quickspace_psa_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FF00AA20"
+            android:textSize="12sp"
+            android:fontFamily="@font/ios"
+            android:visibility="gone"
+            launcher:ambientShadowBlur="3dp"
+            launcher:ambientShadowColor="#4400FF00"
+            launcher:keyShadowBlur="2dp"
+            launcher:keyShadowColor="#2200FF00"
+            launcher:keyShadowOffsetX="0.5dip" />
+
+    </FrameLayout>
+
+</LinearLayout>
