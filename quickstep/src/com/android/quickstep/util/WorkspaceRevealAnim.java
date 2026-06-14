@@ -109,7 +109,9 @@ public class WorkspaceRevealAnim {
             @Override
             public void onAnimationCancel(Animator animation) {
                 super.onAnimationCancel(animation);
-                Log.d(TAG, "onAnimationCancel");
+                Log.d(TAG, "onAnimationCancel - restoring workspace/hotseat visibility");
+                workspace.setAlpha(1f);
+                launcher.getHotseat().setAlpha(1f);
             }
 
             @Override
@@ -132,6 +134,12 @@ public class WorkspaceRevealAnim {
         mAnimators.play(alpha);
 
         mAnimators.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                scaleProperty.set(v, 1f);
+                v.setAlpha(1f);
+            }
+
             @Override
             public void onAnimationEnd(Animator animation) {
                 scaleProperty.set(v, 1f);

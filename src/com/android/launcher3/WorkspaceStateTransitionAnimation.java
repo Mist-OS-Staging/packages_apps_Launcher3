@@ -161,12 +161,19 @@ public class WorkspaceStateTransitionAnimation {
         propertySetter.setViewAlpha(hotseat, hotseatIconsAlpha, hotseatFadeInterpolator);
 
         // Update the accessibility flags for hotseat based on launcher state.
-        hotseat.setImportantForAccessibility(
-                state.hasFlag(FLAG_HOTSEAT_INACCESSIBLE)
-                        ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-                        : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
-        hotseat.setDescendantFocusability(state.hasFlag(FLAG_HOTSEAT_INACCESSIBLE)
-                ? ViewGroup.FOCUS_BLOCK_DESCENDANTS : ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+        // Reset eagerly when going to NORMAL so that an interrupted/aborted transition from
+        // Overview (which sets FOCUS_BLOCK_DESCENDANTS) cannot leave the dock unresponsive.
+        if (state == NORMAL) {
+            hotseat.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+            hotseat.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+        } else {
+            hotseat.setImportantForAccessibility(
+                    state.hasFlag(FLAG_HOTSEAT_INACCESSIBLE)
+                            ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                            : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+            hotseat.setDescendantFocusability(state.hasFlag(FLAG_HOTSEAT_INACCESSIBLE)
+                    ? ViewGroup.FOCUS_BLOCK_DESCENDANTS : ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+        }
 
         Interpolator translationInterpolator =
                 config.getInterpolator(ANIM_WORKSPACE_TRANSLATE, ZOOM_OUT);

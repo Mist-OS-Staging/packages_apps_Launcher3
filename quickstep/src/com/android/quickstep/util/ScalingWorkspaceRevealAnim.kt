@@ -258,7 +258,13 @@ class ScalingWorkspaceRevealAnim(
             object : AnimatorListenerAdapter() {
                 override fun onAnimationCancel(animation: Animator) {
                     super.onAnimationCancel(animation)
-                    Log.d(TAG, "onAnimationCancel")
+                    Log.d(TAG, "onAnimationCancel - restoring workspace/hotseat visibility")
+                    workspace.alpha = MAX_ALPHA
+                    hotseat.alpha = MAX_ALPHA
+                    workspace.setLayerType(View.LAYER_TYPE_NONE, null)
+                    hotseat.setLayerType(View.LAYER_TYPE_NONE, null)
+                    removeBlurLayer()
+                    depthController?.pauseBlursOnWindows(false)
                 }
 
                 override fun onAnimationPause(animation: Animator) {
