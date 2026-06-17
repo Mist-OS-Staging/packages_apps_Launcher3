@@ -34,6 +34,7 @@ import com.android.app.animation.Interpolators
 import com.android.app.animation.Interpolators.EMPHASIZED
 import com.android.app.animation.Interpolators.LINEAR
 import com.android.launcher3.Flags
+import com.android.launcher3.Hotseat
 import com.android.launcher3.LauncherAnimUtils.HOTSEAT_SCALE_PROPERTY_FACTORY
 import com.android.launcher3.LauncherAnimUtils.SCALE_INDEX_REVEAL_ANIM
 import com.android.launcher3.LauncherAnimUtils.SCALE_INDEX_WORKSPACE_STATE
@@ -41,6 +42,7 @@ import com.android.launcher3.LauncherAnimUtils.VIEW_ALPHA
 import com.android.launcher3.LauncherAnimUtils.WORKSPACE_SCALE_PROPERTY_FACTORY
 import com.android.launcher3.LauncherState
 import com.android.launcher3.R
+import com.android.launcher3.Workspace
 import com.android.launcher3.anim.AnimatorListeners
 import com.android.launcher3.anim.PendingAnimation
 import com.android.launcher3.anim.PropertySetter
@@ -94,6 +96,10 @@ class ScalingWorkspaceRevealAnim(
     private var blurLayer: SurfaceControl? = null
     private var surfaceTransactionApplier: SurfaceTransactionApplier =
         SurfaceTransactionApplier(launcher.dragLayer)
+
+    @Volatile
+    private var isRunning = false
+    private var isRestoring = false
 
     init {
         // Make sure the starting state is right for the animation.
@@ -259,12 +265,7 @@ class ScalingWorkspaceRevealAnim(
                 override fun onAnimationCancel(animation: Animator) {
                     super.onAnimationCancel(animation)
                     Log.d(TAG, "onAnimationCancel - restoring workspace/hotseat visibility")
-                    workspace.alpha = MAX_ALPHA
-                    hotseat.alpha = MAX_ALPHA
-                    workspace.setLayerType(View.LAYER_TYPE_NONE, null)
-                    hotseat.setLayerType(View.LAYER_TYPE_NONE, null)
-                    removeBlurLayer()
-                    depthController?.pauseBlursOnWindows(false)
+                    restoreWorkspaceAndHotseat(workspace, hotseat, depthController)
                 }
 
                 override fun onAnimationPause(animation: Animator) {
@@ -281,8 +282,7 @@ class ScalingWorkspaceRevealAnim(
                     // Ensure that the workspace and the hotseat are visible at the end
                     // of the animation regardless of what happens with this animation
                     // itself.
-                    workspace.alpha = MAX_ALPHA
-                    hotseat.alpha = MAX_ALPHA
+                    restoreWorkspaceAndHotseat(workspace, hotseat, depthController)
                     if (!hotseat.isVisible || !workspace.isVisible) {
                         Log.e(
                             TAG,
@@ -294,18 +294,39 @@ class ScalingWorkspaceRevealAnim(
                             Exception(),
                         )
                     }
-
-                    workspace.setLayerType(View.LAYER_TYPE_NONE, null)
-                    hotseat.setLayerType(View.LAYER_TYPE_NONE, null)
-
-                    // Reset the cached animations.
-                    Animations.setOngoingAnimation(workspace, animation = null)
-                    Animations.setOngoingAnimation(hotseat, animation = null)
-                    removeBlurLayer()
-                    depthController?.pauseBlursOnWindows(false)
                 }
             )
         )
+    }
+
+    private fun restoreWorkspaceAndHotseat(
+        workspace: Workspace<*>,
+        hotseat: Hotseat,
+        depthController: DepthController?,
+    ) {
+        if (isRestoring) {
+            Log.d(TAG, "restoreWorkspaceAndHotseat: re-entrant call ignored")
+            return
+        }
+        isRestoring = true
+        isRunning = false
+        workspace.alpha = MAX_ALPHA
+        hotseat.alpha = MAX_ALPHA
+        WORKSPACE_SCALE_PROPERTY_FACTORY[SCALE_INDEX_WORKSPACE_STATE].set(workspace, MAX_SIZE)
+        HOTSEAT_SCALE_PROPERTY_FACTORY[SCALE_INDEX_WORKSPACE_STATE].set(hotseat, MAX_SIZE)
+        WORKSPACE_SCALE_PROPERTY_FACTORY[SCALE_INDEX_REVEAL_ANIM].set(workspace, MAX_SIZE)
+        HOTSEAT_SCALE_PROPERTY_FACTORY[SCALE_INDEX_REVEAL_ANIM].set(hotseat, MAX_SIZE)
+
+        workspace.setLayerType(View.LAYER_TYPE_NONE, null)
+        hotseat.setLayerType(View.LAYER_TYPE_NONE, null)
+
+        Animations.setOngoingAnimation(workspace, animation = null)
+        Animations.setOngoingAnimation(hotseat, animation = null)
+
+        removeBlurLayer()
+        depthController?.pauseBlursOnWindows(false)
+
+        isRestoring = false
     }
 
     fun getAnimators(): AnimatorSet {
@@ -313,6 +334,11 @@ class ScalingWorkspaceRevealAnim(
     }
 
     fun start() {
+        if (isRunning) {
+            Log.d(TAG, "start() skipped – reveal animation already running")
+            return
+        }
+        isRunning = true
         val animators = getAnimators()
         // Make sure to cache the current animation, so it can be properly interrupted.
         // TODO(b/367591368): ideally these animations would be refactored to be controlled
