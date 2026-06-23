@@ -248,6 +248,19 @@
         <item>2</item>
     </string-array>
 
+    <string name="quickspace_clock_hour_color_title">Mistify clock hour color</string>
+    <string name="quickspace_clock_minute_color_title">Mistify clock minute color</string>
+    
+    <!-- Color Picker -->
+    <string name="dialog_color_picker">Color Picker</string>
+    <string name="press_color_to_apply">Press on color below to apply</string>
+    <string name="arrow_right" translatable="false">→</string>
+    <string name="arrow_down" translatable="false">↓</string>
+    <string name="hex" translatable="false">Hex:</string>
+    <string name="hex_hint" translatable="false">#ff000000</string>
+    <string name="set">Set</string>
+    <string name="color_default">Default</string>
+
     <!-- Quickspace PSA - Custom messages for the glance -->
     <string name="quickspace_psa_title">Random messages</string>
     <string name="quickspace_psa_summary">Make your companion more lively with random messages</string>

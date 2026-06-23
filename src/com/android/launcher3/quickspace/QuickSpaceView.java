@@ -124,11 +124,20 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
             String time = text.toString();
             int colon = time.indexOf(':');
             if (colon > 0) {
-                int hourColor = Color.parseColor("#FE4543");
-                int minuteColor = mQuickspaceClock.getCurrentTextColor();
+                int hourColor = LauncherPrefs.QUICKSPACE_CLOCK_HOUR_COLOR.get(getContext());
+                int minuteColor = LauncherPrefs.QUICKSPACE_CLOCK_MINUTE_COLOR.get(getContext());
+
+                if (Color.alpha(hourColor) == 0) {
+                    hourColor = hourColor == 0 ? 0xFFFFFFFF : (hourColor | 0xFF000000);
+                }
+                if (Color.alpha(minuteColor) == 0) {
+                    minuteColor = minuteColor == 0 ? 0xFFFFFFFF : (minuteColor | 0xFF000000);
+                }
+
                 SpannableString styled = new SpannableString(time);
                 styled.setSpan(new ForegroundColorSpan(hourColor), 0, colon, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                styled.setSpan(new ForegroundColorSpan(minuteColor), colon, styled.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                styled.setSpan(new ForegroundColorSpan(0xFFFFFFFF), colon, colon + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                styled.setSpan(new ForegroundColorSpan(minuteColor), colon + 1, styled.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 mQuickspaceClock.setText(styled);
             }
         }
@@ -654,3 +663,4 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         super.setPadding(0, 0, 0, 0);
     }
 }
+

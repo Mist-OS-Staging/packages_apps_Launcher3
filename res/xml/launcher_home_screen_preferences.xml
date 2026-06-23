@@ -184,6 +184,20 @@
             android:persistent="true"
             launcher:iconSpaceReserved="false" />
 
+        <com.android.launcher3.mist.colorpicker.ColorPickerPreference
+            android:key="pref_quickspace_clock_hour_color"
+            android:title="@string/quickspace_clock_hour_color_title"
+            android:defaultValue="-1"
+            android:persistent="true"
+            android:dependency="pref_quickspace" />
+
+        <com.android.launcher3.mist.colorpicker.ColorPickerPreference
+            android:key="pref_quickspace_clock_minute_color"
+            android:title="@string/quickspace_clock_minute_color_title"
+            android:defaultValue="-1"
+            android:persistent="true"
+            android:dependency="pref_quickspace" />
+
         <SwitchPreferenceCompat
             android:key="pref_quickspace_psonality"
             android:title="@string/quickspace_psa_title"

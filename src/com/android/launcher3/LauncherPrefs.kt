@@ -315,6 +315,8 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
         @JvmField val SHOW_QUICKSPACE_WEATHER_CITY = backedUpItem("pref_quickspace_weather_city", false)
         @JvmField val SHOW_QUICKSPACE_WEATHER_PROVIDER = backedUpItem("pref_quickspace_weather_provider", "auto")
         @JvmField val SHOW_QUICKSPACE_WEATHER_TEXT = backedUpItem("pref_quickspace_weather_text", true)
+        @JvmField val QUICKSPACE_CLOCK_HOUR_COLOR = backedUpItem("pref_quickspace_clock_hour_color", -1)
+        @JvmField val QUICKSPACE_CLOCK_MINUTE_COLOR = backedUpItem("pref_quickspace_clock_minute_color", -1)
         @JvmField val SHOW_STATUS_BAR = backedUpItem("pref_show_statusbar", true)
         @JvmField val SHOW_TOP_SHADOW = backedUpItem("pref_show_top_shadow", true)
         @JvmField val SINGLE_PAGE_CENTER = backedUpItem("pref_single_page_center", false)

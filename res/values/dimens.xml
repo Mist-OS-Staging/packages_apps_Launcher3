@@ -612,4 +612,8 @@
     <!-- App Title Pill -->
     <dimen name="app_title_pill_horizontal_padding">4dp</dimen>
     <dimen name="app_title_pill_round_rect_padding">2dp</dimen>
+
+    <!-- Oval preview size -->
+    <dimen name="oval_notification_size">26dp</dimen>
+    <dimen name="color_picker_preview_height">48dp</dimen>
 </resources>
