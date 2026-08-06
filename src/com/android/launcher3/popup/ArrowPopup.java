@@ -27,6 +27,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
@@ -56,6 +57,7 @@ import com.android.launcher3.dragndrop.DragLayer;
 import com.android.launcher3.shortcuts.DeepShortcutView;
 import com.android.launcher3.util.RunnableList;
 import com.android.launcher3.util.Themes;
+import com.android.launcher3.util.BlurBackgroundHelper;
 import com.android.launcher3.views.ActivityContext;
 import com.android.launcher3.views.BaseDragLayer;
 
@@ -131,12 +133,14 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
     private final String mIterateChildrenTag;
 
     protected final int[] mColors;
+    protected final BlurBackgroundHelper mBlurBackgroundHelper;
 
     public ArrowPopup(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         mInflater = LayoutInflater.from(context);
         mOutlineRadius = Themes.getDialogCornerRadius(context);
         mActivityContext = (T) ActivityContext.lookupContext(context);
+        mBlurBackgroundHelper = mActivityContext.getActivityComponent().getBlurBackgroundHelper();
         mIsRtl = Utilities.isRtl(getResources());
         mElevation = getResources().getDimension(R.dimen.deep_shortcuts_elevation);
 
@@ -156,6 +160,10 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
         int smallerRadius = resources.getDimensionPixelSize(R.dimen.popup_smaller_radius);
         mRoundedTop = new GradientDrawable();
         int popupPrimaryColor = Themes.getAttrColor(context, R.attr.popupColorPrimary);
+        if (mBlurBackgroundHelper != null && mBlurBackgroundHelper.isBlurEnabled()) {
+           popupPrimaryColor = Color.argb(120, Color.red(popupPrimaryColor), Color.green(popupPrimaryColor), Color.blue(popupPrimaryColor));
+            mArrowColor = Color.argb(120, Color.red(mArrowColor), Color.green(mArrowColor), Color.blue(mArrowColor));
+        }
         mRoundedTop.setColor(popupPrimaryColor);
         mRoundedTop.setCornerRadii(new float[]{mOutlineRadius, mOutlineRadius, mOutlineRadius,
                 mOutlineRadius, smallerRadius, smallerRadius, smallerRadius, smallerRadius});
@@ -175,6 +183,12 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
             };
         } else {
             mColors = new int[]{getContext().getColor(R.color.materialColorSurfaceContainer)};
+        }
+
+        if (mBlurBackgroundHelper != null && mBlurBackgroundHelper.isBlurEnabled()) {
+            for (int i = 0; i < mColors.length; i++) {
+                mColors[i] = Color.argb(120, Color.red(mColors[i]), Color.green(mColors[i]), Color.blue(mColors[i]));
+            }
         }
     }
 
@@ -321,6 +335,7 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
      */
     public void show() {
         setupForDisplay();
+        mBlurBackgroundHelper.prepareToOpenPopup(this);
         assignMarginsAndBackgrounds(this);
         if (shouldAddArrow()) {
             addArrow();
@@ -333,6 +348,12 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
         mIsOpen = true;
         getPopupContainer().addView(this);
         orientAboutObject();
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        mBlurBackgroundHelper.drawPopupBlur(canvas, null, this);
+        super.dispatchDraw(canvas);
     }
 
     private int getArrowLeft() {
@@ -742,6 +763,7 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
         mDeferContainerRemoval = false;
         getPopupContainer().removeView(this);
         getPopupContainer().removeView(mArrow);
+        mBlurBackgroundHelper.popupCloseComplete();
         mOnCloseCallbacks.executeAllAndClear();
     }
 
