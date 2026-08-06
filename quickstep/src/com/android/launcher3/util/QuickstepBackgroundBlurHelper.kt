@@ -25,7 +25,6 @@ import android.graphics.RenderNode
 import android.graphics.Shader
 import android.view.View
 import com.android.internal.graphics.drawable.BackgroundBlurDrawable
-import com.android.launcher3.Flags.blurOnMoreSurfaces
 import com.android.launcher3.R
 import com.android.launcher3.dagger.ActivityContextSingleton
 import com.android.launcher3.folder.Folder
@@ -151,7 +150,41 @@ constructor(
         folderBlurDrawable?.setVisible(false, false)
     }
 
+    override fun prepareToOpenPopup(popup: View) {
+        if (!isBlurEnabled()) {
+            return
+        }
+
+        val popupVisibility = popup.visibility
+        popup.visibility = View.INVISIBLE
+
+        val dragLayer = activityContext.dragLayer
+        val canvas =
+            workspaceBlurRenderNode.beginRecording(dragLayer.getWidth(), dragLayer.getHeight())
+        dragLayer.draw(canvas)
+        workspaceBlurRenderNode.endRecording()
+        workspaceBlurRenderNode.setPosition(0, 0, dragLayer.getWidth(), dragLayer.getHeight())
+
+        popup.visibility = popupVisibility
+    }
+
+    override fun drawPopupBlur(canvas: Canvas, pathWrapper: PathWrapper?, view: View) {
+        if (!isBlurEnabled()) {
+            return
+        }
+
+        drawCrossWindowBlur(canvas, pathWrapper, view)
+        drawWorkspaceBlur(canvas, pathWrapper?.path, view)
+    }
+
+    override fun popupCloseComplete() {
+        if (workspaceBlurRenderNode.hasDisplayList()) {
+            workspaceBlurRenderNode.discardDisplayList()
+        }
+        folderBlurDrawable?.setVisible(false, false)
+    }
+
     override fun isBlurEnabled(): Boolean {
-        return blurOnMoreSurfaces() && blurState.value
+        return blurState.value
     }
 }
