@@ -46,6 +46,7 @@ public final class TestProtocol {
     public static final int OVERVIEW_SPLIT_SELECT_ORDINAL = 9;
     public static final int EDIT_MODE_STATE_ORDINAL = 10;
     public static final int DESKTOP_DRAG_MODE_ORDINAL = 11;
+public static final int APP_LIBRARY_STATE_ORDINAL = 12;
     public static final String SEQUENCE_MAIN = "Main";
     public static final String SEQUENCE_TIS = "TIS";
     public static final String SEQUENCE_PILFER = "Pilfer";
@@ -76,6 +77,8 @@ public final class TestProtocol {
                 return "EditMode";
             case DESKTOP_DRAG_MODE_ORDINAL:
                 return "DesktopDragMode";
+            case APP_LIBRARY_STATE_ORDINAL:
+                return "AppLibrary";
             default:
                 return "Unknown";
         }

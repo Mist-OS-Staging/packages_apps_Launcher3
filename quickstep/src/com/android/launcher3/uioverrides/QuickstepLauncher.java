@@ -58,6 +58,7 @@ import static com.android.launcher3.popup.SystemShortcut.APP_INFO;
 import static com.android.launcher3.popup.SystemShortcut.APP_LOCK;
 import static com.android.launcher3.popup.SystemShortcut.BUBBLE_SHORTCUT;
 import static com.android.launcher3.popup.SystemShortcut.DONT_SUGGEST_APP;
+import com.android.launcher3.applibrary.AppLibraryTouchController;
 import static com.android.launcher3.popup.SystemShortcut.INSTALL;
 import static com.android.launcher3.popup.SystemShortcut.PRIVATE_PROFILE_INSTALL;
 import static com.android.launcher3.popup.SystemShortcut.REMOVE;
@@ -759,6 +760,7 @@ public class QuickstepLauncher extends Launcher implements RecentsViewContainer,
                 break;
         }
         list.add(new StatusBarTouchController(this, () -> this.isInState(LauncherState.NORMAL)));
+        list.add(new AppLibraryTouchController(this));
         list.add(new TaskViewLaunchTouchController<>(this,
                 animController -> getStateManager().setCurrentUserControlledAnimation(
                         animController)));
