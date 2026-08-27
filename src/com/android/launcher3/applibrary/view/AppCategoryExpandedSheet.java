@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.DeviceProfile;
+import com.android.launcher3.Insettable;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
 import com.android.launcher3.applibrary.model.AppCategoryGroup;
@@ -30,7 +31,7 @@ import com.android.launcher3.views.ActivityContext;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AppCategoryExpandedSheet extends FrameLayout {
+public class AppCategoryExpandedSheet extends FrameLayout implements Insettable {
 
     public interface OnExpandedSheetDismissListener {
         void onDismissStarted(long duration);
@@ -44,6 +45,7 @@ public class AppCategoryExpandedSheet extends FrameLayout {
     private ExpandedGridAdapter mAdapter;
     private final ActivityContext mActivityContext;
     private OnExpandedSheetDismissListener mDismissListener;
+    private final Rect mInsets = new Rect();
 
     private Rect mSourceBounds;
     private float mStartTranslationX = 0f;
@@ -90,6 +92,32 @@ public class AppCategoryExpandedSheet extends FrameLayout {
         }
     }
 
+    @Override
+    public void setInsets(Rect insets) {
+        mInsets.set(insets);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+
+        int safeTop = mInsets.top + (int) (16 * getResources().getDisplayMetrics().density);
+        int safeBottom = mInsets.bottom + (int) (16 * getResources().getDisplayMetrics().density);
+        int availableHeight = Math.max(0, heightSize - safeTop - safeBottom);
+        int maxCardHeight = (int) (availableHeight * 0.82f);
+
+        if (mCardView != null) {
+            int cardWidthSpec = MeasureSpec.makeMeasureSpec(
+                    Math.max(0, widthSize - (int) (32 * getResources().getDisplayMetrics().density)),
+                    MeasureSpec.AT_MOST);
+            int cardHeightSpec = MeasureSpec.makeMeasureSpec(maxCardHeight, MeasureSpec.AT_MOST);
+            mCardView.measure(cardWidthSpec, cardHeightSpec);
+        }
+
+        setMeasuredDimension(widthSize, heightSize);
+    }
+
     public void setOnExpandedSheetDismissListener(OnExpandedSheetDismissListener listener) {
         mDismissListener = listener;
     }
@@ -97,7 +125,7 @@ public class AppCategoryExpandedSheet extends FrameLayout {
     private int calculateAdaptiveSpanCount() {
         if (mActivityContext instanceof Launcher) {
             DeviceProfile dp = ((Launcher) mActivityContext).getDeviceProfile();
-            if (dp.isTablet) {
+            if (dp.getDeviceProperties().isLargeScreen()) {
                 return dp.getDeviceProperties().isLandscape() ? 7 : 5;
             }
             if (dp.getDeviceProperties().isLandscape()) {
@@ -154,6 +182,8 @@ public class AppCategoryExpandedSheet extends FrameLayout {
                     mStartScaleY = 0.85f;
                 }
 
+                mCardView.setPivotX(cardWidth / 2f);
+                mCardView.setPivotY(cardHeight / 2f);
                 mCardView.setTranslationX(mStartTranslationX);
                 mCardView.setTranslationY(mStartTranslationY);
                 mCardView.setScaleX(mStartScaleX);

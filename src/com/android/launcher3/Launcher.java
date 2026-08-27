@@ -1500,21 +1500,25 @@ public class Launcher extends StatefulActivity<LauncherState>
     }
 
     private void toggleAllApps(boolean alreadyOnHome, boolean focusSearch) {
-        if (getStateManager().isInStableState(ALL_APPS)) {
+        boolean isAppLibraryEnabled = LauncherPrefs.get(this).get(LauncherPrefs.APP_LIBRARY_ENABLED);
+        LauncherState targetAllAppsState = isAppLibraryEnabled ? LauncherState.APP_LIBRARY : ALL_APPS;
+        if (getStateManager().isInStableState(targetAllAppsState)) {
             getStateManager().goToState(NORMAL, alreadyOnHome);
         } else {
             if (mWorkspace.isOverlayShown()) {
-                mOverlayManager.hideOverlay(/* animate */true);
+                mOverlayManager.hideOverlay(true);
             }
             AbstractFloatingView.closeAllOpenViews(this);
-            getStateManager().goToState(ALL_APPS, true /* animated */,
+            getStateManager().goToState(targetAllAppsState, true,
                     new AnimationSuccessListener() {
                         @Override
                         public void onAnimationSuccess(Animator animator) {
-                            if (focusSearch
-                                    && mAppsView.getSearchUiManager().getEditText() != null) {
-                                mAppsView.getSearchUiManager().getEditText()
-                                    .requestFocusExplicitly();
+                            if (focusSearch) {
+                                if (isAppLibraryEnabled && mAppLibraryView != null && mAppLibraryView.getSearchBar() != null && mAppLibraryView.getSearchBar().getEditText() != null) {
+                                    mAppLibraryView.getSearchBar().getEditText().requestFocus();
+                                } else if (mAppsView.getSearchUiManager().getEditText() != null) {
+                                    mAppsView.getSearchUiManager().getEditText().requestFocusExplicitly();
+                                }
                             }
                         }
                     });
@@ -1528,12 +1532,17 @@ public class Launcher extends StatefulActivity<LauncherState>
 
     private void showAllAppsWithSelectedTabFromIntent(boolean alreadyOnHome, int tab) {
         AbstractFloatingView.closeAllOpenViews(this);
-        getStateManager().goToState(ALL_APPS, alreadyOnHome);
-        if (mAppsView.isSearching()) {
-            mAppsView.getSearchUiManager().resetSearch();
-        }
-        if (mAppsView.getCurrentPage() != tab) {
-            mAppsView.switchToTab(tab);
+        boolean isAppLibraryEnabled = LauncherPrefs.get(this).get(LauncherPrefs.APP_LIBRARY_ENABLED);
+        if (isAppLibraryEnabled) {
+            getStateManager().goToState(LauncherState.APP_LIBRARY, alreadyOnHome);
+        } else {
+            getStateManager().goToState(ALL_APPS, alreadyOnHome);
+            if (mAppsView.isSearching()) {
+                mAppsView.getSearchUiManager().resetSearch();
+            }
+            if (mAppsView.getCurrentPage() != tab) {
+                mAppsView.switchToTab(tab);
+            }
         }
     }
 
