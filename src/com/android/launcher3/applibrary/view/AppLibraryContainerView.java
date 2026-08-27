@@ -13,6 +13,7 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -55,6 +56,7 @@ public class AppLibraryContainerView extends FrameLayout
 
     private float mDownX;
     private float mDownY;
+    private boolean mPullToSearchEligible = false;
 
     public AppLibraryContainerView(Context context) {
         this(context, null);
@@ -138,25 +140,64 @@ public class AppLibraryContainerView extends FrameLayout
             mDownX = ev.getX();
             mDownY = ev.getY();
             if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
+                mPullToSearchEligible = false;
+                getParent().requestDisallowInterceptTouchEvent(true);
+            } else if (mSearchBar != null && mSearchBar.isSearching()) {
+                mPullToSearchEligible = false;
+                getParent().requestDisallowInterceptTouchEvent(true);
+            } else if (mGridView != null) {
+                mPullToSearchEligible = !mGridView.canScrollVertically(-1);
+            } else {
+                mPullToSearchEligible = false;
+            }
+        } else if (action == MotionEvent.ACTION_MOVE) {
+            float dx = ev.getX() - mDownX;
+            float dy = ev.getY() - mDownY;
+            float absDx = Math.abs(dx);
+            float absDy = Math.abs(dy);
+
+            if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
                 getParent().requestDisallowInterceptTouchEvent(true);
             } else if (mSearchBar != null && mSearchBar.isSearching()) {
                 getParent().requestDisallowInterceptTouchEvent(true);
-            }
-        } else if (action == MotionEvent.ACTION_MOVE) {
-            float dx = Math.abs(ev.getX() - mDownX);
-            float dy = Math.abs(ev.getY() - mDownY);
-            if (dy > dx) {
-                if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                } else if (mSearchBar != null && mSearchBar.isSearching()) {
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                    if (ev.getY() - mDownY > 20 && mSearchBar != null) {
-                        mSearchBar.hideKeyboard();
-                    }
-                } else if (mGridView != null && dy > 10) {
+                if (dy > 20 && mSearchBar != null) {
+                    mSearchBar.hideKeyboard();
+                }
+            } else {
+                if (absDy > absDx && absDy > 10) {
                     getParent().requestDisallowInterceptTouchEvent(true);
                 }
+
+                if (mPullToSearchEligible && dy > 12 && mAppLibraryContent != null) {
+                    float pullDistance = dy - 12;
+                    float density = getResources().getDisplayMetrics().density;
+                    float maxTranslation = 50f * density;
+                    float translationY = Math.min(pullDistance * 0.4f, maxTranslation);
+                    mAppLibraryContent.setTranslationY(translationY);
+
+                    float threshold = 75f * density;
+                    if (pullDistance > threshold) {
+                        mPullToSearchEligible = false;
+                        mAppLibraryContent.animate().translationY(0f).setDuration(160).start();
+                        if (mSearchBar != null) {
+                            mSearchBar.setSearching(true);
+                            if (mSearchBar.getEditText() != null) {
+                                mSearchBar.getEditText().requestFocus();
+                                InputMethodManager imm = (InputMethodManager) getContext().getSystemService(
+                                        Context.INPUT_METHOD_SERVICE);
+                                if (imm != null) {
+                                    imm.showSoftInput(mSearchBar.getEditText(), InputMethodManager.SHOW_IMPLICIT);
+                                }
+                            }
+                        }
+                    }
+                }
             }
+        } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            if (mAppLibraryContent != null && mAppLibraryContent.getTranslationY() > 0) {
+                mAppLibraryContent.animate().translationY(0f).setDuration(220).setInterpolator(EMPHASIZED).start();
+            }
+            mPullToSearchEligible = false;
         }
         return super.dispatchTouchEvent(ev);
     }
@@ -249,9 +290,9 @@ public class AppLibraryContainerView extends FrameLayout
             Rect sourceBounds = new Rect();
             if (sourceCardView != null) {
                 sourceCardView.getGlobalVisibleRect(sourceBounds);
-                int[] containerPos = new int[2];
-                getLocationOnScreen(containerPos);
-                sourceBounds.offset(-containerPos[0], -containerPos[1]);
+                int[] sheetPos = new int[2];
+                mExpandedSheet.getLocationOnScreen(sheetPos);
+                sourceBounds.offset(-sheetPos[0], -sheetPos[1]);
             }
             applyCategoryBackgroundBlur(true, 280);
             mExpandedSheet.show(group, sourceBounds);
@@ -309,8 +350,11 @@ public class AppLibraryContainerView extends FrameLayout
         if (mExpandedSheet != null) {
             mExpandedSheet.hide(false);
         }
-        if (mAppLibraryContent != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            mAppLibraryContent.setRenderEffect(null);
+        if (mAppLibraryContent != null) {
+            mAppLibraryContent.setTranslationY(0f);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                mAppLibraryContent.setRenderEffect(null);
+            }
         }
         if (mSearchBar != null) {
             mSearchBar.resetSearch();
@@ -326,6 +370,7 @@ public class AppLibraryContainerView extends FrameLayout
             mGridView.setAlpha(1f);
             mGridView.scrollToPosition(0);
         }
+        mPullToSearchEligible = false;
     }
 
     public boolean shouldContainerScroll(MotionEvent ev) {
@@ -353,3 +398,4 @@ public class AppLibraryContainerView extends FrameLayout
         }
     }
 }
+

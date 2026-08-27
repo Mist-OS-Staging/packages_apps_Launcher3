@@ -110,20 +110,36 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
 
-        int safeTop = mInsets.top + (int) (24 * getResources().getDisplayMetrics().density);
-        int safeBottom = mInsets.bottom + (int) (24 * getResources().getDisplayMetrics().density);
-        int availableHeight = Math.max(0, heightSize - safeTop - safeBottom);
-        int maxCardHeight = (int) (availableHeight * 0.84f);
+        float density = getResources().getDisplayMetrics().density;
+        int maxCardWidth = Math.min(widthSize - (int) (32 * density), (int) (560 * density));
+        int maxCardHeight = heightSize - (int) (32 * density);
 
         if (mCardView != null) {
-            int cardWidthSpec = MeasureSpec.makeMeasureSpec(
-                    Math.max(0, widthSize - (int) (32 * getResources().getDisplayMetrics().density)),
-                    MeasureSpec.AT_MOST);
-            int cardHeightSpec = MeasureSpec.makeMeasureSpec(maxCardHeight, MeasureSpec.AT_MOST);
+            int cardWidthSpec = MeasureSpec.makeMeasureSpec(Math.max(0, maxCardWidth), MeasureSpec.EXACTLY);
+            int cardHeightSpec = MeasureSpec.makeMeasureSpec(Math.max(0, maxCardHeight), MeasureSpec.AT_MOST);
             mCardView.measure(cardWidthSpec, cardHeightSpec);
+
+            if (mCardView.getMeasuredHeight() > maxCardHeight) {
+                cardHeightSpec = MeasureSpec.makeMeasureSpec(Math.max(0, maxCardHeight), MeasureSpec.EXACTLY);
+                mCardView.measure(cardWidthSpec, cardHeightSpec);
+            }
         }
 
         setMeasuredDimension(widthSize, heightSize);
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        int width = right - left;
+        int height = bottom - top;
+
+        if (mCardView != null && mCardView.getVisibility() != View.GONE) {
+            int cardWidth = mCardView.getMeasuredWidth();
+            int cardHeight = mCardView.getMeasuredHeight();
+            int cardLeft = (width - cardWidth) / 2;
+            int cardTop = (height - cardHeight) / 2;
+            mCardView.layout(cardLeft, cardTop, cardLeft + cardWidth, cardTop + cardHeight);
+        }
     }
 
     public void setOnExpandedSheetDismissListener(OnExpandedSheetDismissListener listener) {
@@ -171,16 +187,16 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
                 int cardHeight = mCardView.getHeight();
 
                 if (cardWidth > 0 && cardHeight > 0 && mSourceBounds != null && mSourceBounds.width() > 0 && mSourceBounds.height() > 0) {
-                    float targetCenterX = mCardView.getX() + cardWidth / 2f;
-                    float targetCenterY = mCardView.getY() + cardHeight / 2f;
+                    float targetCenterX = mCardView.getLeft() + cardWidth / 2f;
+                    float targetCenterY = mCardView.getTop() + cardHeight / 2f;
 
                     float sourceCenterX = mSourceBounds.exactCenterX();
                     float sourceCenterY = mSourceBounds.exactCenterY();
 
                     mStartTranslationX = sourceCenterX - targetCenterX;
                     mStartTranslationY = sourceCenterY - targetCenterY;
-                    mStartScaleX = (float) mSourceBounds.width() / cardWidth;
-                    mStartScaleY = (float) mSourceBounds.height() / cardHeight;
+                    mStartScaleX = Math.max(0.1f, (float) mSourceBounds.width() / cardWidth);
+                    mStartScaleY = Math.max(0.1f, (float) mSourceBounds.height() / cardHeight);
                 } else {
                     mStartTranslationX = 0f;
                     mStartTranslationY = 0f;
