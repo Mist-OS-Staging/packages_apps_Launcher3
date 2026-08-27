@@ -70,13 +70,10 @@ public class AllAppsSwipeController extends AbstractStateChangeTouchController {
         if (AbstractFloatingView.getTopOpenView(mLauncher) != null) {
             return false;
         }
-        if (!mLauncher.isInState(NORMAL) && !mLauncher.isInState(ALL_APPS) && !mLauncher.isInState(APP_LIBRARY)) {
+        if (!mLauncher.isInState(NORMAL) && !mLauncher.isInState(ALL_APPS)) {
             return false;
         }
         if (mLauncher.isInState(ALL_APPS) && !mLauncher.getAppsView().shouldContainerScroll(ev)) {
-            return false;
-        }
-        if (mLauncher.isInState(APP_LIBRARY) && mLauncher.getAppLibraryView() != null && !mLauncher.getAppLibraryView().shouldContainerScroll(ev)) {
             return false;
         }
         return true;
@@ -88,8 +85,6 @@ public class AllAppsSwipeController extends AbstractStateChangeTouchController {
         if (fromState == NORMAL && shouldOpenAllApps(isDragTowardPositive)) {
             return isAppLibraryEnabled ? APP_LIBRARY : ALL_APPS;
         } else if (fromState == ALL_APPS && !isDragTowardPositive) {
-            return NORMAL;
-        } else if (fromState == APP_LIBRARY && !isDragTowardPositive) {
             return NORMAL;
         }
         return fromState;

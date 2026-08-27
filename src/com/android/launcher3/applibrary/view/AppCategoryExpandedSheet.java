@@ -8,6 +8,7 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -89,7 +90,14 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
             mGridView.setLayoutManager(new GridLayoutManager(getContext(), spanCount));
             mAdapter = new ExpandedGridAdapter(mActivityContext);
             mGridView.setAdapter(mAdapter);
+            mGridView.setNestedScrollingEnabled(true);
         }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        super.onTouchEvent(event);
+        return true;
     }
 
     @Override
@@ -102,10 +110,10 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
 
-        int safeTop = mInsets.top + (int) (16 * getResources().getDisplayMetrics().density);
-        int safeBottom = mInsets.bottom + (int) (16 * getResources().getDisplayMetrics().density);
+        int safeTop = mInsets.top + (int) (24 * getResources().getDisplayMetrics().density);
+        int safeBottom = mInsets.bottom + (int) (24 * getResources().getDisplayMetrics().density);
         int availableHeight = Math.max(0, heightSize - safeTop - safeBottom);
-        int maxCardHeight = (int) (availableHeight * 0.82f);
+        int maxCardHeight = (int) (availableHeight * 0.84f);
 
         if (mCardView != null) {
             int cardWidthSpec = MeasureSpec.makeMeasureSpec(
@@ -163,10 +171,8 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
                 int cardHeight = mCardView.getHeight();
 
                 if (cardWidth > 0 && cardHeight > 0 && mSourceBounds != null && mSourceBounds.width() > 0 && mSourceBounds.height() > 0) {
-                    int[] cardPos = new int[2];
-                    mCardView.getLocationInWindow(cardPos);
-                    float targetCenterX = cardPos[0] + cardWidth / 2f;
-                    float targetCenterY = cardPos[1] + cardHeight / 2f;
+                    float targetCenterX = mCardView.getX() + cardWidth / 2f;
+                    float targetCenterY = mCardView.getY() + cardHeight / 2f;
 
                     float sourceCenterX = mSourceBounds.exactCenterX();
                     float sourceCenterY = mSourceBounds.exactCenterY();
