@@ -4,7 +4,7 @@
     android:id="@+id/app_library_expanded_sheet"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#80000000"
+    android:background="#99000000"
     android:clickable="true"
     android:focusable="true"
     android:clipChildren="true"

@@ -2,7 +2,9 @@ package com.android.launcher3.applibrary;
 
 import static com.android.launcher3.AbstractFloatingView.TYPE_ALL;
 import static com.android.launcher3.AbstractFloatingView.getTopOpenViewWithType;
+import static com.android.launcher3.BaseActivity.ACTIVITY_STATE_TRANSITION_ACTIVE;
 import static com.android.launcher3.LauncherState.APP_LIBRARY;
+import static com.android.launcher3.LauncherState.BACKGROUND_APP;
 import static com.android.launcher3.LauncherState.NORMAL;
 
 import android.view.MotionEvent;
@@ -38,7 +40,23 @@ public class AppLibraryTouchController extends AbstractStateChangeTouchControlle
             return false;
         }
 
+        if (mLauncher.isInState(BACKGROUND_APP)) {
+            return false;
+        }
+
+        if ((mLauncher.getActivityFlags() & ACTIVITY_STATE_TRANSITION_ACTIVE) != 0) {
+            if (mCurrentAnimation != null) {
+                clearState();
+            }
+            return false;
+        }
+
         if (mCurrentAnimation != null) {
+            if (mCurrentAnimation.getAnimationPlayer() == null
+                    || !mCurrentAnimation.getAnimationPlayer().isRunning()) {
+                clearState();
+                return false;
+            }
             return true;
         }
 
