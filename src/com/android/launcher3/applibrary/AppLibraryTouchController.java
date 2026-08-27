@@ -10,8 +10,10 @@ import android.view.MotionEvent;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherPrefs;
 import com.android.launcher3.LauncherState;
+import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.Workspace;
+import com.android.launcher3.applibrary.view.AppCategoryExpandedSheet;
 import com.android.launcher3.states.StateAnimationConfig;
 import com.android.launcher3.touch.AbstractStateChangeTouchController;
 import com.android.launcher3.touch.SingleAxisSwipeDetector;
@@ -59,6 +61,16 @@ public class AppLibraryTouchController extends AbstractStateChangeTouchControlle
             int pageCount = workspace.getPageCount();
             return currentPage >= pageCount - 1;
         } else if (mLauncher.isInState(APP_LIBRARY)) {
+            if (mLauncher.getAppLibraryView() != null) {
+                if (mLauncher.getAppLibraryView().getSearchBar() != null
+                        && mLauncher.getAppLibraryView().getSearchBar().isSearching()) {
+                    return false;
+                }
+                AppCategoryExpandedSheet sheet = mLauncher.getAppLibraryView().findViewById(R.id.app_library_expanded_sheet);
+                if (sheet != null && sheet.isOpen()) {
+                    return false;
+                }
+            }
             return true;
         }
 

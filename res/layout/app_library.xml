@@ -31,7 +31,7 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
+                android:gravity="center"
                 android:background="@drawable/app_library_search_bg"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp">
@@ -50,6 +50,7 @@
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
+                    android:gravity="center"
                     android:background="@null"
                     android:hint="@string/app_library_search_hint"
                     android:imeOptions="actionSearch|flagNoExtractUi"
@@ -98,7 +99,7 @@
                 android:paddingEnd="8dp"
                 android:paddingBottom="24dp"
                 android:clipToPadding="false"
-                android:overScrollMode="never" />
+                android:overScrollMode="ifContentScrolls" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/app_library_search_results_view"
@@ -108,7 +109,7 @@
                 android:paddingEnd="8dp"
                 android:paddingBottom="24dp"
                 android:clipToPadding="false"
-                android:overScrollMode="never"
+                android:overScrollMode="ifContentScrolls"
                 android:visibility="gone" />
 
         </FrameLayout>

@@ -5,6 +5,7 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -49,6 +50,7 @@ public class AppLibrarySearchBar extends LinearLayout {
         mCancelButton = findViewById(R.id.app_library_search_cancel);
 
         if (mSearchInput != null) {
+            mSearchInput.setGravity(Gravity.CENTER);
             mSearchInput.addTextChangedListener(new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -70,6 +72,11 @@ public class AppLibrarySearchBar extends LinearLayout {
 
             mSearchInput.setOnFocusChangeListener((v, hasFocus) -> {
                 if (hasFocus && !mIsSearching) {
+                    setSearching(true);
+                }
+            });
+            mSearchInput.setOnClickListener(v -> {
+                if (!mIsSearching) {
                     setSearching(true);
                 }
             });
@@ -97,6 +104,9 @@ public class AppLibrarySearchBar extends LinearLayout {
             return;
         }
         mIsSearching = searching;
+        if (mSearchInput != null) {
+            mSearchInput.setGravity(searching ? (Gravity.CENTER_VERTICAL | Gravity.START) : Gravity.CENTER);
+        }
         if (mCancelButton != null) {
             mCancelButton.setVisibility(searching ? View.VISIBLE : View.GONE);
         }
@@ -113,6 +123,7 @@ public class AppLibrarySearchBar extends LinearLayout {
         if (mSearchInput != null) {
             mSearchInput.setText("");
             mSearchInput.clearFocus();
+            mSearchInput.setGravity(Gravity.CENTER);
         }
         hideKeyboard();
         setSearching(false);

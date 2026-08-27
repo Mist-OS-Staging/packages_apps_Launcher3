@@ -39,7 +39,6 @@ public class AppLibraryContainerView extends FrameLayout
         Insettable {
 
     private static final float CATEGORY_BLUR_RADIUS = 20f;
-    private static final float SEARCH_BLUR_RADIUS = 4f;
 
     private View mAppLibraryContent;
     private AppLibrarySearchBar mSearchBar;
@@ -53,6 +52,9 @@ public class AppLibraryContainerView extends FrameLayout
     private final ActivityContext mActivityContext;
     private final Rect mInsets = new Rect();
     private ValueAnimator mBlurAnimator;
+
+    private float mDownX;
+    private float mDownY;
 
     public AppLibraryContainerView(Context context) {
         this(context, null);
@@ -94,19 +96,29 @@ public class AppLibraryContainerView extends FrameLayout
         if (mGridView != null) {
             mGridView.setLayoutManager(new GridLayoutManager(getContext(), spanCount));
             mGridView.setAdapter(mCategoryAdapter);
+            mGridView.setNestedScrollingEnabled(true);
         }
 
         mSearchAdapter = new AppLibrarySearchAdapter(mActivityContext);
         if (mSearchResultsView != null) {
             mSearchResultsView.setLayoutManager(new LinearLayoutManager(getContext()));
             mSearchResultsView.setAdapter(mSearchAdapter);
+            mSearchResultsView.setNestedScrollingEnabled(true);
+            mSearchResultsView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING && mSearchBar != null) {
+                        mSearchBar.hideKeyboard();
+                    }
+                }
+            });
         }
 
         if (mExpandedSheet != null) {
             mExpandedSheet.setOnExpandedSheetDismissListener(new AppCategoryExpandedSheet.OnExpandedSheetDismissListener() {
                 @Override
                 public void onDismissStarted(long duration) {
-                    applyBackgroundBlur(false, CATEGORY_BLUR_RADIUS, duration);
+                    applyCategoryBackgroundBlur(false, duration);
                 }
 
                 @Override
@@ -117,6 +129,36 @@ public class AppLibraryContainerView extends FrameLayout
                 }
             });
         }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        int action = ev.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            mDownX = ev.getX();
+            mDownY = ev.getY();
+            if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
+                getParent().requestDisallowInterceptTouchEvent(true);
+            } else if (mSearchBar != null && mSearchBar.isSearching()) {
+                getParent().requestDisallowInterceptTouchEvent(true);
+            }
+        } else if (action == MotionEvent.ACTION_MOVE) {
+            float dx = Math.abs(ev.getX() - mDownX);
+            float dy = Math.abs(ev.getY() - mDownY);
+            if (dy > dx) {
+                if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                } else if (mSearchBar != null && mSearchBar.isSearching()) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                    if (ev.getY() - mDownY > 20 && mSearchBar != null) {
+                        mSearchBar.hideKeyboard();
+                    }
+                } else if (mGridView != null && dy > 10) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     public void setModel(AppLibraryModel model) {
@@ -148,6 +190,9 @@ public class AppLibraryContainerView extends FrameLayout
         if (mModel != null && mSearchAdapter != null) {
             List<AppInfo> results = mModel.searchApps(query);
             mSearchAdapter.setApps(results);
+            if (mSearchResultsView != null) {
+                mSearchResultsView.scrollToPosition(0);
+            }
         }
     }
 
@@ -168,7 +213,6 @@ public class AppLibraryContainerView extends FrameLayout
         }
 
         if (isSearching) {
-            applyBackgroundBlur(true, SEARCH_BLUR_RADIUS, 180);
             if (mSearchResultsView != null) {
                 mSearchResultsView.setVisibility(View.VISIBLE);
                 mSearchResultsView.setAlpha(0f);
@@ -183,7 +227,6 @@ public class AppLibraryContainerView extends FrameLayout
                 }).start();
             }
         } else {
-            applyBackgroundBlur(false, SEARCH_BLUR_RADIUS, 180);
             if (mGridView != null) {
                 mGridView.setVisibility(View.VISIBLE);
                 mGridView.setAlpha(0f);
@@ -203,23 +246,19 @@ public class AppLibraryContainerView extends FrameLayout
     @Override
     public void onExpandCategory(AppCategoryGroup group, View sourceCardView) {
         if (mExpandedSheet != null && group != null) {
-            Rect sourceBounds = null;
+            Rect sourceBounds = new Rect();
             if (sourceCardView != null) {
-                int[] pos = new int[2];
-                sourceCardView.getLocationInWindow(pos);
-                sourceBounds = new Rect(
-                        pos[0],
-                        pos[1],
-                        pos[0] + sourceCardView.getWidth(),
-                        pos[1] + sourceCardView.getHeight()
-                );
+                sourceCardView.getGlobalVisibleRect(sourceBounds);
+                int[] containerPos = new int[2];
+                getLocationOnScreen(containerPos);
+                sourceBounds.offset(-containerPos[0], -containerPos[1]);
             }
-            applyBackgroundBlur(true, CATEGORY_BLUR_RADIUS, 280);
+            applyCategoryBackgroundBlur(true, 280);
             mExpandedSheet.show(group, sourceBounds);
         }
     }
 
-    private void applyBackgroundBlur(boolean enable, float maxRadius, long duration) {
+    private void applyCategoryBackgroundBlur(boolean enable, long duration) {
         if (mBlurAnimator != null) {
             mBlurAnimator.cancel();
         }
@@ -228,8 +267,8 @@ public class AppLibraryContainerView extends FrameLayout
             return;
         }
 
-        float startRadius = enable ? 0.1f : maxRadius;
-        float endRadius = enable ? maxRadius : 0.1f;
+        float startRadius = enable ? 0.1f : CATEGORY_BLUR_RADIUS;
+        float endRadius = enable ? CATEGORY_BLUR_RADIUS : 0.1f;
 
         mBlurAnimator = ValueAnimator.ofFloat(startRadius, endRadius);
         mBlurAnimator.setDuration(duration);
@@ -290,15 +329,6 @@ public class AppLibraryContainerView extends FrameLayout
     }
 
     public boolean shouldContainerScroll(MotionEvent ev) {
-        if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
-            return false;
-        }
-        if (mSearchResultsView != null && mSearchResultsView.getVisibility() == View.VISIBLE) {
-            return mSearchResultsView.canScrollVertically(-1);
-        }
-        if (mGridView != null) {
-            return mGridView.canScrollVertically(-1);
-        }
         return false;
     }
 
@@ -308,6 +338,10 @@ public class AppLibraryContainerView extends FrameLayout
 
     public RecyclerView getGridView() {
         return mGridView;
+    }
+
+    public RecyclerView getSearchResultsView() {
+        return mSearchResultsView;
     }
 
     @Override
