@@ -7,61 +7,57 @@
     android:background="#80000000"
     android:clickable="true"
     android:focusable="true"
-    android:clipChildren="false"
-    android:clipToPadding="false"
+    android:clipChildren="true"
+    android:clipToPadding="true"
     android:visibility="gone">
 
     <LinearLayout
         android:id="@+id/expanded_sheet_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
         android:orientation="vertical"
         android:background="@drawable/app_library_card_bg"
-        android:padding="16dp"
-        android:elevation="12dp"
-        android:clipChildren="false"
-        android:clipToPadding="false">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:elevation="12dp">
 
-        <LinearLayout
+        <RelativeLayout
+            android:id="@+id/expanded_sheet_header"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingBottom="12dp">
+            android:layout_height="48dp"
+            android:layout_marginBottom="8dp">
 
             <ImageButton
                 android:id="@+id/expanded_sheet_back_button"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_app_library_back"
                 android:contentDescription="@string/app_library_search_cancel" />
 
             <TextView
                 android:id="@+id/expanded_sheet_title"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
+                android:layout_centerInParent="true"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="?android:attr/textColorPrimary"
                 android:singleLine="true"
                 android:ellipsize="end" />
 
-            <View
-                android:layout_width="40dp"
-                android:layout_height="40dp" />
-
-        </LinearLayout>
+        </RelativeLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/expanded_sheet_grid"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:clipToPadding="false"
-            android:clipChildren="false"
             android:overScrollMode="ifContentScrolls" />
 
     </LinearLayout>
