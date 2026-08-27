@@ -105,6 +105,17 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
         mInsets.set(insets);
     }
 
+    private int calculateCellHeight() {
+        if (mActivityContext instanceof Launcher) {
+            DeviceProfile dp = ((Launcher) mActivityContext).getDeviceProfile();
+            if (dp != null && dp.getAllAppsProfile() != null && dp.getAllAppsProfile().getCellHeightPx() > 0) {
+                return dp.getAllAppsProfile().getCellHeightPx();
+            }
+        }
+        float density = getResources().getDisplayMetrics().density;
+        return (int) (104 * density);
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
@@ -112,17 +123,20 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
 
         float density = getResources().getDisplayMetrics().density;
         int maxCardWidth = Math.min(widthSize - (int) (32 * density), (int) (560 * density));
-        int maxCardHeight = heightSize - (int) (32 * density);
+        int maxSafeCardHeight = heightSize - (int) (48 * density);
+
+        int spanCount = calculateAdaptiveSpanCount();
+        int itemCount = mAdapter != null ? mAdapter.getItemCount() : 0;
+        int rowCount = Math.max(1, (itemCount + spanCount - 1) / spanCount);
+        int cellHeight = calculateCellHeight();
+        int headerAndPadding = (int) (88 * density);
+        int desiredCardHeight = headerAndPadding + (rowCount * cellHeight);
+        int finalCardHeight = Math.min(desiredCardHeight, maxSafeCardHeight);
 
         if (mCardView != null) {
             int cardWidthSpec = MeasureSpec.makeMeasureSpec(Math.max(0, maxCardWidth), MeasureSpec.EXACTLY);
-            int cardHeightSpec = MeasureSpec.makeMeasureSpec(Math.max(0, maxCardHeight), MeasureSpec.AT_MOST);
+            int cardHeightSpec = MeasureSpec.makeMeasureSpec(Math.max(0, finalCardHeight), MeasureSpec.EXACTLY);
             mCardView.measure(cardWidthSpec, cardHeightSpec);
-
-            if (mCardView.getMeasuredHeight() > maxCardHeight) {
-                cardHeightSpec = MeasureSpec.makeMeasureSpec(Math.max(0, maxCardHeight), MeasureSpec.EXACTLY);
-                mCardView.measure(cardWidthSpec, cardHeightSpec);
-            }
         }
 
         setMeasuredDimension(widthSize, heightSize);
@@ -150,7 +164,7 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
         if (mActivityContext instanceof Launcher) {
             DeviceProfile dp = ((Launcher) mActivityContext).getDeviceProfile();
             if (dp.getDeviceProperties().isLargeScreen()) {
-                return dp.getDeviceProperties().isLandscape() ? 7 : 5;
+                return dp.getDeviceProperties().isLandscape() ? 6 : 5;
             }
             if (dp.getDeviceProperties().isLandscape()) {
                 return 6;
@@ -195,8 +209,8 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
 
                     mStartTranslationX = sourceCenterX - targetCenterX;
                     mStartTranslationY = sourceCenterY - targetCenterY;
-                    mStartScaleX = Math.max(0.1f, (float) mSourceBounds.width() / cardWidth);
-                    mStartScaleY = Math.max(0.1f, (float) mSourceBounds.height() / cardHeight);
+                    mStartScaleX = Math.max(0.15f, (float) mSourceBounds.width() / cardWidth);
+                    mStartScaleY = Math.max(0.15f, (float) mSourceBounds.height() / cardHeight);
                 } else {
                     mStartTranslationX = 0f;
                     mStartTranslationY = 0f;
@@ -210,7 +224,7 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
                 mCardView.setTranslationY(mStartTranslationY);
                 mCardView.setScaleX(mStartScaleX);
                 mCardView.setScaleY(mStartScaleY);
-                mCardView.setAlpha(0.6f);
+                mCardView.setAlpha(0.5f);
 
                 mCardView.animate()
                         .translationX(0f)
@@ -294,7 +308,7 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
         return mIsAnimating;
     }
 
-    private static class ExpandedGridAdapter extends RecyclerView.Adapter<ExpandedGridAdapter.ViewHolder> {
+    private class ExpandedGridAdapter extends RecyclerView.Adapter<ExpandedGridAdapter.ViewHolder> {
 
         private final ActivityContext mActivityContext;
         private final List<AppInfo> mApps = new ArrayList<>();
@@ -317,6 +331,12 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
             BubbleTextView icon = (BubbleTextView) inflater.inflate(
                     R.layout.all_apps_icon, parent, false);
+            int cellHeight = calculateCellHeight();
+            RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    cellHeight
+            );
+            icon.setLayoutParams(lp);
             return new ViewHolder(icon);
         }
 
@@ -337,7 +357,7 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
             return mApps.size();
         }
 
-        static class ViewHolder extends RecyclerView.ViewHolder {
+        class ViewHolder extends RecyclerView.ViewHolder {
             final BubbleTextView mIcon;
 
             ViewHolder(BubbleTextView icon) {
