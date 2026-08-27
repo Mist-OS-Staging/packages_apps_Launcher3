@@ -13,7 +13,6 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -39,7 +38,8 @@ public class AppLibraryContainerView extends FrameLayout
         AppCategoryCardView.OnCategoryExpandListener,
         Insettable {
 
-    private static final float CATEGORY_BLUR_RADIUS = 20f;
+    private static final float CATEGORY_BLUR_RADIUS = 35f;
+    private static final float SEARCH_BACKGROUND_BLUR_RADIUS = 25f;
 
     private View mAppLibraryContent;
     private AppLibrarySearchBar mSearchBar;
@@ -57,6 +57,8 @@ public class AppLibraryContainerView extends FrameLayout
     private float mDownX;
     private float mDownY;
     private boolean mPullToSearchEligible = false;
+    private boolean mKeyboardDismissedByScroll = false;
+    private boolean mPendingSwipeSearchKeyboard = false;
 
     public AppLibraryContainerView(Context context) {
         this(context, null);
@@ -102,6 +104,19 @@ public class AppLibraryContainerView extends FrameLayout
         }
 
         mSearchAdapter = new AppLibrarySearchAdapter(mActivityContext);
+        mSearchAdapter.setOnSearchItemClickListener((view, app) -> {
+            if (mSearchBar != null) {
+                mSearchBar.hideKeyboard();
+                if (mSearchBar.getEditText() != null) {
+                    mSearchBar.getEditText().clearFocus();
+                }
+            }
+            if (getParent() != null) {
+                getParent().requestDisallowInterceptTouchEvent(false);
+            }
+            mActivityContext.getItemOnClickListener().onClick(view);
+        });
+
         if (mSearchResultsView != null) {
             mSearchResultsView.setLayoutManager(new LinearLayoutManager(getContext()));
             mSearchResultsView.setAdapter(mSearchAdapter);
@@ -109,8 +124,11 @@ public class AppLibraryContainerView extends FrameLayout
             mSearchResultsView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                 @Override
                 public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING && mSearchBar != null) {
-                        mSearchBar.hideKeyboard();
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                        mKeyboardDismissedByScroll = true;
+                        if (mSearchBar != null) {
+                            mSearchBar.hideKeyboard();
+                        }
                     }
                 }
             });
@@ -130,6 +148,23 @@ public class AppLibraryContainerView extends FrameLayout
                     }
                 }
             });
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
+        super.onWindowFocusChanged(hasWindowFocus);
+        if (getParent() != null) {
+            getParent().requestDisallowInterceptTouchEvent(false);
+        }
+        mPullToSearchEligible = false;
+        if (hasWindowFocus) {
+            if (mSearchBar != null && !mSearchBar.isSearching()) {
+                mSearchBar.hideKeyboard();
+                if (mSearchBar.getEditText() != null) {
+                    mSearchBar.getEditText().clearFocus();
+                }
+            }
         }
     }
 
@@ -161,34 +196,32 @@ public class AppLibraryContainerView extends FrameLayout
             } else if (mSearchBar != null && mSearchBar.isSearching()) {
                 getParent().requestDisallowInterceptTouchEvent(true);
                 if (dy > 20 && mSearchBar != null) {
+                    mKeyboardDismissedByScroll = true;
                     mSearchBar.hideKeyboard();
                 }
             } else {
                 if (absDy > absDx && absDy > 10) {
-                    getParent().requestDisallowInterceptTouchEvent(true);
+                    if (mGridView != null && (mGridView.canScrollVertically(1) || mGridView.canScrollVertically(-1))) {
+                        getParent().requestDisallowInterceptTouchEvent(true);
+                    }
                 }
 
-                if (mPullToSearchEligible && dy > 12 && mAppLibraryContent != null) {
-                    float pullDistance = dy - 12;
+                if (mPullToSearchEligible && dy > 10 && mAppLibraryContent != null) {
+                    float pullDistance = dy - 10;
                     float density = getResources().getDisplayMetrics().density;
                     float maxTranslation = 50f * density;
                     float translationY = Math.min(pullDistance * 0.4f, maxTranslation);
                     mAppLibraryContent.setTranslationY(translationY);
 
-                    float threshold = 75f * density;
+                    float threshold = 60f * density;
                     if (pullDistance > threshold) {
                         mPullToSearchEligible = false;
+                        mKeyboardDismissedByScroll = false;
+                        mPendingSwipeSearchKeyboard = false;
                         mAppLibraryContent.animate().translationY(0f).setDuration(160).start();
                         if (mSearchBar != null) {
                             mSearchBar.setSearching(true);
-                            if (mSearchBar.getEditText() != null) {
-                                mSearchBar.getEditText().requestFocus();
-                                InputMethodManager imm = (InputMethodManager) getContext().getSystemService(
-                                        Context.INPUT_METHOD_SERVICE);
-                                if (imm != null) {
-                                    imm.showSoftInput(mSearchBar.getEditText(), InputMethodManager.SHOW_IMPLICIT);
-                                }
-                            }
+                            mPendingSwipeSearchKeyboard = true;
                         }
                     }
                 }
@@ -197,7 +230,17 @@ public class AppLibraryContainerView extends FrameLayout
             if (mAppLibraryContent != null && mAppLibraryContent.getTranslationY() > 0) {
                 mAppLibraryContent.animate().translationY(0f).setDuration(220).setInterpolator(EMPHASIZED).start();
             }
+            if (getParent() != null) {
+                getParent().requestDisallowInterceptTouchEvent(false);
+            }
             mPullToSearchEligible = false;
+            boolean showKeyboardAfterSuper = mPendingSwipeSearchKeyboard;
+            mPendingSwipeSearchKeyboard = false;
+            boolean result = super.dispatchTouchEvent(ev);
+            if (showKeyboardAfterSuper && mSearchBar != null) {
+                mSearchBar.showKeyboard();
+            }
+            return result;
         }
         return super.dispatchTouchEvent(ev);
     }
@@ -254,23 +297,30 @@ public class AppLibraryContainerView extends FrameLayout
         }
 
         if (isSearching) {
+            if (mGridView != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    mGridView.setRenderEffect(RenderEffect.createBlurEffect(
+                            SEARCH_BACKGROUND_BLUR_RADIUS,
+                            SEARCH_BACKGROUND_BLUR_RADIUS,
+                            Shader.TileMode.CLAMP));
+                }
+                mGridView.animate().alpha(0.2f).setDuration(180).setListener(null).start();
+            }
             if (mSearchResultsView != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    mSearchResultsView.setRenderEffect(null);
+                }
                 mSearchResultsView.setVisibility(View.VISIBLE);
                 mSearchResultsView.setAlpha(0f);
                 mSearchResultsView.animate().alpha(1f).setDuration(180).setListener(null).start();
             }
-            if (mGridView != null) {
-                mGridView.animate().alpha(0f).setDuration(140).setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        mGridView.setVisibility(View.GONE);
-                    }
-                }).start();
-            }
         } else {
+            mKeyboardDismissedByScroll = false;
             if (mGridView != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    mGridView.setRenderEffect(null);
+                }
                 mGridView.setVisibility(View.VISIBLE);
-                mGridView.setAlpha(0f);
                 mGridView.animate().alpha(1f).setDuration(180).setListener(null).start();
             }
             if (mSearchResultsView != null) {
@@ -363,14 +413,25 @@ public class AppLibraryContainerView extends FrameLayout
             mSearchResultsView.animate().cancel();
             mSearchResultsView.setVisibility(View.GONE);
             mSearchResultsView.setAlpha(0f);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                mSearchResultsView.setRenderEffect(null);
+            }
         }
         if (mGridView != null) {
             mGridView.animate().cancel();
             mGridView.setVisibility(View.VISIBLE);
             mGridView.setAlpha(1f);
             mGridView.scrollToPosition(0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                mGridView.setRenderEffect(null);
+            }
+        }
+        if (getParent() != null) {
+            getParent().requestDisallowInterceptTouchEvent(false);
         }
         mPullToSearchEligible = false;
+        mKeyboardDismissedByScroll = false;
+        mPendingSwipeSearchKeyboard = false;
     }
 
     public boolean shouldContainerScroll(MotionEvent ev) {
@@ -398,4 +459,3 @@ public class AppLibraryContainerView extends FrameLayout
         }
     }
 }
-

@@ -20,11 +20,20 @@ import java.util.List;
 
 public class AppLibrarySearchAdapter extends RecyclerView.Adapter<AppLibrarySearchAdapter.ViewHolder> {
 
+    public interface OnSearchItemClickListener {
+        void onSearchItemClick(View view, AppInfo app);
+    }
+
     private final ActivityContext mActivityContext;
     private final List<AppInfo> mApps = new ArrayList<>();
+    private OnSearchItemClickListener mItemClickListener;
 
     public AppLibrarySearchAdapter(ActivityContext activityContext) {
         mActivityContext = activityContext;
+    }
+
+    public void setOnSearchItemClickListener(OnSearchItemClickListener listener) {
+        mItemClickListener = listener;
     }
 
     public void setApps(List<AppInfo> apps) {
@@ -47,6 +56,7 @@ public class AppLibrarySearchAdapter extends RecyclerView.Adapter<AppLibrarySear
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AppInfo app = mApps.get(position);
         holder.itemView.setTag(app);
+        holder.mIcon.setTag(app);
         holder.mTitle.setText(app.title);
 
         if (app.componentName != null) {
@@ -62,7 +72,14 @@ public class AppLibrarySearchAdapter extends RecyclerView.Adapter<AppLibrarySear
             holder.mIcon.setImageDrawable(null);
         }
 
-        holder.itemView.setOnClickListener(mActivityContext.getItemOnClickListener());
+        holder.itemView.setOnClickListener(v -> {
+            if (mItemClickListener != null) {
+                mItemClickListener.onSearchItemClick(holder.mIcon, app);
+            } else {
+                mActivityContext.getItemOnClickListener().onClick(holder.mIcon);
+            }
+        });
+
         if (mActivityContext instanceof Launcher) {
             Launcher launcher = (Launcher) mActivityContext;
             holder.itemView.setOnLongClickListener(launcher.getAllAppsItemLongClickListener());

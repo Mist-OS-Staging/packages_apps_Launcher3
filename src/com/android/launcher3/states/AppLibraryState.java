@@ -96,6 +96,8 @@ public class AppLibraryState extends LauncherState {
         if (launcher.getAppLibraryView() != null && launcher.getAppLibraryView().handleBack()) {
             return;
         }
-        super.onBackInvoked(launcher);
+        if (launcher.getStateManager().getState() == LauncherState.APP_LIBRARY) {
+            super.onBackInvoked(launcher);
+        }
     }
 }

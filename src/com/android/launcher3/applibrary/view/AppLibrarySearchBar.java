@@ -25,6 +25,7 @@ public class AppLibrarySearchBar extends LinearLayout {
     }
 
     private EditText mSearchInput;
+    private View mSearchBox;
     private ImageButton mClearButton;
     private TextView mCancelButton;
     private OnSearchListener mListener;
@@ -45,9 +46,19 @@ public class AppLibrarySearchBar extends LinearLayout {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
+        mSearchBox = findViewById(R.id.app_library_search_box);
         mSearchInput = findViewById(R.id.app_library_search_input);
         mClearButton = findViewById(R.id.app_library_search_clear);
         mCancelButton = findViewById(R.id.app_library_search_cancel);
+
+        if (mSearchBox != null) {
+            mSearchBox.setOnClickListener(v -> {
+                if (!mIsSearching) {
+                    setSearching(true);
+                }
+                showKeyboard();
+            });
+        }
 
         if (mSearchInput != null) {
             mSearchInput.setGravity(Gravity.CENTER);
@@ -79,6 +90,7 @@ public class AppLibrarySearchBar extends LinearLayout {
                 if (!mIsSearching) {
                     setSearching(true);
                 }
+                showKeyboard();
             });
         }
 
@@ -106,6 +118,9 @@ public class AppLibrarySearchBar extends LinearLayout {
         mIsSearching = searching;
         if (mSearchInput != null) {
             mSearchInput.setGravity(searching ? (Gravity.CENTER_VERTICAL | Gravity.START) : Gravity.CENTER);
+            if (searching) {
+                showKeyboard();
+            }
         }
         if (mCancelButton != null) {
             mCancelButton.setVisibility(searching ? View.VISIBLE : View.GONE);
@@ -127,6 +142,20 @@ public class AppLibrarySearchBar extends LinearLayout {
         }
         hideKeyboard();
         setSearching(false);
+    }
+
+    public void showKeyboard() {
+        if (mSearchInput != null) {
+            mSearchInput.setFocusable(true);
+            mSearchInput.setFocusableInTouchMode(true);
+            mSearchInput.requestFocus();
+            InputMethodManager imm = (InputMethodManager) getContext().getSystemService(
+                    Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(mSearchInput, InputMethodManager.SHOW_IMPLICIT);
+                imm.showSoftInput(mSearchInput, 0);
+            }
+        }
     }
 
     public void hideKeyboard() {

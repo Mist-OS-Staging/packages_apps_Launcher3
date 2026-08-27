@@ -345,7 +345,10 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
             AppInfo app = mApps.get(position);
             holder.mIcon.reset();
             holder.mIcon.applyFromApplicationInfo(app);
-            holder.mIcon.setOnClickListener(mActivityContext.getItemOnClickListener());
+            holder.mIcon.setOnClickListener(v -> {
+                hide(false);
+                mActivityContext.getItemOnClickListener().onClick(v);
+            });
             if (mActivityContext instanceof Launcher) {
                 Launcher launcher = (Launcher) mActivityContext;
                 holder.mIcon.setOnLongClickListener(launcher.getAllAppsItemLongClickListener());
@@ -367,3 +370,4 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
         }
     }
 }
+
