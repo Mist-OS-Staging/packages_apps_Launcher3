@@ -38,6 +38,9 @@ public class AppLibraryContainerView extends FrameLayout
         AppCategoryCardView.OnCategoryExpandListener,
         Insettable {
 
+    private static final float CATEGORY_BLUR_RADIUS = 20f;
+    private static final float SEARCH_BLUR_RADIUS = 4f;
+
     private View mAppLibraryContent;
     private AppLibrarySearchBar mSearchBar;
     private RecyclerView mGridView;
@@ -83,7 +86,7 @@ public class AppLibraryContainerView extends FrameLayout
         int spanCount = 2;
         if (mActivityContext instanceof Launcher) {
             DeviceProfile dp = ((Launcher) mActivityContext).getDeviceProfile();
-            if (dp.isTablet || dp.getDeviceProperties().isLandscape()) {
+            if (dp.getDeviceProperties().isLargeScreen() || dp.getDeviceProperties().isLandscape()) {
                 spanCount = 3;
             }
         }
@@ -103,7 +106,7 @@ public class AppLibraryContainerView extends FrameLayout
             mExpandedSheet.setOnExpandedSheetDismissListener(new AppCategoryExpandedSheet.OnExpandedSheetDismissListener() {
                 @Override
                 public void onDismissStarted(long duration) {
-                    applyBackgroundBlur(false, duration);
+                    applyBackgroundBlur(false, CATEGORY_BLUR_RADIUS, duration);
                 }
 
                 @Override
@@ -157,14 +160,22 @@ public class AppLibraryContainerView extends FrameLayout
             }
         }
 
+        if (mSearchResultsView != null) {
+            mSearchResultsView.animate().cancel();
+        }
+        if (mGridView != null) {
+            mGridView.animate().cancel();
+        }
+
         if (isSearching) {
+            applyBackgroundBlur(true, SEARCH_BLUR_RADIUS, 180);
             if (mSearchResultsView != null) {
                 mSearchResultsView.setVisibility(View.VISIBLE);
                 mSearchResultsView.setAlpha(0f);
-                mSearchResultsView.animate().alpha(1f).setDuration(200).start();
+                mSearchResultsView.animate().alpha(1f).setDuration(180).setListener(null).start();
             }
             if (mGridView != null) {
-                mGridView.animate().alpha(0f).setDuration(150).setListener(new AnimatorListenerAdapter() {
+                mGridView.animate().alpha(0f).setDuration(140).setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         mGridView.setVisibility(View.GONE);
@@ -172,13 +183,14 @@ public class AppLibraryContainerView extends FrameLayout
                 }).start();
             }
         } else {
+            applyBackgroundBlur(false, SEARCH_BLUR_RADIUS, 180);
             if (mGridView != null) {
                 mGridView.setVisibility(View.VISIBLE);
                 mGridView.setAlpha(0f);
-                mGridView.animate().alpha(1f).setDuration(200).start();
+                mGridView.animate().alpha(1f).setDuration(180).setListener(null).start();
             }
             if (mSearchResultsView != null) {
-                mSearchResultsView.animate().alpha(0f).setDuration(150).setListener(new AnimatorListenerAdapter() {
+                mSearchResultsView.animate().alpha(0f).setDuration(140).setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         mSearchResultsView.setVisibility(View.GONE);
@@ -202,12 +214,12 @@ public class AppLibraryContainerView extends FrameLayout
                         pos[1] + sourceCardView.getHeight()
                 );
             }
-            applyBackgroundBlur(true, 280);
+            applyBackgroundBlur(true, CATEGORY_BLUR_RADIUS, 280);
             mExpandedSheet.show(group, sourceBounds);
         }
     }
 
-    private void applyBackgroundBlur(boolean enable, long duration) {
+    private void applyBackgroundBlur(boolean enable, float maxRadius, long duration) {
         if (mBlurAnimator != null) {
             mBlurAnimator.cancel();
         }
@@ -216,8 +228,8 @@ public class AppLibraryContainerView extends FrameLayout
             return;
         }
 
-        float startRadius = enable ? 0.1f : 25f;
-        float endRadius = enable ? 25f : 0.1f;
+        float startRadius = enable ? 0.1f : maxRadius;
+        float endRadius = enable ? maxRadius : 0.1f;
 
         mBlurAnimator = ValueAnimator.ofFloat(startRadius, endRadius);
         mBlurAnimator.setDuration(duration);
@@ -252,6 +264,9 @@ public class AppLibraryContainerView extends FrameLayout
     }
 
     public void reset() {
+        if (mBlurAnimator != null) {
+            mBlurAnimator.cancel();
+        }
         if (mExpandedSheet != null) {
             mExpandedSheet.hide(false);
         }
@@ -261,7 +276,15 @@ public class AppLibraryContainerView extends FrameLayout
         if (mSearchBar != null) {
             mSearchBar.resetSearch();
         }
+        if (mSearchResultsView != null) {
+            mSearchResultsView.animate().cancel();
+            mSearchResultsView.setVisibility(View.GONE);
+            mSearchResultsView.setAlpha(0f);
+        }
         if (mGridView != null) {
+            mGridView.animate().cancel();
+            mGridView.setVisibility(View.VISIBLE);
+            mGridView.setAlpha(1f);
             mGridView.scrollToPosition(0);
         }
     }
@@ -291,5 +314,8 @@ public class AppLibraryContainerView extends FrameLayout
     public void setInsets(Rect insets) {
         mInsets.set(insets);
         setPadding(insets.left, insets.top, insets.right, insets.bottom);
+        if (mExpandedSheet != null) {
+            mExpandedSheet.setInsets(insets);
+        }
     }
 }

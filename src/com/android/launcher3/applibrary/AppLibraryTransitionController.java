@@ -1,11 +1,11 @@
 package com.android.launcher3.applibrary;
 
 import static com.android.app.animation.Interpolators.DECELERATE_1_7;
-import static com.android.app.animation.Interpolators.LINEAR;
 import static com.android.launcher3.LauncherState.APP_LIBRARY;
 import static com.android.launcher3.LauncherState.NORMAL;
-import static com.android.launcher3.anim.PropertySetter.NO_ANIM_PROPERTY_SETTER;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.util.FloatProperty;
 import android.view.View;
 import android.view.animation.Interpolator;
@@ -18,7 +18,6 @@ import com.android.launcher3.LauncherState;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.Workspace;
 import com.android.launcher3.anim.PendingAnimation;
-import com.android.launcher3.anim.PropertySetter;
 import com.android.launcher3.applibrary.view.AppLibraryContainerView;
 import com.android.launcher3.statemanager.StateManager.StateHandler;
 import com.android.launcher3.states.StateAnimationConfig;
@@ -98,7 +97,7 @@ public class AppLibraryTransitionController
     public void setState(LauncherState state) {
         if (state == APP_LIBRARY) {
             setProgress(0f);
-        } else if (state == NORMAL) {
+        } else {
             setProgress(1f);
             if (mAppLibraryView != null) {
                 mAppLibraryView.reset();
@@ -114,14 +113,14 @@ public class AppLibraryTransitionController
             Interpolator interpolator = config.getInterpolator(
                     StateAnimationConfig.ANIM_WORKSPACE_TRANSLATE, DECELERATE_1_7);
             animation.setFloat(this, APP_LIBRARY_PROGRESS, targetProgress, interpolator);
-        } else if (toState == NORMAL) {
+        } else {
             float targetProgress = 1f;
             Interpolator interpolator = config.getInterpolator(
                     StateAnimationConfig.ANIM_WORKSPACE_TRANSLATE, DECELERATE_1_7);
             animation.setFloat(this, APP_LIBRARY_PROGRESS, targetProgress, interpolator);
-            animation.addListener(new android.animation.AnimatorListenerAdapter() {
+            animation.addListener(new AnimatorListenerAdapter() {
                 @Override
-                public void onAnimationEnd(android.animation.Animator anim) {
+                public void onAnimationEnd(Animator anim) {
                     if (mAppLibraryView != null) {
                         mAppLibraryView.reset();
                     }
