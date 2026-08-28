@@ -59,10 +59,8 @@ public class AppLibrarySearchAdapter extends RecyclerView.Adapter<AppLibrarySear
         holder.mIcon.setTag(app);
         holder.mTitle.setText(app.title);
 
-        if (app.componentName != null) {
-            holder.mSubtitle.setText(app.componentName.getPackageName());
-        } else {
-            holder.mSubtitle.setText("");
+        if (holder.mSubtitle != null) {
+            holder.mSubtitle.setVisibility(View.GONE);
         }
 
         if (app.bitmap != null) {

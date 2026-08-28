@@ -2022,8 +2022,12 @@ public class Launcher extends StatefulActivity<LauncherState>
         }
 
         RunnableList result = super.startActivitySafely(v, intent, item);
-        if (isInState(APP_LIBRARY)) {
-            getStateManager().goToState(NORMAL, false);
+        if (result != null) {
+            result.add(() -> {
+                if (isInState(APP_LIBRARY)) {
+                    getStateManager().goToState(NORMAL, false);
+                }
+            });
         }
         if (shouldShowHomeBehindDesktop()) {
             Runnable endAction = () -> {
