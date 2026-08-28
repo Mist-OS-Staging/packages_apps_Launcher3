@@ -45,6 +45,7 @@ public class AppLibraryContainerView extends FrameLayout
     private AppLibrarySearchBar mSearchBar;
     private RecyclerView mGridView;
     private RecyclerView mSearchResultsView;
+    private AppLibraryAlphabetIndexer mAlphabetIndexer;
     private AppCategoryExpandedSheet mExpandedSheet;
 
     private AppLibraryAdapter mCategoryAdapter;
@@ -80,7 +81,24 @@ public class AppLibraryContainerView extends FrameLayout
         mSearchBar = findViewById(R.id.app_library_search_bar);
         mGridView = findViewById(R.id.app_library_grid_view);
         mSearchResultsView = findViewById(R.id.app_library_search_results_view);
+        mAlphabetIndexer = findViewById(R.id.app_library_alphabet_indexer);
         mExpandedSheet = findViewById(R.id.app_library_expanded_sheet);
+
+        if (mAlphabetIndexer != null) {
+            mAlphabetIndexer.setOnSectionSelectedListener(section -> {
+                if (mSearchAdapter != null && mSearchResultsView != null) {
+                    int pos = mSearchAdapter.getPositionForSection(section);
+                    if (pos >= 0) {
+                        RecyclerView.LayoutManager lm = mSearchResultsView.getLayoutManager();
+                        if (lm instanceof LinearLayoutManager) {
+                            ((LinearLayoutManager) lm).scrollToPositionWithOffset(pos, 0);
+                        } else {
+                            mSearchResultsView.scrollToPosition(pos);
+                        }
+                    }
+                }
+            });
+        }
 
         if (mSearchBar != null) {
             mSearchBar.setOnSearchListener(this);
@@ -265,15 +283,26 @@ public class AppLibraryContainerView extends FrameLayout
     @Override
     public void onAllAppsUpdated(List<AppInfo> allApps) {
         if (mSearchAdapter != null && mSearchBar != null && !mSearchBar.isSearching()) {
-            mSearchAdapter.setApps(allApps);
+            mSearchAdapter.setApps(allApps, true);
         }
     }
 
     @Override
     public void onSearchQueryChanged(String query) {
         if (mModel != null && mSearchAdapter != null) {
+            boolean isEmpty = query == null || query.trim().isEmpty();
+            if (isEmpty) {
+                mSearchAdapter.setApps(mModel.getAllApps(), true);
+                if (mAlphabetIndexer != null) {
+                    mAlphabetIndexer.setVisibility(View.VISIBLE);
+                }
+            } else {
             List<AppInfo> results = mModel.searchApps(query);
-            mSearchAdapter.setApps(results);
+                mSearchAdapter.setApps(results, false);
+                if (mAlphabetIndexer != null) {
+                    mAlphabetIndexer.setVisibility(View.GONE);
+                }
+            }
             if (mSearchResultsView != null) {
                 mSearchResultsView.scrollToPosition(0);
             }
@@ -297,6 +326,12 @@ public class AppLibraryContainerView extends FrameLayout
         }
 
         if (isSearching) {
+            if (mModel != null && mSearchAdapter != null) {
+                mSearchAdapter.setApps(mModel.getAllApps(), true);
+            }
+            if (mAlphabetIndexer != null) {
+                mAlphabetIndexer.setVisibility(View.VISIBLE);
+            }
             if (mGridView != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     mGridView.setRenderEffect(RenderEffect.createBlurEffect(
@@ -316,6 +351,9 @@ public class AppLibraryContainerView extends FrameLayout
             }
         } else {
             mKeyboardDismissedByScroll = false;
+            if (mAlphabetIndexer != null) {
+                mAlphabetIndexer.setVisibility(View.GONE);
+            }
             if (mGridView != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     mGridView.setRenderEffect(null);
@@ -416,6 +454,9 @@ public class AppLibraryContainerView extends FrameLayout
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 mSearchResultsView.setRenderEffect(null);
             }
+        }
+        if (mAlphabetIndexer != null) {
+            mAlphabetIndexer.setVisibility(View.GONE);
         }
         if (mGridView != null) {
             mGridView.animate().cancel();

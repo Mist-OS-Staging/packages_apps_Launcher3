@@ -16,18 +16,18 @@
         android:contentDescription="@null"
         android:scaleType="fitCenter" />
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:layout_weight="1">
 
         <TextView
             android:id="@+id/app_title"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="17.5sp"
-            android:textColor="?android:attr/textColorPrimary"
+            android:layout_centerVertical="true"
+            android:textSize="17sp"
+            android:textColor="@color/materialColorOnSurface"
             android:singleLine="true"
             android:ellipsize="end" />
 
@@ -35,12 +35,16 @@
             android:id="@+id/app_subtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:textColor="?android:attr/textColorSecondary"
-            android:singleLine="true"
-            android:ellipsize="end"
             android:visibility="gone" />
 
-    </LinearLayout>
+        <View
+            android:id="@+id/app_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_alignParentBottom="true"
+            android:background="@color/materialColorOutlineVariant"
+            android:alpha="0.6" />
+
+    </RelativeLayout>
 
 </LinearLayout>
