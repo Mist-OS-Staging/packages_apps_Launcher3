@@ -40,23 +40,7 @@ public class AppLibraryTouchController extends AbstractStateChangeTouchControlle
             return false;
         }
 
-        if (mLauncher.isInState(BACKGROUND_APP)) {
-            return false;
-        }
-
-        if ((mLauncher.getActivityFlags() & ACTIVITY_STATE_TRANSITION_ACTIVE) != 0) {
-            if (mCurrentAnimation != null) {
-                clearState();
-            }
-            return false;
-        }
-
         if (mCurrentAnimation != null) {
-            if (mCurrentAnimation.getAnimationPlayer() == null
-                    || !mCurrentAnimation.getAnimationPlayer().isRunning()) {
-                clearState();
-                return false;
-            }
             return true;
         }
 
@@ -128,6 +112,12 @@ public class AppLibraryTouchController extends AbstractStateChangeTouchControlle
 
         boolean isRtl = Utilities.isRtl(mLauncher.getResources());
         float totalShift = (mToState == APP_LIBRARY) ? (isRtl ? range : -range) : (isRtl ? -range : range);
+
+        if (mFromState == NORMAL && mLauncher.getAppLibraryController() != null) {
+            if (Float.compare(mLauncher.getAppLibraryController().getProgress(), 1f) != 0) {
+                mLauncher.getAppLibraryController().setState(NORMAL);
+            }
+        }
 
         final StateAnimationConfig config = getConfigForStates(mFromState, mToState);
         config.duration = maxAccuracy;

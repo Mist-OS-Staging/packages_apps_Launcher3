@@ -57,6 +57,7 @@ import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_DESKTOP
 import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT;
 import static com.android.launcher3.LauncherSettings.Favorites.ITEM_TYPE_APPLICATION;
 import static com.android.launcher3.LauncherState.ALL_APPS;
+import static com.android.launcher3.LauncherState.APP_LIBRARY;
 import static com.android.launcher3.LauncherState.BACKGROUND_APP;
 import static com.android.launcher3.LauncherState.EDIT_MODE;
 import static com.android.launcher3.LauncherState.FLAG_MULTI_PAGE;
@@ -1085,12 +1086,14 @@ public class Launcher extends StatefulActivity<LauncherState>
         AccessibilityManagerCompat.sendStateEventToTest(this, state.ordinal);
 
         if (state == NORMAL) {
-            // Re-enable any Un/InstallShortcutReceiver and now process any queued items
             ItemInstallQueue.INSTANCE.get(this)
                     .resumeModelPush(FLAG_DRAG_AND_DROP);
 
-            // Clear any rotation locks when going to normal state
             getRotationHelper().setCurrentStateRequest(REQUEST_NONE);
+
+            if (mAppLibraryTransitionController != null) {
+                mAppLibraryTransitionController.setState(NORMAL);
+            }
         }
 
         if (ALL_APPS.equals(mPrevLauncherState) && !ALL_APPS.equals(state)
@@ -2019,6 +2022,9 @@ public class Launcher extends StatefulActivity<LauncherState>
         }
 
         RunnableList result = super.startActivitySafely(v, intent, item);
+        if (isInState(APP_LIBRARY)) {
+            getStateManager().goToState(NORMAL, false);
+        }
         if (shouldShowHomeBehindDesktop()) {
             Runnable endAction = () -> {
                 closeOpenViews();
