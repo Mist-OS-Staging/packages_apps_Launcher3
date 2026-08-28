@@ -5,12 +5,16 @@ import static com.android.app.animation.Interpolators.DECELERATE_2;
 import static com.android.launcher3.Utilities.shouldReduceWorkspaceBlurUsage;
 import static com.android.launcher3.logging.StatsLogManager.LAUNCHER_STATE_HOME;
 
+import android.graphics.Color;
+
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherState;
 import com.android.launcher3.LauncherUiState;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
+import com.android.launcher3.util.Themes;
 import com.android.launcher3.views.ActivityContext;
+import com.android.launcher3.views.ScrimColors;
 
 public class AppLibraryState extends LauncherState {
 
@@ -89,6 +93,12 @@ public class AppLibraryState extends LauncherState {
     public boolean shouldBlurWorkspace(Launcher launcher, LauncherState targetState) {
         return !shouldReduceWorkspaceBlurUsage(launcher)
                 && (targetState == LauncherState.APP_LIBRARY || targetState == NORMAL);
+    }
+
+    @Override
+    public ScrimColors getWorkspaceScrimColor(Launcher launcher) {
+        int backgroundColor = Themes.getAttrColor(launcher, R.attr.allAppsScrimColor);
+        return new ScrimColors(backgroundColor, Color.TRANSPARENT);
     }
 
     @Override

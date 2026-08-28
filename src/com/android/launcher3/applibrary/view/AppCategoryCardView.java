@@ -87,6 +87,26 @@ public class AppCategoryCardView extends LinearLayout {
         }
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (mCardContent != null) {
+            int cardWidth = mCardContent.getMeasuredWidth();
+            int cardHeightSpec = MeasureSpec.makeMeasureSpec(cardWidth, MeasureSpec.EXACTLY);
+            int cardWidthSpec = MeasureSpec.makeMeasureSpec(cardWidth, MeasureSpec.EXACTLY);
+            mCardContent.measure(cardWidthSpec, cardHeightSpec);
+            int totalHeight = mCardContent.getMeasuredHeight() + getPaddingTop() + getPaddingBottom();
+            if (mTitleView != null && mTitleView.getVisibility() != GONE) {
+                totalHeight += mTitleView.getMeasuredHeight();
+                MarginLayoutParams lp = (MarginLayoutParams) mTitleView.getLayoutParams();
+                if (lp != null) {
+                    totalHeight += lp.topMargin + lp.bottomMargin;
+                }
+            }
+            setMeasuredDimension(getMeasuredWidth(), totalHeight);
+        }
+    }
+
     public void setOnCategoryExpandListener(OnCategoryExpandListener listener) {
         mExpandListener = listener;
     }
