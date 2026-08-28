@@ -471,22 +471,12 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
 
     public static final Factory<ActivityContext> UNINSTALL_APP =
             (activityContext, itemInfo, originalView) -> {
-                if (originalView == null) {
-                    return null;
-                }
-                if (!Flags.enablePrivateSpace()) {
-                    return null;
-                }
-                if (!UserCache.INSTANCE.get(originalView.getContext()).getUserInfo(
-                        itemInfo.user).isPrivate()) {
-                    // If app is not Private Space app.
+                if (originalView == null || itemInfo == null) {
                     return null;
                 }
                 ComponentName cn = SecondaryDropTarget.getUninstallTarget(originalView.getContext(),
                         itemInfo);
                 if (cn == null) {
-                    // If component name is null, don't show uninstall shortcut.
-                    // System apps will have component name as null.
                     return null;
                 }
                 return new UninstallApp(activityContext, itemInfo, originalView, cn);
@@ -499,7 +489,7 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
         UninstallApp(T target, ItemInfo itemInfo, @NonNull View originalView,
                 @NonNull ComponentName cn) {
             super(R.drawable.ic_uninstall_no_shadow,
-                    R.string.uninstall_private_system_shortcut_label, target,
+                    R.string.uninstall_drop_target_label, target,
                     itemInfo, originalView);
             mComponentName = cn;
 

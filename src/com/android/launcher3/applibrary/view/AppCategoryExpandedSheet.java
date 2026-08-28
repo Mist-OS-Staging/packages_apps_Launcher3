@@ -349,10 +349,15 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
                 hide(false);
                 mActivityContext.getItemOnClickListener().onClick(v);
             });
-            if (mActivityContext instanceof Launcher) {
-                Launcher launcher = (Launcher) mActivityContext;
-                holder.mIcon.setOnLongClickListener(launcher.getAllAppsItemLongClickListener());
-            }
+            holder.mIcon.setOnLongClickListener(v -> {
+                if (mActivityContext instanceof Launcher) {
+                    Launcher launcher = (Launcher) mActivityContext;
+                    if (launcher.getPopupControllerForAppIcons() != null) {
+                        return launcher.getPopupControllerForAppIcons().show(v) != null;
+                    }
+                }
+                return false;
+            });
         }
 
         @Override
