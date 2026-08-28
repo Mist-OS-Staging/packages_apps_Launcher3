@@ -156,10 +156,15 @@ public class AppCategoryCardView extends LinearLayout {
             view.reset();
             view.applyFromApplicationInfo(app);
             view.setOnClickListener(activityContext.getItemOnClickListener());
-            if (activityContext instanceof Launcher) {
-                Launcher launcher = (Launcher) activityContext;
-                view.setOnLongClickListener(launcher.getAllAppsItemLongClickListener());
-            }
+            view.setOnLongClickListener(v -> {
+                if (activityContext instanceof Launcher) {
+                    Launcher launcher = (Launcher) activityContext;
+                    if (launcher.getPopupControllerForAppIcons() != null) {
+                        return launcher.getPopupControllerForAppIcons().show(v) != null;
+                    }
+                }
+                return false;
+            });
         } else {
             view.setVisibility(View.INVISIBLE);
         }

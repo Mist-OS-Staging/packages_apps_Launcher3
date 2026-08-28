@@ -3,15 +3,14 @@ package com.android.launcher3.applibrary.view;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
-import com.android.launcher3.icons.FastBitmapDrawable;
 import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.views.ActivityContext;
 
@@ -32,17 +31,17 @@ public class AppLibrarySearchAdapter extends RecyclerView.Adapter<RecyclerView.V
     }
 
     public static class ListItem {
-        final int type;
-        final String title;
-        final AppInfo app;
+        public final int type;
+        public final String title;
+        public final AppInfo app;
 
-        ListItem(String title) {
+        public ListItem(String title) {
             this.type = VIEW_TYPE_HEADER;
             this.title = title;
             this.app = null;
         }
 
-        ListItem(AppInfo app) {
+        public ListItem(AppInfo app) {
             this.type = VIEW_TYPE_APP;
             this.title = null;
             this.app = app;
@@ -62,34 +61,24 @@ public class AppLibrarySearchAdapter extends RecyclerView.Adapter<RecyclerView.V
         mItemClickListener = listener;
     }
 
-    public void setApps(List<AppInfo> apps) {
-        setApps(apps, false);
-    }
-
-    public void setApps(List<AppInfo> apps, boolean groupAlphabetically) {
+    public void setApps(List<AppInfo> apps, boolean grouped) {
         mItems.clear();
         mSectionPositions.clear();
         if (apps != null && !apps.isEmpty()) {
-            if (groupAlphabetically) {
-                List<AppInfo> sorted = new ArrayList<>(apps);
-                Collections.sort(sorted, (a, b) -> {
-                    String ta = a.title != null ? a.title.toString() : "";
-                    String tb = b.title != null ? b.title.toString() : "";
-                    return ta.compareToIgnoreCase(tb);
-                });
-
+            if (grouped) {
                 String currentSection = null;
-                for (AppInfo app : sorted) {
+                for (AppInfo app : apps) {
                     String title = app.title != null ? app.title.toString().trim() : "";
-                    String firstChar = "#";
+                    String section = "#";
                     if (!title.isEmpty()) {
-                        char c = Character.toUpperCase(title.charAt(0));
-                        if (c >= 'A' && c <= 'Z') {
-                            firstChar = String.valueOf(c);
+                        char firstChar = title.toUpperCase(Locale.getDefault()).charAt(0);
+                        if (Character.isLetter(firstChar)) {
+                            section = String.valueOf(firstChar);
                         }
                     }
-                    if (!firstChar.equals(currentSection)) {
-                        currentSection = firstChar;
+
+                    if (!section.equals(currentSection)) {
+                        currentSection = section;
                         mSectionPositions.put(currentSection, mItems.size());
                         mItems.add(new ListItem(currentSection));
                     }
@@ -105,11 +94,18 @@ public class AppLibrarySearchAdapter extends RecyclerView.Adapter<RecyclerView.V
     }
 
     public int getPositionForSection(String section) {
-        if (section == null) {
-            return -1;
-        }
-        Integer pos = mSectionPositions.get(section.toUpperCase(Locale.ROOT));
+        Integer pos = mSectionPositions.get(section);
         return pos != null ? pos : -1;
+    }
+
+    public List<AppInfo> getApps() {
+        List<AppInfo> apps = new ArrayList<>();
+        for (ListItem item : mItems) {
+            if (item.type == VIEW_TYPE_APP && item.app != null) {
+                apps.add(item.app);
+            }
+        }
+        return apps;
     }
 
     @Override
@@ -143,32 +139,36 @@ public class AppLibrarySearchAdapter extends RecyclerView.Adapter<RecyclerView.V
                 return;
             }
             avh.itemView.setTag(app);
-            avh.mIcon.setTag(app);
+            avh.mIcon.reset();
+            avh.mIcon.applyFromApplicationInfo(app);
+            avh.mIcon.setText("");
             avh.mTitle.setText(app.title);
 
             if (avh.mSubtitle != null) {
                 avh.mSubtitle.setVisibility(View.GONE);
             }
 
-            if (app.bitmap != null) {
-                FastBitmapDrawable drawable = app.newIcon(avh.itemView.getContext());
-                avh.mIcon.setImageDrawable(drawable);
-            } else {
-                avh.mIcon.setImageDrawable(null);
-            }
-
-            avh.itemView.setOnClickListener(v -> {
+            View.OnClickListener clickListener = v -> {
                 if (mItemClickListener != null) {
                     mItemClickListener.onSearchItemClick(avh.mIcon, app);
                 } else {
                     mActivityContext.getItemOnClickListener().onClick(avh.mIcon);
                 }
-            });
+            };
+            avh.itemView.setOnClickListener(clickListener);
+            avh.mIcon.setOnClickListener(clickListener);
 
-            if (mActivityContext instanceof Launcher) {
-                Launcher launcher = (Launcher) mActivityContext;
-                avh.itemView.setOnLongClickListener(launcher.getAllAppsItemLongClickListener());
-            }
+            View.OnLongClickListener longClickListener = v -> {
+                if (mActivityContext instanceof Launcher) {
+                    Launcher launcher = (Launcher) mActivityContext;
+                    if (launcher.getPopupControllerForAppIcons() != null) {
+                        return launcher.getPopupControllerForAppIcons().show(avh.mIcon) != null;
+                    }
+                }
+                return false;
+            };
+            avh.itemView.setOnLongClickListener(longClickListener);
+            avh.mIcon.setOnLongClickListener(longClickListener);
         }
     }
 
@@ -187,7 +187,7 @@ public class AppLibrarySearchAdapter extends RecyclerView.Adapter<RecyclerView.V
     }
 
     static class AppViewHolder extends RecyclerView.ViewHolder {
-        final ImageView mIcon;
+        final BubbleTextView mIcon;
         final TextView mTitle;
         final TextView mSubtitle;
 

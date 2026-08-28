@@ -1,6 +1,8 @@
 package com.android.launcher3.applibrary.model;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -16,6 +18,8 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AppLibraryModel implements AllAppsStore.OnUpdateListener {
@@ -39,6 +43,7 @@ public class AppLibraryModel implements AllAppsStore.OnUpdateListener {
     private final Context mContext;
     private final AllAppsStore mAppsStore;
     private final List<AppLibraryModelListener> mListeners = new CopyOnWriteArrayList<>();
+    private final Map<String, Long> mInstallTimeCache = new ConcurrentHashMap<>();
 
     private List<AppInfo> mAllAppsList = Collections.emptyList();
     private List<AppCategoryGroup> mCategoryGroups = Collections.emptyList();
@@ -71,16 +76,54 @@ public class AppLibraryModel implements AllAppsStore.OnUpdateListener {
             mAppsStore.removeUpdateListener(this);
         }
         mListeners.clear();
+        mInstallTimeCache.clear();
     }
 
     @Override
     public void onAppsUpdated() {
         AppCategoryEngine.clearCache();
+        mInstallTimeCache.clear();
         rebuildCategories();
     }
 
     public void forceRefresh() {
         rebuildCategories();
+    }
+
+    private long getAppInstallTime(AppInfo app) {
+        if (app == null || app.componentName == null) {
+            return 0;
+        }
+        String packageName = app.componentName.getPackageName();
+        int userId = app.user != null ? app.user.getIdentifier() : 0;
+        String key = packageName + "#" + userId;
+        Long cached = mInstallTimeCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        long installTime = 0;
+        try {
+            PackageManager pm = mContext.getPackageManager();
+            PackageInfo packageInfo;
+            if (app.user != null) {
+                packageInfo = pm.getPackageInfoAsUser(packageName, 0, userId);
+            } else {
+                packageInfo = pm.getPackageInfo(packageName, 0);
+            }
+            if (packageInfo != null) {
+                installTime = packageInfo.firstInstallTime;
+            }
+        } catch (Exception e) {
+            try {
+                PackageInfo packageInfo = mContext.getPackageManager().getPackageInfo(packageName, 0);
+                if (packageInfo != null) {
+                    installTime = packageInfo.firstInstallTime;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        mInstallTimeCache.put(key, installTime);
+        return installTime;
     }
 
     private void rebuildCategories() {
@@ -125,16 +168,14 @@ public class AppLibraryModel implements AllAppsStore.OnUpdateListener {
         }
         map.put(AppCategory.SUGGESTIONS, suggestions);
 
+        List<AppInfo> appsByInstallTime = new ArrayList<>(allApps);
+        appsByInstallTime.sort((a, b) -> Long.compare(getAppInstallTime(b), getAppInstallTime(a)));
         List<AppInfo> recentlyAdded = new ArrayList<>();
-        int maxRecent = Math.min(4, allApps.size());
-        for (int i = allApps.size() - 1; i >= allApps.size() - maxRecent && i >= 0; i--) {
-            recentlyAdded.add(allApps.get(i));
+        int maxRecent = Math.min(12, appsByInstallTime.size());
+        for (int i = 0; i < maxRecent; i++) {
+            recentlyAdded.add(appsByInstallTime.get(i));
         }
-        if (allApps.size() > 4) {
-            map.put(AppCategory.RECENTLY_ADDED, recentlyAdded);
-        } else {
-            map.put(AppCategory.RECENTLY_ADDED, new ArrayList<>());
-        }
+        map.put(AppCategory.RECENTLY_ADDED, recentlyAdded);
 
         List<AppCategoryGroup> groups = new ArrayList<>();
         for (AppCategory cat : AppCategory.values()) {
@@ -158,29 +199,31 @@ public class AppLibraryModel implements AllAppsStore.OnUpdateListener {
         });
     }
 
-    @NonNull
     public List<AppCategoryGroup> getCategoryGroups() {
         return mCategoryGroups;
     }
 
-    @NonNull
+    public List<AppInfo> getAllAppsList() {
+        return mAllAppsList;
+    }
+
     public List<AppInfo> getAllApps() {
         return mAllAppsList;
     }
 
-    @NonNull
-    public List<AppInfo> searchApps(@Nullable String query) {
+    public List<AppInfo> filterApps(String query) {
+        return searchApps(query);
+    }
+
+    public List<AppInfo> searchApps(String query) {
         if (TextUtils.isEmpty(query)) {
             return mAllAppsList;
         }
 
-        String lowerQuery = query.toLowerCase(Locale.ROOT).trim();
+        String lowerQuery = query.toLowerCase(Locale.getDefault()).trim();
         List<AppInfo> results = new ArrayList<>();
         for (AppInfo app : mAllAppsList) {
-            if (app == null) continue;
-            String title = app.title != null ? app.title.toString().toLowerCase(Locale.ROOT) : "";
-            String pkg = app.componentName != null ? app.componentName.getPackageName().toLowerCase(Locale.ROOT) : "";
-            if (title.contains(lowerQuery) || pkg.contains(lowerQuery)) {
+            if (app.title != null && app.title.toString().toLowerCase(Locale.getDefault()).contains(lowerQuery)) {
                 results.add(app);
             }
         }
