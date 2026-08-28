@@ -109,11 +109,17 @@ public class AppLibraryTransitionController
     public void setStateWithAnimation(LauncherState toState, StateAnimationConfig config,
             PendingAnimation animation) {
         if (toState == APP_LIBRARY) {
+            if (mLauncher.isInState(NORMAL) && Float.compare(mProgress, 1f) != 0) {
+                setProgress(1f);
+            }
             float targetProgress = 0f;
             Interpolator interpolator = config.getInterpolator(
                     StateAnimationConfig.ANIM_WORKSPACE_TRANSLATE, DECELERATE_1_7);
             animation.setFloat(this, APP_LIBRARY_PROGRESS, targetProgress, interpolator);
         } else {
+            if (mLauncher.isInState(APP_LIBRARY) && Float.compare(mProgress, 0f) != 0) {
+                setProgress(0f);
+            }
             float targetProgress = 1f;
             Interpolator interpolator = config.getInterpolator(
                     StateAnimationConfig.ANIM_WORKSPACE_TRANSLATE, DECELERATE_1_7);
