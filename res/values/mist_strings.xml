@@ -160,4 +160,37 @@
     <!-- Dark Status Bar -->
     <string name="perf_dark_status_bar_title">Dark status bar</string>
     <string name="perf_dark_status_bar_summary">Always use dark status bar on home screen</string>
+
+    <string name="app_library_title">App Library</string>
+    <string name="app_library_search_hint">App Library</string>
+    <string name="app_library_search_cancel">Cancel</string>
+    <string name="app_library_search_clear">Clear search</string>
+    <string name="pref_app_library_title">App Library</string>
+    <string name="pref_app_library_summary">Show an iOS-style categorized application library</string>
+    <string name="pref_app_library_single_page_title">Single Home Page Mode</string>
+    <string name="pref_app_library_single_page_summary">Keep only one home screen and access App Library with one swipe</string>
+
+    <string name="app_category_suggestions">Suggestions</string>
+    <string name="app_category_recently_added">Recently Added</string>
+    <string name="app_category_social">Social</string>
+    <string name="app_category_communication">Communication</string>
+    <string name="app_category_productivity">Productivity</string>
+    <string name="app_category_finance">Finance</string>
+    <string name="app_category_shopping">Shopping</string>
+    <string name="app_category_entertainment">Entertainment</string>
+    <string name="app_category_games">Games</string>
+    <string name="app_category_photography">Photography</string>
+    <string name="app_category_video">Video</string>
+    <string name="app_category_music">Music</string>
+    <string name="app_category_travel">Travel</string>
+    <string name="app_category_navigation">Navigation</string>
+    <string name="app_category_education">Education</string>
+    <string name="app_category_health_fitness">Health &amp; Fitness</string>
+    <string name="app_category_utilities">Utilities</string>
+    <string name="app_category_tools">Tools</string>
+    <string name="app_category_lifestyle">Lifestyle</string>
+    <string name="app_category_news">News</string>
+    <string name="app_category_books">Books</string>
+    <string name="app_category_food">Food</string>
+    <string name="app_category_other">Other</string>
 </resources>

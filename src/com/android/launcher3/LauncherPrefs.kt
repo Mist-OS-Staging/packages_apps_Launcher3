@@ -353,6 +353,9 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
 
         @JvmField val ENABLE_COMPOSITION_TRACING = backedUpItem(COMPOSITION_TRACING_PREF_KEY, false)
 
+        @JvmField val APP_LIBRARY_ENABLED = backedUpItem("pref_app_library_enabled", false)
+        @JvmField val APP_LIBRARY_SINGLE_PAGE = backedUpItem("pref_app_library_single_page", false)
+
         @JvmField
         val FIXED_LANDSCAPE_MODE = backedUpItem(SettingsMisc.FIXED_LANDSCAPE_MODE, false)
 

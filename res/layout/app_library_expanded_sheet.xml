@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.android.launcher3.applibrary.view.AppCategoryExpandedSheet
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/app_library_expanded_sheet"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#66000000"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:padding="20dp"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:id="@+id/expanded_sheet_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:background="@drawable/app_library_card_bg"
+        android:padding="16dp"
+        android:elevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="12dp">
+
+            <ImageButton
+                android:id="@+id/expanded_sheet_back_button"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_app_library_back"
+                android:contentDescription="@string/app_library_search_cancel" />
+
+            <TextView
+                android:id="@+id/expanded_sheet_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary"
+                android:singleLine="true"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/expanded_sheet_grid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:overScrollMode="never" />
+
+    </LinearLayout>
+
+</com.android.launcher3.applibrary.view.AppCategoryExpandedSheet>
