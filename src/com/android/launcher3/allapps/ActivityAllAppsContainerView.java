@@ -202,8 +202,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         super(context, attrs, defStyleAttr);
         mActivityContext = ActivityContext.lookupContext(context);
         mAllAppsStore = mActivityContext.getActivityComponent().getAppsStore();
-        UserManager userManager = mActivityContext.getSystemService(UserManager.class);
-        mPersonalMatcher = ItemInfoMatcher.ofCurrentOrDualUser(userManager, Process.myUserHandle());
+        mPersonalMatcher = ItemInfoMatcher.ofCurrentOrDualUser(
+                UserCache.INSTANCE.get(mActivityContext), Process.myUserHandle());
 
         mHeaderThreshold = getResources().getDimensionPixelSize(
                 R.dimen.dynamic_grid_cell_border_spacing);

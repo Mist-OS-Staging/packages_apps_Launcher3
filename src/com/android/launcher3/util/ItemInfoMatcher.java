@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import com.android.launcher3.LauncherSettings.Favorites;
 import com.android.launcher3.model.data.FolderInfo;
 import com.android.launcher3.model.data.ItemInfo;
+import com.android.launcher3.pm.UserCache;
 import com.android.launcher3.shortcuts.ShortcutKey;
 
 import java.util.Collection;
@@ -46,10 +47,20 @@ public abstract class ItemInfoMatcher {
         return info -> info != null && info.user.equals(user);
     }
 
+    public static Predicate<ItemInfo> ofCurrentOrDualUser(UserCache userCache, UserHandle user) {
+        return itemInfo -> itemInfo != null && (
+                isDualAppUser(userCache, itemInfo.user) || itemInfo.user.equals(user)
+        );
+    }
+
     public static Predicate<ItemInfo> ofCurrentOrDualUser(UserManager userManager, UserHandle user) {
         return itemInfo -> itemInfo != null && (
                 isDualAppUser(userManager, itemInfo.user) || itemInfo.user.equals(user)
         );
+    }
+
+    private static boolean isDualAppUser(UserCache userCache, UserHandle user) {
+        return userCache != null && userCache.getUserInfo(user).isCloned();
     }
 
     private static boolean isDualAppUser(UserManager userManager, UserHandle user) {
@@ -57,10 +68,17 @@ public abstract class ItemInfoMatcher {
     }
 
     public static int getCloneUserId(UserManager userManager) {
-        for (UserHandle userHandle : userManager.getUserProfiles()) {
-            if (userManager.getUserInfo(userHandle.getIdentifier()).isCloneProfile()) {
-                return userHandle.getIdentifier();
+        if (userManager == null) {
+            return -1;
+        }
+        try {
+            for (UserHandle userHandle : userManager.getUserProfiles()) {
+                if (userManager.getUserInfo(userHandle.getIdentifier()).isCloneProfile()) {
+                    return userHandle.getIdentifier();
+                }
             }
+        } catch (Throwable t) {
+            // Permission MANAGE_USERS / QUERY_USERS might not be granted
         }
         return -1;
     }
