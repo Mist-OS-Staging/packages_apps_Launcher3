@@ -1630,9 +1630,14 @@ public abstract class AbsSwipeUpHandler<
                 duration = Math.min(MAX_SWIPE_DURATION, 2 * baseDuration);
             }
         }
+        final boolean isFluid = com.android.internal.util.mist.MistifyFluidMotionHelper.isFluidAnimationEnabled(mContext);
         Interpolator interpolator;
         STATE state = mContainerInterface.stateFromGestureEndTarget(endTarget);
-        if (isKeyboardTaskFocusPending()) {
+        if (isFluid) {
+            interpolator = (endTarget == RECENTS || endTarget == NEW_TASK)
+                    ? com.android.internal.util.mist.MistifyFluidMotionHelper.getSpringInterpolator()
+                    : com.android.internal.util.mist.MistifyFluidMotionHelper.getDampedSpringInterpolator();
+        } else if (isKeyboardTaskFocusPending()) {
             interpolator = EMPHASIZED;
         } else if (state.displayOverviewTasksAsGrid(mDp)) {
             interpolator = ACCELERATE_DECELERATE;

@@ -40,6 +40,10 @@ public class AppLibraryTouchController extends AbstractStateChangeTouchControlle
             return false;
         }
 
+        if ((ev.getEdgeFlags() & Utilities.EDGE_NAV_BAR) != 0) {
+            return false;
+        }
+
         if (mCurrentAnimation != null) {
             return true;
         }

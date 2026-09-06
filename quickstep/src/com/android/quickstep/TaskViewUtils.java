@@ -697,7 +697,10 @@ public final class TaskViewUtils {
                 raController.setWillFinishToHome(false);
             }
             launcherAnim = recentsView.createAdjacentPageAnimForTaskLaunch(taskView);
-            launcherAnim.setInterpolator(Interpolators.TOUCH_RESPONSE);
+            launcherAnim.setInterpolator(
+                    com.android.internal.util.mist.MistifyFluidMotionHelper.isFluidAnimationEnabled(taskView.getContext())
+                            ? com.android.internal.util.mist.MistifyFluidMotionHelper.getSpringInterpolator()
+                            : Interpolators.TOUCH_RESPONSE);
             launcherAnim.setDuration(RECENTS_LAUNCH_DURATION);
 
             windowAnimEndListener = new AnimationSuccessListener() {

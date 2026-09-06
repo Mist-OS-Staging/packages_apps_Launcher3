@@ -447,6 +447,13 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
             dampingY = rp.getFloat(R.dimen.swipe_up_rect_y_damping_ratio);
             rectStiffness = rp.getFloat(R.dimen.swipe_up_rect_scale_stiffness_v2);
 
+            if (com.android.internal.util.mist.MistifyFluidMotionHelper.isFluidAnimationEnabled(context)) {
+                stiffnessX = com.android.internal.util.mist.MistifyFluidMotionHelper.SPRING_STIFFNESS_FLUID;
+                stiffnessY = com.android.internal.util.mist.MistifyFluidMotionHelper.SPRING_STIFFNESS_FLUID;
+                dampingX = com.android.internal.util.mist.MistifyFluidMotionHelper.SPRING_DAMPING_RATIO_FLUID;
+                dampingY = com.android.internal.util.mist.MistifyFluidMotionHelper.SPRING_DAMPING_RATIO_FLUID;
+            }
+
             this.startRect = startRect;
             this.targetRect = targetRect;
         }

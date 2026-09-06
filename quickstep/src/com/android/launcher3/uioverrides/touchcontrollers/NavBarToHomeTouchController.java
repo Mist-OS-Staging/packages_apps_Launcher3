@@ -19,9 +19,11 @@ import static com.android.app.animation.Interpolators.DECELERATE_3;
 import static com.android.internal.jank.Cuj.CUJ_LAUNCHER_RECENTS_TO_HOME;
 import static com.android.launcher3.AbstractFloatingView.TYPE_ALL;
 import static com.android.launcher3.AbstractFloatingView.TYPE_ALL_APPS_EDU;
+import static com.android.launcher3.LauncherAnimUtils.SCALE_PROPERTY;
 import static com.android.launcher3.LauncherAnimUtils.SUCCESS_TRANSITION_PROGRESS;
 import static com.android.launcher3.LauncherAnimUtils.newSingleUseCancelListener;
 import static com.android.launcher3.LauncherState.ALL_APPS;
+import static com.android.launcher3.LauncherState.APP_LIBRARY;
 import static com.android.launcher3.LauncherState.NORMAL;
 import static com.android.launcher3.MotionEventsUtils.isTrackpadMotionEvent;
 import static com.android.launcher3.anim.AnimatorListeners.forSuccessCallback;
@@ -43,6 +45,7 @@ import com.android.launcher3.LauncherState;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.allapps.AllAppsTransitionController;
+import com.android.launcher3.applibrary.view.AppCategoryExpandedSheet;
 import com.android.launcher3.anim.AnimationSuccessListener;
 import com.android.launcher3.anim.AnimatorPlaybackController;
 import com.android.launcher3.anim.PendingAnimation;
@@ -126,7 +129,8 @@ public class NavBarToHomeTouchController implements TouchController,
         if (!cameFromNavBar) {
             return false;
         }
-        if (mStartState.isRecentsViewVisible || mStartState == ALL_APPS) {
+        if (mStartState.isRecentsViewVisible || mStartState == ALL_APPS
+                || mStartState == APP_LIBRARY) {
             return true;
         }
         int typeToClose = TYPE_ALL & ~TYPE_ALL_APPS_EDU;
@@ -166,6 +170,11 @@ public class NavBarToHomeTouchController implements TouchController,
             allAppsController.setShouldScaleHeader(true);
             builder.addAnimatedFloat(allAppsController.getAllAppScale(), 1f,
                     PREDICTIVE_BACK_MIN_SCALE, PULLBACK_INTERPOLATOR);
+        } else if (mStartState == APP_LIBRARY) {
+            if (mLauncher.getAppLibraryView() != null) {
+                builder.addFloat(mLauncher.getAppLibraryView(), SCALE_PROPERTY,
+                        1f, PREDICTIVE_BACK_MIN_SCALE, PULLBACK_INTERPOLATOR);
+            }
         }
         AbstractFloatingView topView = AbstractFloatingView.getTopOpenView(mLauncher);
         if (topView != null) {
@@ -179,6 +188,10 @@ public class NavBarToHomeTouchController implements TouchController,
         mCurrentAnimation = null;
         mSwipeDetector.finishedScrolling();
         mSwipeDetector.setDetectableScrollConditions(0, false);
+        if (mLauncher.getAppLibraryView() != null) {
+            mLauncher.getAppLibraryView().setScaleX(1f);
+            mLauncher.getAppLibraryView().setScaleY(1f);
+        }
     }
 
     @Override
@@ -243,6 +256,16 @@ public class NavBarToHomeTouchController implements TouchController,
             if (topOpenView != null) {
                 AbstractFloatingView.closeAllOpenViews(mLauncher);
                 // TODO: add to WW log
+            }
+            if (mStartState == APP_LIBRARY && mLauncher.getAppLibraryView() != null) {
+                if (mLauncher.getAppLibraryView().getSearchBar() != null) {
+                    mLauncher.getAppLibraryView().getSearchBar().hideKeyboard();
+                }
+                AppCategoryExpandedSheet sheet = mLauncher.getAppLibraryView()
+                        .findViewById(R.id.app_library_expanded_sheet);
+                if (sheet != null && sheet.isOpen()) {
+                    sheet.hide(false);
+                }
             }
             TaskUtils.closeSystemWindowsAsync(CLOSE_SYSTEM_WINDOWS_REASON_RECENTS);
         } else {

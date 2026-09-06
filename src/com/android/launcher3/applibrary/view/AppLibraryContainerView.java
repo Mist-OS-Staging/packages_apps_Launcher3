@@ -25,9 +25,11 @@ import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Insettable;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.applibrary.model.AppCategoryGroup;
 import com.android.launcher3.applibrary.model.AppLibraryModel;
 import com.android.launcher3.model.data.AppInfo;
+import com.android.launcher3.testing.shared.ResourceUtils;
 import com.android.launcher3.views.ActivityContext;
 
 import java.util.List;
@@ -57,6 +59,7 @@ public class AppLibraryContainerView extends FrameLayout
 
     private float mDownX;
     private float mDownY;
+    private boolean mDownInBottomNavArea = false;
     private boolean mPullToSearchEligible = false;
     private boolean mKeyboardDismissedByScroll = false;
     private boolean mPendingSwipeSearchKeyboard = false;
@@ -186,13 +189,34 @@ public class AppLibraryContainerView extends FrameLayout
         }
     }
 
+    private boolean isEventInBottomNavArea(MotionEvent ev) {
+        if ((ev.getEdgeFlags() & Utilities.EDGE_NAV_BAR) != 0) {
+            return true;
+        }
+        int bottomNavHeight = Math.max(mInsets.bottom,
+                ResourceUtils.getNavbarSize(ResourceUtils.NAVBAR_BOTTOM_GESTURE_SIZE, getResources()));
+        return bottomNavHeight > 0 && ev.getY() >= getHeight() - bottomNavHeight;
+    }
+
+    @Override
+    public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+        if (mDownInBottomNavArea && disallowIntercept) {
+            return;
+        }
+        super.requestDisallowInterceptTouchEvent(disallowIntercept);
+    }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         int action = ev.getActionMasked();
         if (action == MotionEvent.ACTION_DOWN) {
             mDownX = ev.getX();
             mDownY = ev.getY();
-            if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
+            mDownInBottomNavArea = isEventInBottomNavArea(ev);
+
+            if (mDownInBottomNavArea) {
+                mPullToSearchEligible = false;
+            } else if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
                 mPullToSearchEligible = false;
                 getParent().requestDisallowInterceptTouchEvent(true);
             } else if (mSearchBar != null && mSearchBar.isSearching()) {
@@ -208,6 +232,10 @@ public class AppLibraryContainerView extends FrameLayout
             float dy = ev.getY() - mDownY;
             float absDx = Math.abs(dx);
             float absDy = Math.abs(dy);
+
+            if (mDownInBottomNavArea) {
+                return super.dispatchTouchEvent(ev);
+            }
 
             if (mExpandedSheet != null && mExpandedSheet.isOpen()) {
                 getParent().requestDisallowInterceptTouchEvent(true);
@@ -245,6 +273,7 @@ public class AppLibraryContainerView extends FrameLayout
                 }
             }
         } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            mDownInBottomNavArea = false;
             if (mAppLibraryContent != null && mAppLibraryContent.getTranslationY() > 0) {
                 mAppLibraryContent.animate().translationY(0f).setDuration(220).setInterpolator(EMPHASIZED).start();
             }
@@ -470,6 +499,7 @@ public class AppLibraryContainerView extends FrameLayout
         if (getParent() != null) {
             getParent().requestDisallowInterceptTouchEvent(false);
         }
+        mDownInBottomNavArea = false;
         mPullToSearchEligible = false;
         mKeyboardDismissedByScroll = false;
         mPendingSwipeSearchKeyboard = false;

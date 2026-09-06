@@ -25,8 +25,10 @@ import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Insettable;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.applibrary.model.AppCategoryGroup;
 import com.android.launcher3.model.data.AppInfo;
+import com.android.launcher3.testing.shared.ResourceUtils;
 import com.android.launcher3.views.ActivityContext;
 
 import java.util.ArrayList;
@@ -96,6 +98,14 @@ public class AppCategoryExpandedSheet extends FrameLayout implements Insettable 
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if ((event.getEdgeFlags() & Utilities.EDGE_NAV_BAR) != 0) {
+            return false;
+        }
+        int bottomNavHeight = Math.max(mInsets.bottom,
+                ResourceUtils.getNavbarSize(ResourceUtils.NAVBAR_BOTTOM_GESTURE_SIZE, getResources()));
+        if (bottomNavHeight > 0 && event.getY() >= getHeight() - bottomNavHeight) {
+            return false;
+        }
         super.onTouchEvent(event);
         return true;
     }

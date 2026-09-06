@@ -372,6 +372,12 @@ public class QuickstepTransitionManager implements OnDeviceProfileChangeListener
                 com.android.internal.R.bool.config_enableAppLaunchBlur);
     }
 
+    private Interpolator getOpeningInterpolator() {
+        return com.android.internal.util.mist.MistifyFluidMotionHelper.isFluidAnimationEnabled(mLauncher)
+                ? com.android.internal.util.mist.MistifyFluidMotionHelper.getAppLaunchInterpolator()
+                : mOpeningInterpolator;
+    }
+
     @Override
     public void onDeviceProfileChanged(DeviceProfile dp) {
         mDeviceProfile = dp;
@@ -961,7 +967,7 @@ public class QuickstepTransitionManager implements OnDeviceProfileChangeListener
                 : 0f;
         final float finalShadowRadius = appTargetsAreTranslucent ? 0 : mMaxShadowRadius;
 
-        MultiValueUpdateListener listener = new MultiValueUpdateListener(mOpeningInterpolator) {
+        MultiValueUpdateListener listener = new MultiValueUpdateListener(getOpeningInterpolator()) {
             FloatProp mDx = new FloatProp(0, prop.dX, mOpeningXInterpolator);
             FloatProp mDy = new FloatProp(0, prop.dY);
 
@@ -1223,7 +1229,7 @@ public class QuickstepTransitionManager implements OnDeviceProfileChangeListener
         });
         floatingView.setFastFinishRunnable(animatorSet::end);
 
-        appAnimator.addUpdateListener(new MultiValueUpdateListener(mOpeningInterpolator) {
+        appAnimator.addUpdateListener(new MultiValueUpdateListener(getOpeningInterpolator()) {
             float mAppWindowScale = 1;
             final FloatProp mWidgetForegroundAlpha = new FloatProp(1, 0, clampToDuration(
                     LINEAR, 0, WIDGET_CROSSFADE_DURATION_MILLIS / 2, APP_LAUNCH_DURATION));

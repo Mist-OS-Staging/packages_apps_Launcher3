@@ -1310,7 +1310,10 @@ public abstract class RecentsView<
                     new SurfaceTransactionApplier(mContainer.getDragLayer());
             ValueAnimator appAnimator = ValueAnimator.ofFloat(0, 1);
             appAnimator.setDuration(RECENTS_LAUNCH_DURATION);
-            appAnimator.setInterpolator(ACCELERATE_DECELERATE);
+            appAnimator.setInterpolator(
+                    com.android.internal.util.mist.MistifyFluidMotionHelper.isFluidAnimationEnabled(getContext())
+                            ? com.android.internal.util.mist.MistifyFluidMotionHelper.getSpringInterpolator()
+                            : ACCELERATE_DECELERATE);
             final Matrix matrix = new Matrix();
             appAnimator.addUpdateListener(valueAnimator -> {
                 float percent = valueAnimator.getAnimatedFraction();
