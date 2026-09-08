@@ -1163,6 +1163,7 @@ constructor(
                     }
                 }
             } else {
+                preparePageForRemoval(pageToSnapTo)
                 updateTaskSize()
                 mUtils.updateChildTaskOrientations()
                 updateScrollSynchronously()

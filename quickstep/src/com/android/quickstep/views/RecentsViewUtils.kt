@@ -197,7 +197,9 @@ constructor(
 
     fun getVisibleTaskIds(): List<Int> {
         val visibleTaskViews: Iterable<TaskView> =
-            if (recentsView.showAsGrid()) {
+            if (recentsView.recentStyleController?.isCustomStyleActive == true) {
+                taskViews.filter { recentsView.isTaskViewVisible(it) }
+            } else if (recentsView.showAsGrid()) {
                 val pagedOrientationHandler = recentsView.pagedOrientationHandler
                 val screenStart = pagedOrientationHandler.getPrimaryScroll(recentsView)
                 val pageOrientedSize = pagedOrientationHandler.getMeasuredSize(recentsView)

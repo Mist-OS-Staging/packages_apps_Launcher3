@@ -367,6 +367,10 @@ public class TaskViewSimulator implements TransformParams.BuilderProxy {
         return mMatrix;
     }
 
+    public Rect getTaskRect() {
+        return mTaskRect;
+    }
+
     /**
      * Sets a matrix used to transform the position of tasks. If set, this matrix is applied to
      * the task rect after the task has been scaled and positioned inside the fulltask, but

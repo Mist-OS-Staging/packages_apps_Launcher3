@@ -111,8 +111,10 @@ import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.RemoteAnimationTarget;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewDebug;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver.OnScrollChangedListener;
@@ -196,6 +198,8 @@ import com.android.quickstep.TaskViewUtils;
 import com.android.quickstep.TopTaskTracker;
 import com.android.quickstep.fallback.RecentsState;
 import com.android.quickstep.orientation.RecentsPagedOrientationHandler;
+import com.android.quickstep.recents.style.RecentStyle;
+import com.android.quickstep.recents.style.RecentStyleController;
 import com.android.quickstep.recents.viewmodel.RecentsViewModel;
 import com.android.quickstep.split.SplitAnimationController.Companion.SplitAnimInitProps;
 import com.android.quickstep.split.SplitAnimationTimings;
@@ -848,6 +852,9 @@ public abstract class RecentsView<
 
     protected final RecentsViewUtils mUtils;
     protected final RecentsDismissUtils mDismissUtils;
+    protected final RecentStyleController mRecentStyleController;
+
+
 
     private final boolean mIsMultipleDesktopFrontendEnabled;
 
@@ -873,6 +880,7 @@ public abstract class RecentsView<
         initialiseInjectables();
         mUtils = mUtilsFactory.create(this);
         mDismissUtils = mDismissUtilsFactory.create(this);
+        mRecentStyleController = new RecentStyleController(context);
 
         mOrientationState.setRotationChangeListener(this::animateRecentsRotationInPlace);
         final int rotation = mContainer.getDisplay().getRotation();
@@ -1119,6 +1127,7 @@ public abstract class RecentsView<
         if (mIsMultipleDesktopFrontendEnabled) {
             mDesktopVisibilityController.registerDesktopVisibilityListener(mUtils);
         }
+        mRecentStyleController.attach(this);
     }
 
     @Override
@@ -1145,6 +1154,7 @@ public abstract class RecentsView<
         }
         mTaskLaunchListener = null;
         mOnTaskLaunchCancelledRunnable = null;
+        mRecentStyleController.detach();
         reset();
     }
 
@@ -1195,6 +1205,7 @@ public abstract class RecentsView<
         super.onViewAdded(child);
         if (child instanceof TaskView) {
             mTaskViewCount++;
+            child.setVisibility(View.VISIBLE);
         }
         if (mAddDesktopButton != null && child instanceof AddDesktopButton) {
             mAddDesktopButton.setContentAlpha(mContentAlpha);
@@ -1381,6 +1392,24 @@ public abstract class RecentsView<
     }
 
     public boolean isTaskViewVisible(TaskView tv) {
+        if (tv == null) {
+            return false;
+        }
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            Boolean styleVisible = mRecentStyleController.isTaskViewVisible(this, tv);
+            if (styleVisible != null) {
+                return styleVisible;
+            }
+            if (tv == getCurrentPageTaskView() || tv == getRunningTaskView()) {
+                return true;
+            }
+            float left = tv.getLeft() - getScrollX() + tv.getTranslationX();
+            float top = tv.getTop() - getScrollY() + tv.getTranslationY();
+            float right = left + (tv.getWidth() * tv.getScaleX());
+            float bottom = top + (tv.getHeight() * tv.getScaleY());
+            float buffer = 100f;
+            return right > -buffer && left < getWidth() + buffer && bottom > -buffer && top < getHeight() + buffer && tv.getAlpha() > 0.05f;
+        }
         if (showAsGrid()) {
             int screenStart = getPagedOrientationHandler().getPrimaryScroll(this);
             int screenEnd = screenStart + getPagedOrientationHandler().getMeasuredSize(this);
@@ -1610,10 +1639,15 @@ public abstract class RecentsView<
     }
 
     @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        return super.onInterceptTouchEvent(ev);
+    }
+
+    @Override
     public boolean onTouchEvent(MotionEvent ev) {
         super.onTouchEvent(ev);
 
-        if (showAsGrid()) {
+        if (showAsGrid() || (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive())) {
             for (TaskView taskView : getTaskViews()) {
                 if (isTaskViewVisible(taskView) && taskView.offerTouchToChildren(ev)) {
                     // Keep consuming events to pass to delegate
@@ -2394,14 +2428,27 @@ public abstract class RecentsView<
             return;
         }
         int scroll = getPagedOrientationHandler().getPrimaryScroll(this);
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            mRecentStyleController.updateCurveProperties(this, scroll);
+        }
         mClearAllButton.onRecentsViewScroll(scroll, mOverviewGridEnabled);
 
         // Clear all button alpha was set by the previous line.
-        mActionsView.getIndexScrollAlpha().updateValue(1 - mClearAllButton.getScrollAlpha());
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            mActionsView.getIndexScrollAlpha().updateValue(1f);
+        } else {
+            mActionsView.getIndexScrollAlpha().updateValue(1 - mClearAllButton.getScrollAlpha());
+        }
     }
 
     @Override
     protected int getDestinationPage(int scaledScroll) {
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            Integer destPage = mRecentStyleController.getDestinationPage(this, scaledScroll);
+            if (destPage != null) {
+                return destPage;
+            }
+        }
         if (!mContainer.getDeviceProfile().getDeviceProperties().isLargeScreen()) {
             return super.getDestinationPage(scaledScroll);
         }
@@ -2516,8 +2563,12 @@ public abstract class RecentsView<
             mAddDesktopButton.setGestureAlpha(1f);
         }
         setKeyboardFocusTask(KeyboardFocusTask.Unfocused.INSTANCE);
+        if (mRecentStyleController != null) {
+            mRecentStyleController.setIsLaunching(false);
+        }
 
-        if (mEnableDrawingLiveTile && mRecentsAnimationController != null) {
+        if ((mEnableDrawingLiveTile || (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()))
+                && mRecentsAnimationController != null) {
             // We own mRecentsAnimationController, finish it now to clean up.
             finishRecentsAnimation(true /* toHome */, null);
         } else {
@@ -2534,6 +2585,8 @@ public abstract class RecentsView<
         setEnableDrawingLiveTile(false);
         mBlurUtils.setDrawLiveTileBelowRecents(false);
         mClearAllButton.setSplitSelectionActive(false);
+
+
 
         // TODO(b/391842220): This should not need to be explicitly called from here. When TVs
         //  are added and removed with the RecentsView lifecycle, this can be removed.
@@ -2791,7 +2844,14 @@ public abstract class RecentsView<
                 });
             }
         } else {
-            setCurrentTask(-1);
+            if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+                switchToScreenshot(() -> {
+                    finishRecentsAnimation(false, false, null);
+                    setCurrentTask(-1);
+                });
+            } else {
+                setCurrentTask(-1);
+            }
         }
 
         mCurrentGestureEndTarget = null;
@@ -3497,6 +3557,17 @@ public abstract class RecentsView<
                 "snapToPage, whichPage: " + whichPage + ", delta: " + delta + ", duration: "
                         + duration + ", immediate: " + immediate);
         return super.snapToPage(whichPage, delta, duration, immediate);
+    }
+
+    @Override
+    protected boolean snapToPageWithVelocity(int whichPage, int velocity) {
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            Integer targetPage = mRecentStyleController.snapToPageWithVelocity(this, whichPage, velocity);
+            if (targetPage != null) {
+                whichPage = targetPage;
+            }
+        }
+        return super.snapToPageWithVelocity(whichPage, velocity);
     }
 
     private int getNextPageInternal(int delta, TaskGridNavHelper.TaskNavDirection direction,
@@ -4679,14 +4750,17 @@ public abstract class RecentsView<
 
         float toScale = getMaxScaleForFullScreen();
         boolean showAsGrid = showAsGrid();
-        boolean zoomInTaskView = showAsGrid ? taskView.isLargeTile() : taskIndex == centerTaskIndex;
+        boolean isCustomStyle = mRecentStyleController != null && mRecentStyleController.isCustomStyleActive();
+        boolean isGridStyle = mRecentStyleController != null
+                && mRecentStyleController.getCurrentStyle() == RecentStyle.ONE_UI_GRID;
+        boolean zoomInTaskView = isCustomStyle ? (!isGridStyle) : (showAsGrid ? taskView.isLargeTile() : taskIndex == centerTaskIndex);
         if (zoomInTaskView) {
             anim.play(ObjectAnimator.ofFloat(this, RECENTS_SCALE_PROPERTY, toScale));
             anim.play(ObjectAnimator.ofFloat(this, FULLSCREEN_PROGRESS, 1));
             anim.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationStart(@NonNull Animator animation) {
-                    taskView.getThumbnailBounds(mTempRect, /*relativeToDragLayer=*/true);
+                    taskView.getThumbnailBounds(mTempRect, true);
                     getTaskDimension(mContainer.getDeviceProfile(), mTempPointF);
                     Rect fullscreenBounds = new Rect(0, 0, (int) mTempPointF.x,
                             (int) mTempPointF.y);
@@ -4718,7 +4792,7 @@ public abstract class RecentsView<
                     }
                 }
             });
-        } else if (!showAsGrid) {
+        } else if (!showAsGrid && !isGridStyle) {
             // We are launching an adjacent task, so parallax the center and other adjacent task.
             float displacementX = taskView.getWidth() * (toScale - 1f);
             float primaryTranslation = mIsRtl ? -displacementX : displacementX;
@@ -4924,6 +4998,9 @@ public abstract class RecentsView<
     }
 
     public void setEnableDrawingLiveTile(boolean enableDrawingLiveTile) {
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            enableDrawingLiveTile = false;
+        }
         mEnableDrawingLiveTile = enableDrawingLiveTile;
     }
 
@@ -5107,6 +5184,13 @@ public abstract class RecentsView<
     /**
      * Updates page scroll synchronously after measure and layout child views.
      */
+    public void preparePageForRemoval(int pageToSnapTo) {
+        int pageCount = getPageCount();
+        mCurrentPage = pageCount > 0 ? Math.max(0, Math.min(pageToSnapTo, pageCount - 1)) : 0;
+        mCurrentScrollOverPage = mCurrentPage;
+        mNextPage = mCurrentPage;
+    }
+
     @SuppressLint("WrongCall")
     public void updateScrollSynchronously() {
         // onMeasure is needed to update child's measured width which is used in scroll calculation,
@@ -5139,6 +5223,12 @@ public abstract class RecentsView<
 
     @Override
     protected int computeMinScroll() {
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            Integer min = mRecentStyleController.computeMinScroll(this);
+            if (min != null) {
+                return min;
+            }
+        }
         if (!hasTaskViews()) {
             return super.computeMinScroll();
         }
@@ -5148,6 +5238,12 @@ public abstract class RecentsView<
 
     @Override
     protected int computeMaxScroll() {
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            Integer max = mRecentStyleController.computeMaxScroll(this);
+            if (max != null) {
+                return max;
+            }
+        }
         if (!hasTaskViews()) {
             return super.computeMaxScroll();
         }
@@ -5248,6 +5344,11 @@ public abstract class RecentsView<
             }
             debugLog(PAGE_SCROLL_TAG, "getPageScrolls - addDesktopButtonScroll: "
                     + outPageScrolls[addDesktopButtonIndex]);
+        }
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            if (mRecentStyleController.getPageScrolls(this, outPageScrolls)) {
+                return !Arrays.equals(oldPageScrolls, outPageScrolls);
+            }
         }
         debugLog(PAGE_SCROLL_TAG, "getPageScrolls - clearAllScroll: " + clearAllScroll);
         return !Arrays.equals(oldPageScrolls, outPageScrolls);
@@ -5646,6 +5747,10 @@ public abstract class RecentsView<
                 .displayOverviewTasksAsGrid(mContainer.getDeviceProfile()));
     }
 
+    public RecentStyleController getRecentStyleController() {
+        return mRecentStyleController;
+    }
+
     protected boolean showAsFullscreen() {
         return mOverviewFullscreenEnabled
                 && mCurrentGestureEndTarget != GestureState.GestureEndTarget.RECENTS;
@@ -5756,8 +5861,13 @@ public abstract class RecentsView<
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
+        if (mRecentStyleController != null && mRecentStyleController.isCustomStyleActive()) {
+            updateCurveProperties();
+        }
         dispatchScrollChanged();
     }
+
+
 
     /**
      * Prepares this RecentsView to scroll properly for an upcoming child view focus request from

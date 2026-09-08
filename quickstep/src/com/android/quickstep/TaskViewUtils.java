@@ -88,6 +88,7 @@ import com.android.quickstep.util.SurfaceTransaction.SurfaceProperties;
 import com.android.quickstep.util.SurfaceTransactionApplier;
 import com.android.quickstep.util.TaskViewSimulator;
 import com.android.quickstep.util.TransformParams;
+import com.android.quickstep.recents.style.RecentStyle;
 import com.android.quickstep.views.DesktopTaskView;
 import com.android.quickstep.views.GroupedTaskView;
 import com.android.quickstep.views.RecentsView;
@@ -267,8 +268,11 @@ public final class TaskViewUtils {
 
         RemoteTargetHandle[] topMostSimulators = null;
 
-        // TVSs already initialized from the running task, no need to re-init
-        if (!taskView.isRunningTask()) {
+        boolean isCustomStyle = recentsView.getRecentStyleController() != null
+                && recentsView.getRecentStyleController().isCustomStyleActive();
+        boolean isGridStyle = recentsView.getRecentStyleController() != null
+                && recentsView.getRecentStyleController().getCurrentStyle() == RecentStyle.ONE_UI_GRID;
+        if (!taskView.isRunningTask() || isCustomStyle) {
             initTaskViewSimulatorsForRemoteTargetHandles(
                     Arrays.asList(remoteTargetHandles), dp, recentsView, taskView, out);
         }
@@ -277,9 +281,23 @@ public final class TaskViewUtils {
             TaskViewSimulator tvsLocal = targetHandle.getTaskViewSimulator();
             out.setFloat(tvsLocal.fullScreenProgress,
                     AnimatedFloat.VALUE, 1, TOUCH_RESPONSE);
+            float targetScale = (isGridStyle && !TEMP_THUMBNAIL_BOUNDS.isEmpty())
+                    ? ((float) TEMP_FULLSCREEN_BOUNDS.width() / (float) Math.max(1, TEMP_THUMBNAIL_BOUNDS.width()))
+                    : tvsLocal.getFullScreenScale();
             out.setFloat(tvsLocal.recentsViewScale,
-                    AnimatedFloat.VALUE, tvsLocal.getFullScreenScale(),
+                    AnimatedFloat.VALUE, targetScale,
                     TOUCH_RESPONSE);
+            if (!isGridStyle) {
+            if (tvsLocal.taskPrimaryTranslation.value != 0f) {
+                out.setFloat(tvsLocal.taskPrimaryTranslation, AnimatedFloat.VALUE, 0f, TOUCH_RESPONSE);
+            }
+            if (tvsLocal.taskSecondaryTranslation.value != 0f) {
+                out.setFloat(tvsLocal.taskSecondaryTranslation, AnimatedFloat.VALUE, 0f, TOUCH_RESPONSE);
+            }
+            if (tvsLocal.carouselScale.value != 1f) {
+                out.setFloat(tvsLocal.carouselScale, AnimatedFloat.VALUE, 1f, TOUCH_RESPONSE);
+            }
+         }
 
             out.addListener(new AnimatorListenerAdapter() {
                 @Override
@@ -291,7 +309,8 @@ public final class TaskViewUtils {
                     }
                     applier.scheduleApply(showTransaction);
 
-                    taskView.getThumbnailBounds(TEMP_THUMBNAIL_BOUNDS, /*relativeToDragLayer=*/
+                if (!isGridStyle) {
+                        taskView.getThumbnailBounds(TEMP_THUMBNAIL_BOUNDS,
                             true);
                     getTaskDimension(container.getDeviceProfile(),
                             TEMP_TASK_DIMENSION);
@@ -300,6 +319,15 @@ public final class TaskViewUtils {
                     Utilities.getPivotsForScalingRectToRect(TEMP_THUMBNAIL_BOUNDS,
                             TEMP_FULLSCREEN_BOUNDS, TEMP_PIVOT);
                     tvsLocal.setPivotOverride(TEMP_PIVOT);
+                 }
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    if (isGridStyle) {
+                        tvsLocal.setTaskRectTransform(null);
+                        tvsLocal.setPivotOverride(null);
+                    }
                 }
             });
             out.addOnFrameCallback(() -> {
@@ -350,7 +378,8 @@ public final class TaskViewUtils {
 
         int taskIndex = recentsView.indexOfChild(taskView);
         boolean parallaxCenterAndAdjacentTask = !dp.getDeviceProperties().isLargeScreen()
-                && taskIndex != recentsView.getCurrentPage();
+                && taskIndex != recentsView.getCurrentPage()
+                && !isGridStyle;
         if (!skipViewChanges && parallaxCenterAndAdjacentTask && topMostSimulators != null) {
             out.addFloat(taskView, VIEW_ALPHA, 1, 0, clampToProgress(LINEAR, 0.2f, 0.4f));
 
@@ -696,6 +725,9 @@ public final class TaskViewUtils {
             if (raController != null) {
                 raController.setWillFinishToHome(false);
             }
+            if (recentsView.getRecentStyleController() != null) {
+                recentsView.getRecentStyleController().setIsLaunching(true);
+            }
             launcherAnim = recentsView.createAdjacentPageAnimForTaskLaunch(taskView);
             launcherAnim.setInterpolator(
                     com.android.internal.util.mist.MistifyFluidMotionHelper.isFluidAnimationEnabled(taskView.getContext())
@@ -714,10 +746,13 @@ public final class TaskViewUtils {
                 // interfere with a rapid swipe up to home in the live tile + running task case.
                 @Override
                 public void onAnimationSuccess(Animator animation) {
+                    if (recentsView.getRecentStyleController() != null) {
+                        recentsView.getRecentStyleController().setIsLaunching(false);
+                    }
                     recentsView.finishRecentsAnimation(false /* toHome */, () -> {
                         recentsView.post(() -> {
                             stateManager.moveToRestState(
-                                    !(taskView instanceof DesktopTaskView) /* isAnimated */);
+                                     !(taskView instanceof DesktopTaskView));
                             stateManager.reapplyState();
 
                             // We may have notified launcher is not visible so that taskbar can
@@ -743,12 +778,18 @@ public final class TaskViewUtils {
                 @Override
                 public void onAnimationCancel(Animator animation) {
                     super.onAnimationCancel(animation);
+                    if (recentsView.getRecentStyleController() != null) {
+                        recentsView.getRecentStyleController().setIsLaunching(false);
+                    }
                     recentsView.onTaskLaunchedInLiveTileModeCancelled();
                 }
 
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
+                    if (recentsView.getRecentStyleController() != null) {
+                        recentsView.getRecentStyleController().setIsLaunching(false);
+                    }
                     recentsView.setTaskLaunchCancelledRunnable(null);
                 }
             };
@@ -787,6 +828,14 @@ public final class TaskViewUtils {
         if (windowAnimEndListener != null) {
             anim.addListener(windowAnimEndListener);
         }
+        anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (recentsView.getRecentStyleController() != null) {
+                    recentsView.getRecentStyleController().setIsLaunching(false);
+                }
+            }
+        });
     }
 
     /**
@@ -854,6 +903,19 @@ public final class TaskViewUtils {
         int gridTranslationY = deviceProfile.getDeviceProperties().isLargeScreen()
                 ? (int) taskView.getGridTranslationY() : 0;
 
+        float customTransX = taskView.getCustomStyleTranslationX();
+        float customTransY = taskView.getCustomStyleTranslationY();
+        float customScale = taskView.getCustomStyleScale();
+
+        boolean isGridStyle = recentsView.getRecentStyleController() != null
+                && recentsView.getRecentStyleController().getCurrentStyle() == RecentStyle.ONE_UI_GRID;
+        if (isGridStyle) {
+            taskView.getThumbnailBounds(TEMP_THUMBNAIL_BOUNDS, true);
+            getTaskDimension(deviceProfile, TEMP_TASK_DIMENSION);
+            TEMP_FULLSCREEN_BOUNDS.set(0, 0, (int) TEMP_TASK_DIMENSION.x, (int) TEMP_TASK_DIMENSION.y);
+            Utilities.getPivotsForScalingRectToRect(TEMP_THUMBNAIL_BOUNDS, TEMP_FULLSCREEN_BOUNDS, TEMP_PIVOT);
+        }
+
         for (RemoteTargetHandle handle : handleList) {
             TaskViewSimulator tvsLocal = handle.getTaskViewSimulator();
             tvsLocal.setDp(deviceProfile);
@@ -861,11 +923,28 @@ public final class TaskViewUtils {
             tvsLocal.getOrientationState().update(displayRotation, displayRotation);
             tvsLocal.calculateTaskSize();
 
+        if (isGridStyle) {
+                Matrix transform = new Matrix();
+                transform.setRectToRect(new RectF(tvsLocal.getTaskRect()), new RectF(TEMP_THUMBNAIL_BOUNDS), ScaleToFit.FILL);
+                tvsLocal.setTaskRectTransform(transform);
+                tvsLocal.setPivotOverride(TEMP_PIVOT);
+
+                tvsLocal.fullScreenProgress.value = 0;
+                tvsLocal.recentsViewScale.value = 1;
+                tvsLocal.recentsViewScroll.value = 0;
+                tvsLocal.taskPrimaryTranslation.value = 0;
+                tvsLocal.taskSecondaryTranslation.value = 0;
+                tvsLocal.taskGridTranslationX.value = 0;
+                tvsLocal.taskGridTranslationY.value = 0;
+                tvsLocal.carouselScale.value = 1;
+            } else {
             tvsLocal.fullScreenProgress.value = 0;
             tvsLocal.recentsViewScale.value = 1;
             tvsLocal.recentsViewScroll.value = scrollOffset;
-            tvsLocal.taskSecondaryTranslation.value = gridTranslationY;
-
+            tvsLocal.taskPrimaryTranslation.value = customTransX;
+            tvsLocal.taskSecondaryTranslation.value = (gridTranslationY != 0) ? gridTranslationY : customTransY;
+            tvsLocal.carouselScale.value = customScale;
+         }
             if (taskView instanceof DesktopTaskView) {
                 handle.getTransformParams().setTargetAlpha(1f);
             } else {

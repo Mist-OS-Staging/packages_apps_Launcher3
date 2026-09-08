@@ -147,6 +147,23 @@
     <string name="recents_clear_all_title">Clear all</string>
     <string name="recents_lens_title">Lens</string>
 
+    <!-- Recents style -->
+    <string name="recents_style_title">Recent apps style</string>
+    <string-array name="recents_style_entries">
+        <item>Default</item>
+        <item>One UI Grid</item>
+        <item>Mistify Stack</item>
+        <item>iOS</item>
+        <item>Horizontal</item>
+    </string-array>
+    <string-array name="recents_style_values">
+        <item>default</item>
+        <item>oneui_grid</item>
+        <item>oneui_stack</item>
+        <item>ios</item>
+        <item>miui_horizontal</item>
+    </string-array>
+
     <!-- Parallax -->
     <string name="short_parallax_title">Allow short parallax</string>
     <string name="short_parallax_summary">Enable full wallpaper scroll effect on smaller numbers of pages instead of cropping the wallpaper</string>

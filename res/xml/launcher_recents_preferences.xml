@@ -7,6 +7,16 @@
     <PreferenceCategory
         android:title="@string/general_category_title">
 
+        <ListPreference
+            android:key="pref_recents_style"
+            android:title="@string/recents_style_title"
+            android:summary="%s"
+            android:entries="@array/recents_style_entries"
+            android:entryValues="@array/recents_style_values"
+            android:defaultValue="default"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
         <SwitchPreferenceCompat
             android:key="pref_recents_meminfo"
             android:title="@string/recents_meminfo_title"

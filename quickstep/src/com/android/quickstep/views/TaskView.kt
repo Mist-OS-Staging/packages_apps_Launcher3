@@ -237,9 +237,15 @@ constructor(
         get() =
             pagedOrientationHandler.getPrimaryValue(DISMISS_TRANSLATION_X, DISMISS_TRANSLATION_Y)
 
+    val primaryDismissTranslation: Float
+        get() = primaryDismissTranslationProperty.get(this)
+
     val secondaryDismissTranslationProperty: FloatProperty<TaskView>
         get() =
             pagedOrientationHandler.getSecondaryValue(DISMISS_TRANSLATION_X, DISMISS_TRANSLATION_Y)
+
+    val secondaryDismissTranslation: Float
+        get() = secondaryDismissTranslationProperty.get(this)
 
     protected val primaryTaskOffsetTranslationProperty: FloatProperty<TaskView>
         get() =
@@ -339,6 +345,24 @@ constructor(
         set(value) {
             field = value
             onGridProgressChanged()
+        }
+
+    var customStyleScale = 1f
+        set(value) {
+            field = value
+            applyScale()
+        }
+
+    var customStyleTranslationX = 0f
+        set(value) {
+            field = value
+            applyTranslationX()
+        }
+
+    var customStyleTranslationY = 0f
+        set(value) {
+            field = value
+            applyTranslationY()
         }
 
     /**
@@ -498,6 +522,7 @@ constructor(
     var splitAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Split)
     private var modalAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Modal)
     var animateToIconAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.AnimateToIcon)
+    var customStyleAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.CustomStyle)
 
     var shouldShowScreenshot = false
         get() = !isRunningTask || field
@@ -743,6 +768,9 @@ constructor(
         isBeingDraggedForDismissal = false
         isBeingDismissed = false
         resetPersistentViewTransforms()
+        resetCustomStyleTransforms()
+        visibility = VISIBLE
+        alpha = 1f
 
         groupTask = null
         viewModel.unbind()
@@ -753,6 +781,7 @@ constructor(
         modalScale = 1f
         modalPivot = null
         taskThumbnailSplashAlpha = 0f
+        customStyleAlpha = 1f
         borderEnabled = false
         hoverBorderVisible = false
         taskViewId = UNBOUND_TASK_VIEW_ID
@@ -1310,7 +1339,8 @@ constructor(
             "${taskIds.contentToString()} - launchWithAnimation - initiating launch, " +
                 "partial trace: ${getTrimmedStackTrace("TaskView.launchWithAnimation")}",
         )
-        return if (isRunningTask && recentsView?.remoteTargetHandles != null) {
+        val isCustomStyle = recentsView?.recentStyleController?.isCustomStyleActive ?: false
+        return if (isRunningTask && recentsView?.remoteTargetHandles != null && !isCustomStyle) {
                 launchAsLiveTile(recentsView?.remoteTargetHandles!!)
             } else {
                 launchAsStaticTile()
@@ -1453,7 +1483,9 @@ constructor(
                 ActiveGestureErrorDetector.GestureEvent.EXPECTING_TASK_APPEARED
             )
             val recentsView = recentsView ?: return null
+            val isCustomStyle = recentsView.recentStyleController?.isCustomStyleActive ?: false
             if (
+                !isCustomStyle &&
                 recentsView.runningTaskViewId != -1 &&
                     recentsView.mRecentsAnimationController != null
             ) {
@@ -1777,6 +1809,7 @@ constructor(
             persistentScale *
                 dismissScale *
                 animateToIconScale *
+                customStyleScale *
                 Utilities.mapRange(modalness, 1f, modalScale)
         scaleX = scale
         scaleY = scale
@@ -1784,14 +1817,16 @@ constructor(
     }
 
     private fun applyTranslationX() {
+        val isCustomStyle = recentsView?.recentStyleController?.isCustomStyleActive == true
         translationX =
-            dismissTranslationX +
+            (if (isCustomStyle) 0f else dismissTranslationX) +
                 taskOffsetTranslationX +
                 taskResistanceTranslationX +
                 splitSelectTranslationX +
                 gridEndTranslationX +
                 persistentTranslationX +
-                animateToIconTranslationX
+                animateToIconTranslationX +
+                customStyleTranslationX
     }
 
     private fun applyTranslationY() {
@@ -1801,7 +1836,8 @@ constructor(
                 taskResistanceTranslationY +
                 splitSelectTranslationY +
                 persistentTranslationY +
-                animateToIconTranslationY
+                animateToIconTranslationY +
+                customStyleTranslationY
     }
 
     private fun onGridProgressChanged() {
@@ -1887,6 +1923,18 @@ constructor(
         animateToIconTranslationY = 0f
     }
 
+    open fun resetCustomStyleTransforms() {
+        customStyleScale = 1f
+        customStyleTranslationX = 0f
+        customStyleTranslationY = 0f
+        customStyleAlpha = 1f
+        translationZ = 0f
+        elevation = 0f
+        rotation = 0f
+        rotationY = 0f
+        setColorTint(0f, 0)
+    }
+
     private fun getGridTrans(endTranslation: Float) =
         Utilities.mapRange(gridProgress, 0f, endTranslation)
 
@@ -1920,6 +1968,7 @@ constructor(
             Split,
             Modal,
             AnimateToIcon,
+            CustomStyle,
         }
 
         private enum class SettledProgress {
