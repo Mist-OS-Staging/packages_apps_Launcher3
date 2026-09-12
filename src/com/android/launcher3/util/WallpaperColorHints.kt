@@ -70,10 +70,11 @@ constructor(@ApplicationContext private val context: Context, tracker: DaggerSin
     @MainThread
     private fun onColorsChanged(colors: WallpaperColors?, which: Int) {
         if ((which and FLAG_SYSTEM) != 0) {
+            val hadColors = this.colors != null
             val oldHints = hints
             this.colors = colors
             val newHints = hints
-            if (oldHints != newHints) {
+            if (hadColors && oldHints != newHints) {
                 onColorHintsChangedListeners.forEach { it.onColorHintsChanged(newHints) }
             }
         }
