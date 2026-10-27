@@ -117,8 +117,11 @@
     <dimen name="min_page_snap_velocity">1500dp</dimen>
 
     <!-- All Apps -->
-    <dimen name="all_apps_search_bar_field_height">52dp</dimen>
+    <dimen name="all_apps_search_bar_field_height">56dp</dimen>
     <!-- all_apps_search_bar_field_height / 2 -->
+    <dimen name="all_apps_search_bar_bottom_margin">8dp</dimen>
+    <dimen name="all_apps_search_bar_max_width">600dp</dimen>
+    <dimen name="all_apps_search_bar_blur_radius">12dp</dimen>
     <dimen name="all_apps_search_bar_content_overlap">26dp</dimen>
     <!-- affects padding above apps lists when tabs and floating header rows are not visible -->
     <!-- (always affects padding above search results) -->
@@ -126,6 +129,7 @@
     <!-- margin adjustment for layout relative to bottom of search container -->
     <!-- if the search container is obscuring things, try adjusting this -->
     <dimen name="all_apps_search_bar_bottom_adjustment">-6dp</dimen>
+    <dimen name="all_apps_search_bar_bottom_margin">12dp</dimen>
     <dimen name="all_apps_empty_search_message_top_offset">40dp</dimen>
     <dimen name="all_apps_search_top_row_extra_height">4dp</dimen>
     <dimen name="all_apps_header_pill_height">48dp</dimen>

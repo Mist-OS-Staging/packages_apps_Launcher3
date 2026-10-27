@@ -283,6 +283,8 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
         @JvmField val DOCK_THEME = backedUpItem("pref_dock_theme", false)
         @JvmField val DRAWER_SCROLLBAR = backedUpItem("pref_drawer_scrollbar", true)
         @JvmField val DRAWER_SEARCH = backedUpItem("pref_drawer_search", true)
+        @JvmField val ALL_APPS_SEARCH_BAR_PLACEMENT = backedUpItem("pref_all_apps_search_bar_placement", "top")
+        @JvmField val ALL_APPS_SEARCH_BAR_APPEARANCE = backedUpItem("pref_all_apps_search_bar_appearance", "default")
         @JvmField val FONT_SIZE = backedUpItem("pref_custom_font_size", 100)
         @JvmField val HOTSEAT_OPACITY = backedUpItem("pref_hotseat_opacity", 40)
         @JvmField val HOTSEAT_QSB_OPACITY = backedUpItem("pref_hotseat_qsb_opacity", 100)

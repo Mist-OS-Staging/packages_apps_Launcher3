@@ -121,7 +121,29 @@
 
     <!-- App drawer searchbar -->
     <string name="drawer_search_title">App drawer search bar</string>
-    <string name="drawer_search_summary">Show a search bar at the top of the app drawer</string>
+    <string name="drawer_search_summary">Show a search bar in the app drawer</string>
+    <string name="search_bar_placement_title">Search bar placement</string>
+    <string-array name="search_bar_placement_entries">
+        <item>Top</item>
+        <item>Bottom</item>
+    </string-array>
+    <string-array name="search_bar_placement_values" translatable="false">
+        <item>top</item>
+        <item>bottom</item>
+    </string-array>
+    <string name="search_bar_appearance_title">Search bar appearance</string>
+    <string-array name="search_bar_appearance_entries">
+        <item>Default</item>
+        <item>Blur</item>
+        <item>Narrow</item>
+        <item>Narrow Blur</item>
+    </string-array>
+    <string-array name="search_bar_appearance_values" translatable="false">
+        <item>default</item>
+        <item>blur</item>
+        <item>narrow</item>
+        <item>narrow_blur</item>
+    </string-array>
 
     <!-- Wallpaper scrolling -->
     <string name="allow_wallpaper_scrolling">Wallpaper scrolling</string>

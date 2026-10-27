@@ -19,19 +19,33 @@ import static android.view.View.MeasureSpec.EXACTLY;
 import static android.view.View.MeasureSpec.getSize;
 import static android.view.View.MeasureSpec.makeMeasureSpec;
 
-import static com.android.launcher3.Utilities.prefixTextWithIcon;
 import static com.android.launcher3.icons.IconNormalizer.ICON_VISIBLE_AREA_FACTOR;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Canvas;
+import android.graphics.Path;
+import android.graphics.RecordingCanvas;
 import android.graphics.Rect;
+import android.graphics.RenderEffect;
+import android.graphics.RenderNode;
+import android.graphics.Shader;
+import android.graphics.drawable.Drawable;
 import android.text.Selection;
 import android.text.SpannableStringBuilder;
 import android.text.method.TextKeyListener;
 import android.util.AttributeSet;
+import android.view.CrossWindowBlurListeners;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewGroup.MarginLayoutParams;
+import android.view.WindowInsets;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.ExtendedEditText;
@@ -43,11 +57,14 @@ import com.android.launcher3.allapps.AllAppsStore;
 import com.android.launcher3.allapps.BaseAllAppsAdapter.AdapterItem;
 import com.android.launcher3.allapps.PrivateProfileManager;
 import com.android.launcher3.allapps.SearchUiManager;
+import com.android.launcher3.anim.KeyboardInsetAnimationCallback;
 import com.android.launcher3.search.SearchCallback;
 import com.android.launcher3.util.ApiWrapper;
+import com.android.launcher3.util.Themes;
 import com.android.launcher3.views.ActivityContext;
 
 import java.util.ArrayList;
+import java.util.function.Consumer;
 
 /**
  * Layout to contain the All-apps search UI.
@@ -64,6 +81,32 @@ public class AppsSearchContainerLayout extends ExtendedEditText
 
     // The amount of pixels to shift down and overlap with the rest of the content.
     private final int mContentOverlap;
+
+    private static final int SEARCH_BAR_BG_ALPHA = 255;
+    private final int mMaxBarWidth;
+    private float mWidthExpansion = 1.0f;
+    private ValueAnimator mWidthAnimator;
+    private boolean mImeVisible;
+
+    private AllAppsSearchBarConfig.Placement mPlacement = AllAppsSearchBarConfig.Placement.TOP;
+    private AllAppsSearchBarConfig.Appearance mAppearance = AllAppsSearchBarConfig.Appearance.DEFAULT;
+
+    private Drawable mSearchIcon;
+    private boolean mBlurEnabled;
+    private final RenderNode mBlurNode = new RenderNode("searchBarBackdropBlur");
+    private final Path mClipPath = new Path();
+    private float mBlurRadiusPx = -1f;
+    private final int[] mBarLoc = new int[2];
+    private final int[] mListLoc = new int[2];
+    private RecyclerView mObservedList;
+    private final RecyclerView.OnScrollListener mScrollListener =
+            new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                    invalidate();
+                }
+            };
+    private final Consumer<Boolean> mBlurListener = this::onBlurEnabledChanged;
 
     public AppsSearchContainerLayout(Context context) {
         this(context, null);
@@ -84,29 +127,59 @@ public class AppsSearchContainerLayout extends ExtendedEditText
 
         mContentOverlap =
                 getResources().getDimensionPixelSize(R.dimen.all_apps_search_bar_content_overlap);
+
+        setWindowInsetsAnimationCallback(new KeyboardInsetAnimationCallback(this));
+
+        mMaxBarWidth = getResources().getDimensionPixelSize(R.dimen.all_apps_search_bar_max_width);
+        setElevation(0f);
+        setTranslationZ(0f);
+
+        mPlacement = AllAppsSearchBarConfig.getPlacement(context);
+        mAppearance = AllAppsSearchBarConfig.getAppearance(context);
+        mWidthExpansion = (mAppearance != null && mAppearance.isNarrow()) ? 0.88f : 1.0f;
+        updateBackgroundAlpha();
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if(mAppsView != null)
+        if (getParent() instanceof ViewGroup) {
+            ((ViewGroup) getParent()).setClipChildren(false);
+        }
+        if (mAppsView != null) {
             mAppsView.getAppsStore().addUpdateListener(this);
+        }
+        CrossWindowBlurListeners blurListeners = CrossWindowBlurListeners.getInstance();
+        blurListeners.addListener(getContext().getMainExecutor(), mBlurListener);
+        onBlurEnabledChanged(blurListeners.isCrossWindowBlurEnabled());
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if(mAppsView != null)
+        if (mAppsView != null) {
             mAppsView.getAppsStore().removeUpdateListener(this);
+        }
+        CrossWindowBlurListeners.getInstance().removeListener(mBlurListener);
+        onBlurEnabledChanged(false);
+        if (mWidthAnimator != null) {
+            mWidthAnimator.cancel();
+            mWidthAnimator = null;
+        }
+        if (mObservedList != null) {
+            mObservedList.removeOnScrollListener(mScrollListener);
+            mObservedList = null;
+        }
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // Update the width to match the grid padding
         DeviceProfile dp = mLauncher.getDeviceProfile();
         int myRequestedWidth = getSize(widthMeasureSpec);
-        int rowWidth = myRequestedWidth - mAppsView.getActiveRecyclerView().getPaddingLeft()
-                - mAppsView.getActiveRecyclerView().getPaddingRight();
+        RecyclerView activeRv = mAppsView != null ? mAppsView.getActiveRecyclerView() : null;
+        int rvPaddingLeft = activeRv != null ? activeRv.getPaddingLeft() : 0;
+        int rvPaddingRight = activeRv != null ? activeRv.getPaddingRight() : 0;
+        int rowWidth = myRequestedWidth - rvPaddingLeft - rvPaddingRight;
 
         int cellWidth = DeviceProfile.calculateCellWidth(rowWidth,
                 dp.getWorkspaceProfile().getCellLayoutBorderSpacePx().x,
@@ -116,6 +189,12 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         int iconPadding = cellWidth - iconVisibleSize;
 
         int myWidth = rowWidth - iconPadding + getPaddingLeft() + getPaddingRight();
+        myWidth = Math.min(myWidth, mMaxBarWidth);
+        float expansion = (mAppearance != null && mAppearance.isNarrow()) ? mWidthExpansion : 1.0f;
+        myWidth = (int) (myWidth * expansion);
+
+        myWidth = Math.min(myWidth, myRequestedWidth
+                - 2 * (int) (16 * getResources().getDisplayMetrics().density));
         super.onMeasure(makeMeasureSpec(myWidth, EXACTLY), heightMeasureSpec);
     }
 
@@ -123,15 +202,123 @@ public class AppsSearchContainerLayout extends ExtendedEditText
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
 
-        // Shift the widget horizontally so that its centered in the parent (b/63428078)
+        // Shift the widget horizontally so that it's centered in the parent (b/63428078)
         View parent = (View) getParent();
-        int availableWidth = parent.getWidth() - parent.getPaddingLeft() - parent.getPaddingRight();
-        int myWidth = right - left;
-        int expectedLeft = parent.getPaddingLeft() + (availableWidth - myWidth) / 2;
-        int shift = expectedLeft - left;
-        setTranslationX(shift);
+        if (parent != null) {
+            int availableWidth = parent.getWidth() - parent.getPaddingLeft() - parent.getPaddingRight();
+            int myWidth = right - left;
+            int expectedLeft = parent.getPaddingLeft() + (availableWidth - myWidth) / 2;
+            int shift = expectedLeft - left;
+            setTranslationX(shift);
+        }
+    }
 
-        offsetTopAndBottom(mContentOverlap);
+    private void onBlurEnabledChanged(boolean enabled) {
+        if (mBlurEnabled == enabled) return;
+        mBlurEnabled = enabled;
+        updateBackgroundAlpha();
+        invalidate();
+    }
+
+    private void updateBackgroundAlpha() {
+        Drawable bg = getBackground();
+        if (bg != null) {
+            boolean isBlurActive = mAppearance != null && mAppearance.isBlur() && mBlurEnabled;
+            bg.mutate().setAlpha(isBlurActive ? 0 : SEARCH_BAR_BG_ALPHA);
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        mClipPath.reset();
+        mClipPath.addRoundRect(0f, 0f, w, h, h / 2f, h / 2f, Path.Direction.CW);
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+        if (mAppearance != null && mAppearance.isBlur() && mBlurEnabled) {
+            drawBackdropBlur(canvas);
+        }
+        super.draw(canvas);
+    }
+
+    /** Blurs the app list content that scrolls under the search bar. */
+    private void drawBackdropBlur(Canvas canvas) {
+        if (!mBlurEnabled || mAppsView == null || !canvas.isHardwareAccelerated()
+                || getWidth() <= 0 || getHeight() <= 0) {
+            return;
+        }
+        View list = mAppsView.getActiveRecyclerView();
+        if (list == null || list.getWidth() <= 0) {
+            return;
+        }
+        if (list instanceof RecyclerView && list != mObservedList) {
+            if (mObservedList != null) {
+                mObservedList.removeOnScrollListener(mScrollListener);
+            }
+            mObservedList = (RecyclerView) list;
+            mObservedList.addOnScrollListener(mScrollListener);
+        }
+        getLocationInWindow(mBarLoc);
+        list.getLocationInWindow(mListLoc);
+        final int w = getWidth();
+        final int h = getHeight();
+        boolean effectNeeded = mBlurRadiusPx < 0f;
+        if (effectNeeded) {
+            mBlurRadiusPx = getResources()
+                    .getDimensionPixelSize(R.dimen.all_apps_search_bar_blur_radius);
+        }
+
+        mBlurNode.setPosition(0, 0, w, h);
+        RecordingCanvas rc = mBlurNode.beginRecording(w, h);
+        rc.translate(mListLoc[0] - mBarLoc[0], mListLoc[1] - mBarLoc[1]);
+        list.draw(rc);
+        mBlurNode.endRecording();
+        if (effectNeeded) {
+            mBlurNode.setRenderEffect(RenderEffect.createBlurEffect(
+                    mBlurRadiusPx, mBlurRadiusPx, Shader.TileMode.CLAMP));
+        }
+
+        int base = Themes.getAttrColor(
+                getContext(), R.attr.allappsHeaderProtectionColor);
+        int save = canvas.save();
+        canvas.clipPath(mClipPath);
+        // Opaque panel-colored backing hides the sharp icons that sit under the bar
+        canvas.drawColor(base | 0xFF000000);
+        canvas.drawRenderNode(mBlurNode);
+        canvas.restoreToCount(save);
+    }
+
+    /** Search icon drawn fixed at the start of the bar. */
+    private void drawSearchIcon(Canvas canvas) {
+        if (mSearchIcon == null) {
+            mSearchIcon = getContext().getDrawable(R.drawable.ic_allapps_search);
+            if (mSearchIcon == null) return;
+        }
+        int size = mSearchIcon.getIntrinsicWidth();
+        int margin = (int) (16 * getResources().getDisplayMetrics().density);
+        int top = (getHeight() - size) / 2;
+        boolean rtl = getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+        int left = (rtl ? getWidth() - margin - size : margin) + getScrollX();
+        mSearchIcon.setBounds(left, top, left + size, top + size);
+        mSearchIcon.draw(canvas);
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        int save = canvas.save();
+        CharSequence hint = getHint();
+        if (length() == 0 && hint != null) {
+            // Hint centered across the entire bar (icon stays in corner)
+            float hintWidth = getPaint().measureText(hint, 0, hint.length());
+            float dx = Math.max(0f, (getWidth() - hintWidth) / 2f - getPaddingStart());
+            boolean rtl = getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+            canvas.translate(rtl ? -dx : dx, 0);
+        }
+        super.onDraw(canvas);
+        canvas.restoreToCount(save);
+        drawSearchIcon(canvas);
     }
 
     @Override
@@ -153,6 +340,11 @@ public class AppsSearchContainerLayout extends ExtendedEditText
     }
 
     @Override
+    public void focusSearchField() {
+        mSearchBarController.focusSearchField();
+    }
+
+    @Override
     public boolean isSearchQueryEmpty() {
         String query = Utilities.trim(getEditableText().toString());
         return query.isEmpty();
@@ -160,13 +352,11 @@ public class AppsSearchContainerLayout extends ExtendedEditText
 
     @Override
     public void preDispatchKeyEvent(KeyEvent event) {
-        // Determine if the key event was actual text, if so, focus the search bar and then dispatch
-        // the key normally so that it can process this key event
-        if (!mSearchBarController.isSearchFieldFocused() &&
-                event.getAction() == KeyEvent.ACTION_DOWN) {
+        if (!mSearchBarController.isSearchFieldFocused()
+                && event.getAction() == KeyEvent.ACTION_DOWN) {
             final int unicodeChar = event.getUnicodeChar();
-            final boolean isKeyNotWhitespace = unicodeChar > 0 &&
-                    !Character.isWhitespace(unicodeChar) && !Character.isSpaceChar(unicodeChar);
+            final boolean isKeyNotWhitespace = unicodeChar > 0
+                    && !Character.isWhitespace(unicodeChar) && !Character.isSpaceChar(unicodeChar);
             if (isKeyNotWhitespace) {
                 boolean gotKey = TextKeyListener.getInstance().onKeyDown(this, mSearchQueryBuilder,
                         event.getKeyCode(), event);
@@ -183,25 +373,102 @@ public class AppsSearchContainerLayout extends ExtendedEditText
             privateSpaceQuery();
             return;
         }
-        if (items != null) {
+        if (items != null && mAppsView != null) {
             mAppsView.setSearchResults(items);
         }
     }
 
     @Override
     public void clearSearchResult() {
-        // Clear the search query
         mSearchQueryBuilder.clear();
         mSearchQueryBuilder.clearSpans();
         Selection.setSelection(mSearchQueryBuilder, 0);
-        mAppsView.onClearSearchResult();
+        if (mAppsView != null) {
+            mAppsView.onClearSearchResult();
+        }
+    }
+
+    private void animateWidth(boolean imeVisible) {
+        if (mImeVisible == imeVisible) {
+            return;
+        }
+        mImeVisible = imeVisible;
+
+        if (mWidthAnimator != null) {
+            mWidthAnimator.cancel();
+        }
+
+        float target = (mAppearance != null && mAppearance.isNarrow())
+                ? (imeVisible ? 1.0f : 0.88f)
+                : 1.0f;
+        if (mWidthExpansion == target) {
+            return;
+        }
+        mWidthAnimator = ValueAnimator.ofFloat(mWidthExpansion, target);
+        mWidthAnimator.setDuration(220);
+        mWidthAnimator.addUpdateListener(animator -> {
+            mWidthExpansion = (float) animator.getAnimatedValue();
+            requestLayout();
+        });
+        mWidthAnimator.start();
+    }
+
+    @Override
+    public WindowInsets onApplyWindowInsets(WindowInsets insets) {
+        boolean imeVisible = insets.isVisible(WindowInsets.Type.ime());
+        if (mAppearance != null && mAppearance.isNarrow()) {
+            animateWidth(imeVisible);
+        } else if (mWidthExpansion != 1.0f) {
+            mWidthExpansion = 1.0f;
+            requestLayout();
+        }
+
+        if (mAppsView != null && mAppsView.isSearchBarAtBottom()) {
+            // The bar already rests above the nav bar, and the IME inset includes the nav bar.
+            int ime = imeVisible ? insets.getInsets(WindowInsets.Type.ime()).bottom : 0;
+            int nav = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+            setTranslationY(-Math.max(0, ime - nav));
+        } else {
+            setTranslationY(0f);
+        }
+        return super.onApplyWindowInsets(insets);
     }
 
     @Override
     public void setInsets(Rect insets) {
         MarginLayoutParams mlp = (MarginLayoutParams) getLayoutParams();
-        mlp.topMargin = insets.top;
+        if (mAppsView != null
+                && (mAppsView.getSearchUiDelegate().isSearchBarFloating()
+                || mLauncher.getDeviceProfile().getDeviceProperties().isLargeScreen())) {
+            mlp.topMargin = insets.top;
+        }
         requestLayout();
+    }
+
+    public void setPlacement(AllAppsSearchBarConfig.Placement placement) {
+        mPlacement = placement != null ? placement : AllAppsSearchBarConfig.Placement.TOP;
+    }
+
+    public void setAppearance(AllAppsSearchBarConfig.Appearance appearance) {
+        mAppearance = appearance != null ? appearance : AllAppsSearchBarConfig.Appearance.DEFAULT;
+        if (mAppearance.isNarrow()) {
+            if (mWidthExpansion == 1.0f && !mImeVisible) {
+                mWidthExpansion = 0.88f;
+            }
+        } else {
+            mWidthExpansion = 1.0f;
+        }
+        updateBackgroundAlpha();
+        requestLayout();
+        invalidate();
+    }
+
+    public AllAppsSearchBarConfig.Placement getPlacement() {
+        return mPlacement;
+    }
+
+    public AllAppsSearchBarConfig.Appearance getAppearance() {
+        return mAppearance;
     }
 
     @Override
@@ -210,6 +477,7 @@ public class AppsSearchContainerLayout extends ExtendedEditText
     }
 
     private void privateSpaceQuery() {
+        if (mAppsView == null) return;
         PrivateProfileManager privateProfileManager = mAppsView.getPrivateProfileManager();
         if (privateProfileManager.isPrivateSpaceHidden()) {
             privateProfileManager.setQuietMode(false);
