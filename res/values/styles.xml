@@ -322,6 +322,14 @@
             @color/widget_cell_subtitle_color_dark</item>
     </style>
 
+    <style name="SmartspaceText">
+        <item name="android:fontFamily">variable-headline-large-emphasized</item>
+    </style>
+
+    <style name="SmartspaceSubText">
+        <item name="android:fontFamily">variable-headline-medium-emphasized</item>
+    </style>
+
     <style name="WidgetsTitle" parent="">
         <item name="android:fontFamily">variable-headline-small-emphasized</item>
         <item name="android:textSize">@dimen/widget_picker_title_font_size</item>

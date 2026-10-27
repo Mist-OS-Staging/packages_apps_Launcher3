@@ -25,5 +25,8 @@
         <permission name="android.permission.REGISTER_STATS_PULL_ATOM"/>
         <permission name="android.permission.PACKAGE_USAGE_STATS"/>
         <permission name="com.libremobileos.permission.START_FREEFORM"/>
+        <permission name="android.permission.BLUETOOTH_PRIVILEGED"/>
+        <permission name="android.permission.MANAGE_SMARTSPACE"/>
+        <permission name="android.permission.MEDIA_CONTENT_CONTROL"/>
     </privapp-permissions>
 </permissions>

@@ -290,6 +290,8 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
     private boolean mCreateUserFolderOnDrop = false;
     private boolean mAddToExistingFolderOnDrop = false;
 
+    private View mFirstPagePinnedItem;
+    private boolean mIsEventOverFirstPagePinnedItem;
     private boolean mIsDownOverHorizontalScrollContent;
 
     final static float START_DAMPING_TOUCH_SLOP_ANGLE = (float) Math.PI / 6;
@@ -726,13 +728,38 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
      */
     public void bindAndInitFirstWorkspaceScreen() {
         // Add the first page
-        insertNewWorkspaceScreen(Workspace.FIRST_SCREEN_ID, getChildCount());
+        CellLayout firstPage = insertNewWorkspaceScreen(Workspace.FIRST_SCREEN_ID, getChildCount());
+        if (!LauncherPrefs.SMARTSPACE_ENABLED.get(getContext())) {
+            mFirstPagePinnedItem = null;
+            return;
+        }
+
+        if (mFirstPagePinnedItem == null) {
+            mFirstPagePinnedItem = LayoutInflater.from(getContext())
+                    .inflate(R.layout.reserved_container_workspace, firstPage, false);
+        }
+
+        int cellHSpan = mLauncher.getDeviceProfile().inv.numSearchContainerColumns;
+        int cellVSpan = 1;
+
+        CellLayoutLayoutParams lp = new CellLayoutLayoutParams(0, 0, cellHSpan, cellVSpan);
+        lp.canReorder = false;
+        if (!firstPage.addViewToCellLayout(
+                mFirstPagePinnedItem, 0, R.id.reserved_container_workspace, lp, true)) {
+            Log.e(TAG, "Failed to add to item at (0, 0) to CellLayout");
+            mFirstPagePinnedItem = null;
+        }
     }
 
     public void removeAllWorkspaceScreens() {
         // Disable all layout transitions before removing all pages to ensure that we don't get the
         // transition animations competing with us changing the scroll when we add pages
         disableLayoutTransitions();
+
+        // Recycle the first page pinned item
+        if (mFirstPagePinnedItem != null && mFirstPagePinnedItem.getParent() != null) {
+            ((ViewGroup) mFirstPagePinnedItem.getParent()).removeView(mFirstPagePinnedItem);
+        }
 
         // Remove the pages and clear the screen models
         removeAllViews();
@@ -1306,11 +1333,22 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
 
         mIsDownOverHorizontalScrollContent =
                 (targetItem instanceof ScrollableContent sc) && sc.canScrollHorizontally();
+
+        if (mFirstPagePinnedItem != null) {
+            final float[] pinnedFXY = new float[] {x, y};
+            Utilities.mapCoordInSelfToDescendant(mFirstPagePinnedItem, this, pinnedFXY);
+            mIsEventOverFirstPagePinnedItem = mFirstPagePinnedItem.getLeft() <= pinnedFXY[0]
+                    && mFirstPagePinnedItem.getRight() >= pinnedFXY[0]
+                    && mFirstPagePinnedItem.getTop() <= pinnedFXY[1]
+                    && mFirstPagePinnedItem.getBottom() >= pinnedFXY[1];
+        } else {
+            mIsEventOverFirstPagePinnedItem = false;
+        }
     }
 
     @Override
     protected void determineScrollingStart(MotionEvent ev) {
-        if (!isFinishedSwitchingState() || mIsDownOverHorizontalScrollContent) return;
+        if (!isFinishedSwitchingState() || mIsDownOverHorizontalScrollContent || mIsEventOverFirstPagePinnedItem) return;
 
         float deltaX = ev.getX() - getDownMotionX();
         float absDeltaX = Math.abs(deltaX);
@@ -2894,7 +2932,7 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
         CellLayout layout = null;
         if (shouldUseHotseatAsDropLayout(d)) {
             layout = mLauncher.getHotseat();
-        } else {
+        } else if (!isDragObjectOverSmartSpace(d)) {
             // Check neighbour pages
             layout = checkDragObjectIsOverNeighbourPages(d, centerX);
 
@@ -2923,6 +2961,14 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
             return false;
         }
         getViewBoundsRelativeToWorkspace(hotseat.getShortcutsAndWidgets(), mTempRect);
+        return mTempRect.contains(dragObject.x, dragObject.y);
+    }
+
+    private boolean isDragObjectOverSmartSpace(DragObject dragObject) {
+        if (mFirstPagePinnedItem == null) {
+            return false;
+        }
+        getViewBoundsRelativeToWorkspace(mFirstPagePinnedItem, mTempRect);
         return mTempRect.contains(dragObject.x, dragObject.y);
     }
 

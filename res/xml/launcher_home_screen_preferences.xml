@@ -217,4 +217,25 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:key="smartspace_category"
+        android:title="@string/smartspace_title">
+
+        <SwitchPreferenceCompat
+            android:key="pref_smartspace_enabled"
+            android:title="@string/show_smartspace_title"
+            android:summary="@string/show_smartspace_summary"
+            android:defaultValue="false"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <androidx.preference.PreferenceScreen
+            android:key="smartspace_events"
+            android:title="@string/smartspace_events_title"
+            android:summary="@string/smartspace_events_summary"
+            android:dependency="pref_smartspace_enabled"
+            launcher:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

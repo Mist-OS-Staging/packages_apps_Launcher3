@@ -17,6 +17,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.Manifest;
+import android.app.NotificationManager;
+import android.content.ComponentName;
+import android.content.pm.PackageManager;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -32,6 +36,7 @@ import androidx.preference.PreferenceFragmentCompat.OnPreferenceStartScreenCallb
 import androidx.preference.PreferenceGroup;
 import androidx.preference.PreferenceGroup.PreferencePositionCallback;
 import androidx.preference.PreferenceScreen;
+import androidx.preference.SwitchPreferenceCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.launcher3.BuildConfig;
@@ -42,6 +47,8 @@ import com.android.launcher3.LauncherPrefs;
 import com.android.launcher3.R;
 import com.android.launcher3.display.DisplayController;
 import com.android.launcher3.display.LauncherDisplayInfo;
+import com.android.launcher3.notification.NotificationListener;
+import com.android.launcher3.smartspace.SmartspaceEvent;
 import com.android.launcher3.util.SafeCloseable;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.util.SettingsCache;
@@ -107,6 +114,9 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (LauncherPrefs.SMARTSPACE_ENABLED.getSharedPrefKey().equals(key)) {
+            LauncherAppState.INSTANCE.executeIfCreated(app -> app.getModel().forceReload());
+        }
         if (LauncherPrefs.SHOW_HOTSEAT_BG.getSharedPrefKey().equals(key) ||
                 LauncherPrefs.HOTSEAT_OPACITY.getSharedPrefKey().equals(key) ||
                 LauncherPrefs.DOCK_SEARCH.getSharedPrefKey().equals(key) ||
@@ -179,6 +189,11 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
         private static final String KEY_MINUS_ONE = "pref_enable_minus_one";
 
         private Preference mShowGoogleAppPref;
+        private Preference mCalendarPermissionPref;
+        private Preference mBluetoothPermissionPref;
+        private Preference mNotificationPermissionPref;
+        private static final int REQUEST_SMARTSPACE_CALENDAR = 42;
+        private static final int REQUEST_SMARTSPACE_BLUETOOTH = 43;
 
         @Override
         public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -208,6 +223,7 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
 
             getPreferenceManager().setSharedPreferencesName(LauncherFiles.SHARED_PREFERENCES_KEY);
             setPreferencesFromResource(R.xml.launcher_home_screen_preferences, rootKey);
+            addSmartspacePreferences();
 
             PreferenceScreen screen = getPreferenceScreen();
             initPreferences(screen);
@@ -322,6 +338,7 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
                 recreateActivityNow();
             }
             updateQsbStylePrefs();
+            updateSmartspacePermissionPrefs();
             LauncherPrefs.getPrefs(getContext())
                     .registerOnSharedPreferenceChangeListener(mPrefListener);
         }
@@ -337,6 +354,9 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
                 (prefs, key) -> {
                     if (LauncherPrefs.QSB_STYLE_GOOGLE.getSharedPrefKey().equals(key)) {
                         updateQsbStylePrefs();
+                    }
+                    if (key == null || key.startsWith("pref_smartspace")) {
+                        updateSmartspacePermissionPrefs();
                     }
                 };
 
@@ -369,6 +389,98 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
             Preference pref = findPreference(key);
             if (pref != null) {
                 pref.setEnabled(enabled);
+            }
+        }
+
+        private void addSmartspacePreferences() {
+            PreferenceGroup category = findPreference("smartspace_events");
+            if (category == null) return;
+            Preference info = new Preference(getPreferenceManager().getContext());
+            info.setSummary(R.string.smartspace_events_summary);
+            info.setSelectable(false);
+            info.setIconSpaceReserved(false);
+            info.setOrder(-1);
+            category.addPreference(info);
+            for (SmartspaceEvent event : SmartspaceEvent.values()) {
+                SwitchPreferenceCompat pref = new SwitchPreferenceCompat(
+                        getPreferenceManager().getContext());
+                pref.setKey(event.preference.getSharedPrefKey());
+                pref.setTitle(event.title);
+                pref.setDefaultValue(true);
+                pref.setPersistent(true);
+                pref.setIconSpaceReserved(false);
+                pref.setOrder(event.ordinal() * 2);
+                category.addPreference(pref);
+            }
+            mCalendarPermissionPref = new Preference(getPreferenceManager().getContext());
+            mCalendarPermissionPref.setTitle(R.string.smartspace_calendar_permission);
+            mCalendarPermissionPref.setSummary(R.string.smartspace_calendar_permission_summary);
+            mCalendarPermissionPref.setIconSpaceReserved(false);
+            mCalendarPermissionPref.setOrder(SmartspaceEvent.CALENDAR.ordinal() * 2 + 1);
+            mCalendarPermissionPref.setOnPreferenceClickListener(pref -> {
+                requestPermissions(new String[] {Manifest.permission.READ_CALENDAR},
+                        REQUEST_SMARTSPACE_CALENDAR);
+                return true;
+            });
+            category.addPreference(mCalendarPermissionPref);
+            mBluetoothPermissionPref = new Preference(getPreferenceManager().getContext());
+            mBluetoothPermissionPref.setTitle(R.string.smartspace_bluetooth_permission);
+            mBluetoothPermissionPref.setSummary(R.string.smartspace_bluetooth_permission_summary);
+            mBluetoothPermissionPref.setIconSpaceReserved(false);
+            mBluetoothPermissionPref.setOrder(SmartspaceEvent.BLUETOOTH.ordinal() * 2 + 1);
+            mBluetoothPermissionPref.setOnPreferenceClickListener(pref -> {
+                requestPermissions(new String[] {Manifest.permission.BLUETOOTH_CONNECT},
+                        REQUEST_SMARTSPACE_BLUETOOTH);
+                return true;
+            });
+            category.addPreference(mBluetoothPermissionPref);
+            mNotificationPermissionPref = new Preference(getPreferenceManager().getContext());
+            mNotificationPermissionPref.setTitle(R.string.smartspace_notification_permission);
+            mNotificationPermissionPref.setSummary(R.string.smartspace_notification_permission_summary);
+            mNotificationPermissionPref.setIconSpaceReserved(false);
+            mNotificationPermissionPref.setOrder(SmartspaceEvent.TIMERS.ordinal() * 2 + 1);
+            mNotificationPermissionPref.setOnPreferenceClickListener(pref -> {
+                startActivity(new Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                        .putExtra(android.provider.Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
+                                new ComponentName(getContext(), NotificationListener.class)
+                                        .flattenToString()));
+                return true;
+            });
+            category.addPreference(mNotificationPermissionPref);
+            updateSmartspacePermissionPrefs();
+        }
+
+        private void updateSmartspacePermissionPrefs() {
+            if (getContext() == null) return;
+            boolean enabled = LauncherPrefs.SMARTSPACE_ENABLED.get(getContext());
+            if (mCalendarPermissionPref != null) {
+                mCalendarPermissionPref.setVisible(enabled
+                        && LauncherPrefs.SMARTSPACE_CALENDAR.get(getContext())
+                        && getContext().checkSelfPermission(Manifest.permission.READ_CALENDAR)
+                                != PackageManager.PERMISSION_GRANTED);
+            }
+            if (mBluetoothPermissionPref != null) {
+                mBluetoothPermissionPref.setVisible(enabled
+                        && SmartspaceEvent.BLUETOOTH.isEnabled(getContext())
+                        && getContext().checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                                != PackageManager.PERMISSION_GRANTED);
+            }
+            if (mNotificationPermissionPref != null) {
+                NotificationManager manager = getContext().getSystemService(NotificationManager.class);
+                boolean granted = manager != null && manager.isNotificationListenerAccessGranted(
+                        new ComponentName(getContext(), NotificationListener.class));
+                mNotificationPermissionPref.setVisible(enabled
+                        && SmartspaceEvent.TIMERS.isEnabled(getContext()) && !granted);
+            }
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                int[] grantResults) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            if (requestCode == REQUEST_SMARTSPACE_CALENDAR
+                    || requestCode == REQUEST_SMARTSPACE_BLUETOOTH) {
+                updateSmartspacePermissionPrefs();
             }
         }
 

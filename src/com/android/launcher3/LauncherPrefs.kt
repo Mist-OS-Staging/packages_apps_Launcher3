@@ -411,6 +411,25 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
 
         @JvmField val SHOW_HOTSEAT_QSB = backedUpItem("pref_show_hotseat_qsb", false)
 
+        @JvmField val SMARTSPACE_ENABLED = backedUpItem("pref_smartspace_enabled", false)
+        @JvmField val SMARTSPACE_WEATHER = backedUpItem("pref_smartspace_weather", true)
+        @JvmField val SMARTSPACE_CALENDAR = backedUpItem("pref_smartspace_calendar", true)
+        @JvmField val SMARTSPACE_MUSIC = backedUpItem("pref_smartspace_music", true)
+        @JvmField val SMARTSPACE_ALARMS = backedUpItem("pref_smartspace_alarms", true)
+        @JvmField val SMARTSPACE_FLASHLIGHT = backedUpItem("pref_smartspace_flashlight", true)
+        @JvmField val SMARTSPACE_BLUETOOTH = backedUpItem("pref_smartspace_connectivity", true)
+        @JvmField val SMARTSPACE_BATTERY = backedUpItem("pref_smartspace_battery", true)
+        @JvmField val SMARTSPACE_TIMERS = backedUpItem("pref_smartspace_timers", true)
+        @JvmField val SMARTSPACE_REMINDERS = backedUpItem("pref_smartspace_reminders", true)
+        @JvmField val SMARTSPACE_TRAVEL = backedUpItem("pref_smartspace_travel", true)
+        @JvmField val SMARTSPACE_SPORTS = backedUpItem("pref_smartspace_sports", true)
+        @JvmField val SMARTSPACE_PACKAGES = backedUpItem("pref_smartspace_packages", true)
+        @JvmField val SMARTSPACE_FINANCE = backedUpItem("pref_smartspace_finance", true)
+        @JvmField val SMARTSPACE_SHOPPING = backedUpItem("pref_smartspace_shopping", true)
+        @JvmField val SMARTSPACE_FITNESS = backedUpItem("pref_smartspace_fitness", true)
+        @JvmField val SMARTSPACE_DOORBELL = backedUpItem("pref_smartspace_doorbell", true)
+        @JvmField val SMARTSPACE_OTHER = backedUpItem("pref_smartspace_other", true)
+
         @JvmStatic
         fun isHotseatQsbEnabled(context: Context): Boolean {
             return Utilities.showQSB(context)

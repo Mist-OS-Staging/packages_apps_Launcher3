@@ -99,6 +99,9 @@ import static com.android.launcher3.states.RotationHelper.REQUEST_NONE;
 import static com.android.launcher3.testing.shared.TestProtocol.LAUNCHER_ACTIVITY_LOST_WINDOW_FOCUS_MESSAGE;
 import static com.android.launcher3.testing.shared.TestProtocol.LAUNCHER_ACTIVITY_STOPPED_MESSAGE;
 import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
+import static com.android.launcher3.util.Executors.UI_HELPER_EXECUTOR;
+import com.android.launcher3.smartspace.SmartspaceView;
+import com.android.launcher3.util.FlashlightUtils;
 import static com.android.launcher3.util.ItemInfoMatcher.forFolderMatch;
 import static com.android.launcher3.util.SettingsCache.TOUCHPAD_NATURAL_SCROLLING;
 
@@ -405,6 +408,9 @@ public class Launcher extends StatefulActivity<LauncherState>
     private StartupLatencyLogger mStartupLatencyLogger;
 
     protected WallpaperThemeManager mWallpaperThemeManager;
+
+    private static final int REQUEST_TURN_OFF_FLASHLIGHT = 99;
+    private SmartspaceView mSmartspace;
 
     public static Launcher getLauncher(Context context) {
         return fromContext(context);
@@ -944,6 +950,9 @@ public class Launcher extends StatefulActivity<LauncherState>
     @Override
     protected void onStop() {
         super.onStop();
+        if (mSmartspace != null) {
+            mSmartspace.onPause();
+        }
         hideKeyboard();
         logStopAndResume(false /* isResume */);
         mAppWidgetHolder.setActivityStarted(false);
@@ -1122,6 +1131,9 @@ public class Launcher extends StatefulActivity<LauncherState>
     protected void onResume() {
         TraceHelper.INSTANCE.beginSection(ON_RESUME_EVT);
         super.onResume();
+        if (mSmartspace != null) {
+            mSmartspace.onResume();
+        }
         mLauncherUiState.setIsResumedActivity(true);
         DragView.removeAllViews(this);
         TraceHelper.INSTANCE.endSection();
@@ -1135,6 +1147,9 @@ public class Launcher extends StatefulActivity<LauncherState>
         ItemInstallQueue.INSTANCE.get(this).pauseModelPush(FLAG_ACTIVITY_PAUSED);
 
         super.onPause();
+        if (mSmartspace != null) {
+            mSmartspace.onPause();
+        }
         mLauncherUiState.setIsResumedActivity(false);
         mDragController.cancelDrag();
         mLastTouchUpTime = -1;
@@ -1217,6 +1232,12 @@ public class Launcher extends StatefulActivity<LauncherState>
 
         // Setup Scrim
         mScrimView = findViewById(R.id.scrim_view);
+
+        // Smartspace
+        mSmartspace = findViewById(R.id.reserved_container_workspace);
+        if (!LauncherPrefs.SMARTSPACE_ENABLED.get(this) && mSmartspace != null) {
+            mSmartspace.setVisibility(View.GONE);
+        }
 
         // Setup the drag controller (drop targets have to be added in reverse order in priority)
         mDropTargetBar.setup(mDragController);
@@ -1635,6 +1656,10 @@ public class Launcher extends StatefulActivity<LauncherState>
         LauncherAppState.getIDP(this).removeOnChangeListener(this);
         mOverlayManager.onActivityDestroyed();
         PillColorProvider.getInstance(mWorkspace.getContext()).unregisterObserver();
+
+        if (mSmartspace != null) {
+            mSmartspace.onDestroy();
+        }
     }
 
     public LauncherAccessibilityDelegate getAccessibilityDelegate() {
@@ -1996,6 +2021,36 @@ public class Launcher extends StatefulActivity<LauncherState>
                 onUiChangedWhileSleeping();
             }
             mStateManager.goToState(NORMAL);
+        }
+    }
+
+    public void turnOffFlashlight() {
+        if (!hasBeenResumed()) {
+            addEventCallback(EVENT_RESUMED, this::turnOffFlashlight);
+            return;
+        }
+        if (checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] {android.Manifest.permission.CAMERA}, REQUEST_TURN_OFF_FLASHLIGHT);
+            return;
+        }
+        Context context = getApplicationContext();
+        UI_HELPER_EXECUTOR.execute(() -> {
+            if (!FlashlightUtils.setEnabled(context, false)) {
+                MAIN_EXECUTOR.execute(() -> android.widget.Toast.makeText(context,
+                        R.string.smartspace_flashlight_error, android.widget.Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQUEST_TURN_OFF_FLASHLIGHT) return;
+        if (grantResults.length > 0 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            turnOffFlashlight();
+        } else {
+            android.widget.Toast.makeText(this, R.string.smartspace_flashlight_permission,
+                    android.widget.Toast.LENGTH_LONG).show();
         }
     }
 
