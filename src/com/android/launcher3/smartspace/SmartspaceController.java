@@ -38,7 +38,6 @@ import android.util.Log;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
 import com.android.launcher3.quickspace.QuickspaceController;
-import com.android.launcher3.quickspace.QuickSpaceActionReceiver;
 import com.android.launcher3.util.MSMHProxy;
 import com.android.launcher3.util.MediaSessionManagerHelper;
 
@@ -390,7 +389,7 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
         if (mWeather.isWeatherAvailable() && !TextUtils.isEmpty(text)) {
             mLocal.put(SmartspaceEvent.WEATHER, new SmartspaceCard("local_weather",
                     SmartspaceEvent.WEATHER, text, null, null, mWeather.getWeatherIcon(),
-                    QuickSpaceActionReceiver.getWeatherAction(), 0));
+                    SmartspaceActionHandler.getWeatherAction(), 0));
         } else {
             mLocal.remove(SmartspaceEvent.WEATHER);
         }
