@@ -56,6 +56,27 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
+/** Share of a card's own dismiss distance it must travel before its neighbours reflow. */
+private const val REFLOW_REACH_FRACTION = 0.8f
+
+/**
+ * Position of the dismissed card at which the reflow of its neighbours starts, and the dismissal
+ * is committed (the task is removed once the reflow has finished).
+ *
+ * The stock threshold is the card's unscaled layout height. A recents style that draws cards
+ * smaller than their layout (the OneUI grid) dismisses them over a shorter distance than that, so
+ * the card would never reach the threshold: the reflow would never start, the springs would never
+ * finish and the task would never be removed, only hidden. When the stock threshold is out of
+ * reach, use a distance the card really travels instead. Both values point in the dismiss
+ * direction (negative for a swipe up).
+ */
+internal fun getReflowDriverThreshold(fullHeightThreshold: Float, finalPosition: Float): Float {
+    if (finalPosition == 0f || abs(finalPosition) > abs(fullHeightThreshold)) {
+        return fullHeightThreshold
+    }
+    return finalPosition * REFLOW_REACH_FRACTION
+}
+
 /**
  * Helper class for [RecentsView]. This util class contains refactored and extracted functions from
  * RecentsView related to TaskView dismissal.
@@ -203,9 +224,13 @@ constructor(
                 // as recents scales during swipe up while the home task is dismissed. Otherwise,
                 // when dismissing we should be at the default recents scale.
                 val driverThreshold =
-                    dismissedTaskSecondaryDimension *
-                        verticalFactor *
-                        RECENTS_SCALE_PROPERTY.get(recentsView)
+                    getReflowDriverThreshold(
+                        fullHeightThreshold =
+                            dismissedTaskSecondaryDimension *
+                                verticalFactor *
+                                RECENTS_SCALE_PROPERTY.get(recentsView),
+                        finalPosition = dismissedTaskData.finalPosition,
+                    )
                 springSet.playAfterThreshold(
                     driverThreshold = driverThreshold,
                     triggeredSpringSet = reflowSpringSet,
