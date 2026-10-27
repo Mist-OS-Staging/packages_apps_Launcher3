@@ -379,6 +379,7 @@ open class PopupContainer<T : ActivityContext>(
             }
 
             override fun onPreDragEnd(dragObject: DragObject, dragStarted: Boolean) {
+                focusMode?.onPreDragEnded()
                 if (iconViewController == null || !updateIconUi) return
                 iconViewController.setIconVisible(true)
                 if (dragStarted) {

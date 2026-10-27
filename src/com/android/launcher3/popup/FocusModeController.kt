@@ -89,6 +89,14 @@ private constructor(private val launcher: Launcher, private val icon: BubbleText
         )
     }
 
+    /**
+     * The long press was released without a drag. The pre-drag logic hides the icon drawable while
+     * the finger is down and shows it again here, so the sharp copy must be redrawn.
+     */
+    fun onPreDragEnded() {
+        overlay?.invalidate()
+    }
+
     /** The selected icon is being dragged out of the popup; the drag owns it from now on. */
     fun onDragStarted() {
         overlay?.drawIcon = false
@@ -207,7 +215,7 @@ private constructor(private val launcher: Launcher, private val icon: BubbleText
             canvas.translate(iconPos[0], iconPos[1])
             canvas.scale(scale, scale)
             // Only the icon is kept; the app label is left out, as the popup replaces it.
-            val iconBottom = icon.paddingTop + icon.iconHeight
+            val iconBottom = icon.paddingTop + icon.getIconHeight()
             if (iconBottom > 0) canvas.clipRect(0, 0, icon.width, iconBottom)
             icon.draw(canvas)
             canvas.restoreToCount(count)
