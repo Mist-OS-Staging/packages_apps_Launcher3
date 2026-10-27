@@ -43,6 +43,26 @@ public interface RecentLayoutHandler {
 
     default void onPostUpdateCurveProperties(@NonNull RecentsView<?, ?> recentsView) {}
 
+    /**
+     * Whether this layout derives its transforms from the cards' live positions, including the
+     * translations driven by swipe-to-dismiss and the neighbour reflow that follows it.
+     *
+     * When true, {@link TaskView}'s dismiss translation is rendered (so neighbours visibly slide
+     * into the gap) and the style transforms are re-evaluated on every dismiss frame.
+     */
+    default boolean followsDismissProgress() {
+        return false;
+    }
+
+    /**
+     * Alpha multiplier of the card being swiped away.
+     *
+     * @param dismissProgress 0 at rest, 1 once the card has travelled half its height.
+     */
+    default float getDismissedTaskAlpha(float dismissProgress) {
+        return Math.max(0f, 1f - dismissProgress);
+    }
+
     default void resetTaskTransforms(@Nullable TaskView taskView) {
         if (taskView != null) {
             taskView.resetCustomStyleTransforms();

@@ -16,6 +16,7 @@
 
 package com.android.quickstep.recents.style;
 
+import android.animation.ValueAnimator;
 import android.graphics.Rect;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -23,6 +24,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.android.app.animation.Interpolators;
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.R;
 import com.android.quickstep.views.ClearAllButton;
@@ -36,6 +38,16 @@ public class OneUIGridLayout implements RecentLayoutHandler {
     private static final float COL_SPACING_DP = 12f;
     private static final float ROW_SPACING_DP = 12f;
     private static final float TOP_PADDING_DP = 16f;
+
+    private static final float BASE_ELEVATION_DP = 6f;
+    private static final float ELEVATION_PER_SLOT_DP = 0.04f;
+    private static final int MAX_ELEVATION_SLOTS = 100;
+    private static final long REFLOW_DURATION_MS = 300;
+
+    // Reflow after a swipe-to-dismiss: how far the cards behind it have slid to their new slots.
+    @Nullable private ValueAnimator mReflowAnimator;
+    @Nullable private TaskView mReflowTask;
+    private float mReflowProgress;
 
     private float getBottomPadding(RecentsView<?, ?> recentsView, int insetsBottom) {
         float bottomPadding = insetsBottom;
@@ -265,6 +277,93 @@ public class OneUIGridLayout implements RecentLayoutHandler {
         return Math.abs(taskPage - currentContinuousPage) <= 1.5f;
     }
 
+    /** Everything needed to place a card in a grid slot at the current scroll position. */
+    private static final class SlotMetrics {
+        float density;
+        int containerWidth;
+        int rowsPerPage;
+        int tasksPerPage;
+        float horizontalMargin;
+        float colSpacing;
+        float rowSpacing;
+        float topPadding;
+        float cardWidth;
+        float cardHeight;
+        float scale;
+        boolean isRtl;
+        int baseScroll;
+        int currentScroll;
+
+        /** Screen X of the center of the slot with this (task) index. */
+        float centerX(int index) {
+            int page = index / tasksPerPage;
+            int col = (index % tasksPerPage) % 2;
+            float cellLeft = isRtl
+                    ? (containerWidth - horizontalMargin - (col + 1) * cardWidth - col * colSpacing)
+                    : (horizontalMargin + col * (cardWidth + colSpacing));
+            int targetPageScroll = isRtl
+                    ? (baseScroll - page * containerWidth)
+                    : (baseScroll + page * containerWidth);
+            return cellLeft + (cardWidth / 2f) + (targetPageScroll - currentScroll);
+        }
+
+        /** Screen Y of the center of the slot with this (task) index. */
+        float centerY(int index) {
+            int row = (index % tasksPerPage) / 2;
+            return topPadding + row * (cardHeight + rowSpacing) + (cardHeight / 2f);
+        }
+    }
+
+    private SlotMetrics buildSlotMetrics(@NonNull RecentsView<?, ?> recentsView) {
+        DisplayMetrics dm = recentsView.getResources().getDisplayMetrics();
+        SlotMetrics m = new SlotMetrics();
+        m.density = dm.density;
+
+        int containerWidth = recentsView.getWidth();
+        int containerHeight = recentsView.getHeight();
+        if (containerWidth <= 0) containerWidth = dm.widthPixels;
+        if (containerHeight <= 0) containerHeight = dm.heightPixels;
+        m.containerWidth = containerWidth;
+
+        m.rowsPerPage = computeRowsPerPage(recentsView);
+        m.tasksPerPage = m.rowsPerPage * 2;
+
+        Rect insets = null;
+        if (recentsView.getContainer() != null) {
+            DeviceProfile dp = recentsView.getContainer().getDeviceProfile();
+            if (dp != null) {
+                insets = dp.getInsets();
+            }
+        }
+        int insetsTop = (insets != null) ? insets.top : 0;
+        int insetsBottom = (insets != null) ? insets.bottom : 0;
+
+        m.horizontalMargin = HORIZONTAL_MARGIN_DP * m.density;
+        m.colSpacing = COL_SPACING_DP * m.density;
+        m.rowSpacing = ROW_SPACING_DP * m.density;
+        m.topPadding = insetsTop + (TOP_PADDING_DP * m.density);
+        float bottomPadding = getBottomPadding(recentsView, insetsBottom);
+
+        float availableWidth = Math.max(100f,
+                containerWidth - (2f * m.horizontalMargin) - m.colSpacing);
+        m.cardWidth = availableWidth / 2f;
+
+        float availableHeight = Math.max(100f, containerHeight - m.topPadding - bottomPadding
+                - ((m.rowsPerPage - 1) * m.rowSpacing));
+        m.cardHeight = availableHeight / (float) m.rowsPerPage;
+
+        int fullWidth = recentsView.getLastComputedTaskSize().width();
+        int fullHeight = recentsView.getLastComputedTaskSize().height();
+        if (fullWidth <= 0) fullWidth = containerWidth;
+        if (fullHeight <= 0) fullHeight = containerHeight;
+        m.scale = Math.min(m.cardWidth / (float) fullWidth, m.cardHeight / (float) fullHeight);
+
+        m.isRtl = recentsView.isRtl();
+        m.baseScroll = getBaseScroll(recentsView);
+        m.currentScroll = recentsView.getPagedOrientationHandler().getPrimaryScroll(recentsView);
+        return m;
+    }
+
     @Override
     public void calculateTransform(
             @NonNull RecentsView<?, ?> recentsView,
@@ -277,79 +376,87 @@ public class OneUIGridLayout implements RecentLayoutHandler {
         outTransform.reset();
         if (taskCount == 0) return;
 
-        DisplayMetrics dm = recentsView.getResources().getDisplayMetrics();
-        float density = dm.density;
+        SlotMetrics m = buildSlotMetrics(recentsView);
 
-        int containerWidth = recentsView.getWidth();
-        int containerHeight = recentsView.getHeight();
-        if (containerWidth <= 0) containerWidth = dm.widthPixels;
-        if (containerHeight <= 0) containerHeight = dm.heightPixels;
+        // `taskIndex` skips the cards that are being swiped away, so it is the slot a card moves
+        // to once the gap is closed. `slotIndex` counts every card, i.e. the slot it sits in now.
+        int slotIndex = getTaskIndex(recentsView, taskView);
+        if (slotIndex < 0) slotIndex = taskIndex;
 
-        int rowsPerPage = computeRowsPerPage(recentsView);
-        int tasksPerPage = rowsPerPage * 2;
+        float targetScreenCenterX = m.centerX(slotIndex);
+        float targetScreenCenterY = m.centerY(slotIndex);
 
-        int page = taskIndex / tasksPerPage;
-        int posInPage = taskIndex % tasksPerPage;
-        int row = posInPage / 2;
-        int col = posInPage % 2;
-
-        Rect insets = null;
-        if (recentsView.getContainer() != null) {
-            DeviceProfile dp = recentsView.getContainer().getDeviceProfile();
-            if (dp != null) {
-                insets = dp.getInsets();
+        if (!taskView.isBeingDismissed() && taskIndex < slotIndex) {
+            // Slide from the old slot to the new one, possibly across a page border, instead of
+            // jumping there when the swiped card is removed.
+            float progress = getReflowProgress();
+            if (progress != 0f) {
+                targetScreenCenterX += (m.centerX(taskIndex) - targetScreenCenterX) * progress;
+                targetScreenCenterY += (m.centerY(taskIndex) - targetScreenCenterY) * progress;
             }
         }
-        int insetsTop = (insets != null) ? insets.top : 0;
-        int insetsBottom = (insets != null) ? insets.bottom : 0;
 
-        float horizontalMargin = HORIZONTAL_MARGIN_DP * density;
-        float colSpacing = COL_SPACING_DP * density;
-        float rowSpacing = ROW_SPACING_DP * density;
-        float topPadding = insetsTop + (TOP_PADDING_DP * density);
-        float bottomPadding = getBottomPadding(recentsView, insetsBottom);
-
-        float availableWidth = Math.max(100f, containerWidth - (2f * horizontalMargin) - colSpacing);
-        float cardWidth = availableWidth / 2f;
-
-        float availableHeight = Math.max(100f, containerHeight - topPadding - bottomPadding - ((rowsPerPage - 1) * rowSpacing));
-        float cardHeight = availableHeight / (float) rowsPerPage;
-
-        int fullWidth = recentsView.getLastComputedTaskSize().width();
-        int fullHeight = recentsView.getLastComputedTaskSize().height();
-        if (fullWidth <= 0) fullWidth = containerWidth;
-        if (fullHeight <= 0) fullHeight = containerHeight;
-
-        float scale = Math.min(cardWidth / (float) fullWidth, cardHeight / (float) fullHeight);
-
-        boolean isRtl = recentsView.isRtl();
-        float cellLeft = isRtl
-                ? (containerWidth - horizontalMargin - (col + 1) * cardWidth - col * colSpacing)
-                : (horizontalMargin + col * (cardWidth + colSpacing));
-        float cellTop = topPadding + row * (cardHeight + rowSpacing);
-
-        float targetCenterXInPage = cellLeft + (cardWidth / 2f);
-        float targetCenterYInPage = cellTop + (cardHeight / 2f);
-
-        int pageWidth = containerWidth;
-        int baseScroll = getBaseScroll(recentsView);
-        int targetPageScroll = isRtl
-                ? (baseScroll - page * pageWidth)
-                : (baseScroll + page * pageWidth);
-
-        int currentScroll = recentsView.getPagedOrientationHandler().getPrimaryScroll(recentsView);
-        float pageOffsetOnScreen = targetPageScroll - currentScroll;
-        float targetScreenCenterX = targetCenterXInPage + pageOffsetOnScreen;
-        float targetScreenCenterY = targetCenterYInPage;
-
-        float nativeScreenCenterX = taskView.getLeft() + (taskView.getWidth() / 2f) - currentScroll;
+        float nativeScreenCenterX =
+                taskView.getLeft() + (taskView.getWidth() / 2f) - m.currentScroll;
         float nativeScreenCenterY = taskView.getTop() + (taskView.getHeight() / 2f);
 
-        outTransform.scale = scale;
+        outTransform.scale = m.scale;
         outTransform.translationX = targetScreenCenterX - nativeScreenCenterX;
         outTransform.translationY = targetScreenCenterY - nativeScreenCenterY;
-        outTransform.elevation = 6f * density;
+        outTransform.elevation = getElevationForSlot(slotIndex, m.density);
         outTransform.alpha = 1f;
+    }
+
+    /**
+     * Cards in a grid do not overlap at rest, but they do while sliding to a new slot. Earlier
+     * slots are drawn in front, so the order is always well defined, and never ties.
+     */
+    static float getElevationForSlot(int slotIndex, float density) {
+        int slots = Math.min(slotIndex, MAX_ELEVATION_SLOTS);
+        return (BASE_ELEVATION_DP - ELEVATION_PER_SLOT_DP * slots) * density;
+    }
+
+    /** Progress of the reflow that closes the gap left by a swiped-away card. 0 when idle. */
+    private float getReflowProgress() {
+        if (mReflowTask != null && !mReflowTask.isBeingDismissed()) {
+            mReflowTask = null;
+        }
+        return mReflowTask != null ? mReflowProgress : 0f;
+    }
+
+    /** The grid closes the gap itself; the stock reflow springs are not used for its positions. */
+    @Override
+    public void onTaskDismissed(@NonNull RecentsView<?, ?> recentsView, @NonNull TaskView taskView) {
+        mReflowTask = taskView;
+        if (mReflowAnimator != null && mReflowAnimator.isRunning()) {
+            return;
+        }
+        mReflowProgress = 0f;
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+        animator.setDuration(REFLOW_DURATION_MS);
+        animator.setInterpolator(Interpolators.EMPHASIZED);
+        animator.addUpdateListener(a -> {
+            mReflowProgress = (float) a.getAnimatedValue();
+            recentsView.updateCurveProperties();
+        });
+        mReflowAnimator = animator;
+        animator.start();
+    }
+
+    @Override
+    public void onDetached(@NonNull RecentsView<?, ?> recentsView) {
+        if (mReflowAnimator != null) {
+            mReflowAnimator.cancel();
+            mReflowAnimator = null;
+        }
+        mReflowTask = null;
+        mReflowProgress = 0f;
+    }
+
+    /** The card is flung off the top of the screen without fading. */
+    @Override
+    public float getDismissedTaskAlpha(float dismissProgress) {
+        return 1f;
     }
 
     @Override
@@ -516,7 +623,4 @@ public class OneUIGridLayout implements RecentLayoutHandler {
         return null;
     }
 
-    @Override
-    public void onTaskDismissed(@NonNull RecentsView<?, ?> recentsView, @NonNull TaskView taskView) {
-    }
 }

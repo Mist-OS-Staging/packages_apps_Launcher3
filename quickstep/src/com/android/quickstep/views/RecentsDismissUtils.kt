@@ -272,6 +272,10 @@ constructor(
         dismissedTaskData: DismissedTaskData,
     ): SpringAnimation? {
         dismissedTaskView.isBeingDismissed = true
+        if (isDismissing) {
+            // Lets a recents style that positions cards itself (e.g. the grid) close the gap.
+            recentsView.recentStyleController?.onTaskDismissed(recentsView, dismissedTaskView)
+        }
         val taskDismissFloatProperty =
             FloatPropertyCompat.createFloatPropertyCompat(
                 dismissedTaskView.secondaryDismissTranslationProperty
@@ -716,6 +720,12 @@ constructor(
             .sortedBy { it.second }
 
     private fun willTaskBeVisibleAfterDismiss(taskView: TaskView, taskTranslation: Int): Boolean {
+        // Stacked styles (iOS/ColorOS) draw cards whose native page is off screen, as strips
+        // behind the focused card. Ask the style instead of the screen bounds so those cards also
+        // slide forward, rather than popping into place when the dismissed view is removed.
+        if (recentsView.recentStyleController?.isDismissProgressFollowed == true) {
+            return recentsView.isTaskViewVisible(taskView)
+        }
         val screenStart = recentsView.pagedOrientationHandler.getPrimaryScroll(recentsView)
         val screenEnd =
             screenStart + recentsView.pagedOrientationHandler.getMeasuredSize(recentsView)
