@@ -211,6 +211,9 @@ public class QuickspaceController implements OmniJawsClient.OmniJawsObserver,
             // Ensure the chosen provider is actually set up
             if (target == WeatherProvider.SERAPHIX) {
                 tryBindSeraphix(false);
+                if ("auto".equals(LauncherPrefs.SHOW_QUICKSPACE_WEATHER_PROVIDER.get(mAppContext))) {
+                    addOmniJawsIfEnabled();
+                }
             } else {
                 addOmniJawsIfEnabled();
             }
@@ -232,6 +235,8 @@ public class QuickspaceController implements OmniJawsClient.OmniJawsObserver,
                 // fallback if bind fails at runtime
                 mProvider = WeatherProvider.OMNIJAWS;
                 addOmniJawsIfEnabled();
+            } else if ("auto".equals(LauncherPrefs.SHOW_QUICKSPACE_WEATHER_PROVIDER.get(mAppContext))) {
+                addOmniJawsIfEnabled();
             }
         } else {
             addOmniJawsIfEnabled();
@@ -245,7 +250,7 @@ public class QuickspaceController implements OmniJawsClient.OmniJawsObserver,
         if (!isWeatherEnabled()) return;
         
         try {
-            if (mWeatherClient == null) mWeatherClient = OmniJawsClient.get();
+            if (mWeatherClient == null) mWeatherClient = OmniJawsClient.get(mAppContext);
             if (!mOmniRegistered && mWeatherClient != null) {
                 mWeatherClient.addObserver(mAppContext, this);
                 mOmniRegistered = true;
@@ -411,9 +416,12 @@ public class QuickspaceController implements OmniJawsClient.OmniJawsObserver,
         if (mDestroyed || !isWeatherEnabled()) return false;
         
         if (mProvider == WeatherProvider.SERAPHIX) {
-            return !TextUtils.isEmpty(mSeraphixText) || mSeraphixIcon != null;
+            if (!TextUtils.isEmpty(mSeraphixText) || mSeraphixIcon != null) {
+                return true;
+            }
+            return mWeatherClient != null && mOmniJawsEnabled && mWeatherInfo != null;
         } else {
-            return mWeatherClient != null && mOmniJawsEnabled;
+            return mWeatherClient != null && mOmniJawsEnabled && mWeatherInfo != null;
         }
     }
 
@@ -421,7 +429,10 @@ public class QuickspaceController implements OmniJawsClient.OmniJawsObserver,
         if (mDestroyed) return null;
         
         if (mProvider == WeatherProvider.SERAPHIX) {
-            return mSeraphixIcon != null ? mSeraphixIcon.loadDrawable(mAppContext) : null;
+            if (mSeraphixIcon != null) {
+                return mSeraphixIcon.loadDrawable(mAppContext);
+            }
+            return mConditionImage;
         } else {
             return mConditionImage;
         }
@@ -430,7 +441,7 @@ public class QuickspaceController implements OmniJawsClient.OmniJawsObserver,
     public String getWeatherTemp() {
         if (mDestroyed) return null;
         
-        if (mProvider == WeatherProvider.SERAPHIX) {
+        if (mProvider == WeatherProvider.SERAPHIX && !TextUtils.isEmpty(mSeraphixText)) {
             return mSeraphixText;
         } else {
             final OmniJawsClient.WeatherInfo info = mWeatherInfo;
@@ -648,10 +659,26 @@ public class QuickspaceController implements OmniJawsClient.OmniJawsObserver,
         try {
             MediaMetadata mediaMetadata = MSMHProxy.INSTANCE(mAppContext).getCurrentMediaMetadata();
             boolean isPlaying = MSMHProxy.INSTANCE(mAppContext).isMediaPlaying();
-            String trackArtist = isPlaying && mediaMetadata != null ? 
-                mediaMetadata.getString(MediaMetadata.METADATA_KEY_ARTIST) : "";
-            String trackTitle = isPlaying && mediaMetadata != null ? 
-                mediaMetadata.getString(MediaMetadata.METADATA_KEY_TITLE) : "";
+            String trackArtist = "";
+            String trackTitle = "";
+            if (isPlaying && mediaMetadata != null) {
+                trackTitle = mediaMetadata.getString(MediaMetadata.METADATA_KEY_TITLE);
+                if (TextUtils.isEmpty(trackTitle)) {
+                    trackTitle = mediaMetadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE);
+                }
+                trackArtist = mediaMetadata.getString(MediaMetadata.METADATA_KEY_ARTIST);
+                if (TextUtils.isEmpty(trackArtist)) {
+                    trackArtist = mediaMetadata.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST);
+                }
+                if (TextUtils.isEmpty(trackArtist)) {
+                    trackArtist = mediaMetadata.getString(MediaMetadata.METADATA_KEY_AUTHOR);
+                }
+                if (TextUtils.isEmpty(trackArtist)) {
+                    trackArtist = mediaMetadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE);
+                }
+            }
+            if (trackTitle == null) trackTitle = "";
+            if (trackArtist == null) trackArtist = "";
             
             if (mEventsController != null) {
                 mEventsController.setMediaInfo(trackTitle, trackArtist, isPlaying);

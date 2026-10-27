@@ -99,12 +99,12 @@ public class QuickEventsController {
 
         if (!mPlayingActive) return;
 
-        if (mNowPlayingTitle == null) return;
+        if (mNowPlayingTitle == null || mNowPlayingTitle.isEmpty()) return;
 
         mEventTitle = mNowPlayingTitle;
         mGreetings = mResources.getString(R.string.qe_now_playing_ext_one);
         mClockExt = "";
-        if (mNowPlayingArtist == null ) {
+        if (mNowPlayingArtist == null || mNowPlayingArtist.isEmpty()) {
             mEventTitleSub = mResources.getString(R.string.qe_now_playing_unknown_artist);
         } else {
             mEventTitleSub = mNowPlayingArtist;
@@ -195,20 +195,22 @@ public class QuickEventsController {
         mEventSubIcon = null;
 
         int luckNumber = getLuckyNumber(13);
-        if (luckNumber < 7) {
-            mIsQuickEvent = false;
-            return;
-        } else if (luckNumber == 7) {
-            mPSAStr = mResources.getStringArray(R.array.quickspace_psa_random);
-            mEventTitleSub = mPSAStr[getLuckyNumber(0, mPSAStr.length - 1)];
-            mEventSubIcon = ContextCompat.getDrawable(mAppContext, R.drawable.ic_quickspace_crdroid);
-            mIsQuickEvent = true;
-            return;
+        if (luckNumber == 7) {
+            mPSAStr = getCachedArray(R.array.quickspace_psa_random);
+            if (mPSAStr != null && mPSAStr.length > 0) {
+                mEventTitleSub = mPSAStr[getLuckyNumber(0, mPSAStr.length - 1)];
+                mEventSubIcon = ContextCompat.getDrawable(mAppContext, R.drawable.ic_quickspace_crdroid);
+                mIsQuickEvent = true;
+                return;
+            }
         }
 
         mPSAStr = getPSAStr(hourOfDay);
+        if (mPSAStr == null || mPSAStr.length == 0) {
+            mPSAStr = getCachedArray(R.array.quickspace_psa_random);
+        }
 
-        if (mPSAStr != null) {
+        if (mPSAStr != null && mPSAStr.length > 0) {
             mEventTitleSub = mPSAStr[getLuckyNumber(0, mPSAStr.length - 1)];
             mIsQuickEvent = true;
         } else {
@@ -219,16 +221,16 @@ public class QuickEventsController {
     private String[] getPSAStr(int hour) {
         if (hour >= 0 && hour <= 3) {
             return getCachedArray(R.array.quickspace_psa_midnight);
-        } else if (hour >= 5 && hour <= 9) {
+        } else if (hour >= 4 && hour <= 9) {
             return getCachedArray(R.array.quickspace_psa_morning);
-        } else if (hour >= 12 && hour <= 15) {
+        } else if (hour >= 10 && hour <= 15) {
             return getCachedArray(R.array.quickspace_psa_noon);
         } else if (hour >= 16 && hour <= 18) {
             return getCachedArray(R.array.quickspace_psa_early_evening);
-        } else if (hour >= 19 && hour <= 21) {
+        } else if (hour >= 19 && hour <= 23) {
             return getCachedArray(R.array.quickspace_psa_evening);
         } else {
-            return null;
+            return getCachedArray(R.array.quickspace_psa_random);
         }
     }
 

@@ -37,6 +37,8 @@ import android.util.Log;
 
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
+import com.android.launcher3.quickspace.QuickspaceController;
+import com.android.launcher3.quickspace.QuickSpaceActionReceiver;
 import com.android.launcher3.util.MSMHProxy;
 import com.android.launcher3.util.MediaSessionManagerHelper;
 
@@ -49,13 +51,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
-final class SmartspaceController implements MediaSessionManagerHelper.MediaMetadataListener {
+final class SmartspaceController implements MediaSessionManagerHelper.MediaMetadataListener,
+        QuickspaceController.OnDataListener {
     private static final String TAG = "LauncherSmartspace";
     private static final String FLASHLIGHT_ENABLED = "flashlight_enabled";
     private static final long EVENT_WINDOW = DateUtils.HOUR_IN_MILLIS;
     private static final SmartspaceEvent[] LOCAL_ORDER = {
             SmartspaceEvent.FLASHLIGHT, SmartspaceEvent.CALENDAR, SmartspaceEvent.ALARMS,
-            SmartspaceEvent.MUSIC, SmartspaceEvent.BATTERY
+            SmartspaceEvent.MUSIC, SmartspaceEvent.BATTERY, SmartspaceEvent.WEATHER
     };
 
     private final Context mContext;
@@ -68,6 +71,7 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
     private final Runnable mQueryCalendar = this::queryCalendar;
     private SmartspaceSession mSession;
     private SmartspaceSession.OnTargetsAvailableListener mSessionListener;
+    private QuickspaceController mWeather;
     private CancellationSignal mCalendarQuery;
     private boolean mActive;
     private boolean mMediaRegistered;
@@ -163,6 +167,10 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
             });
             mClock.start();
         }
+        if (SmartspaceEvent.WEATHER.isEnabled(mContext)) {
+            mWeather = new QuickspaceController(mContext, true);
+            mWeather.addListener(this);
+        }
         if (SmartspaceEvent.MUSIC.isEnabled(mContext)) {
             try {
                 MSMHProxy.INSTANCE(mContext).addMediaMetadataListener(this);
@@ -194,6 +202,11 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
         if (mClock != null) mClock.stop();
         mClock = null;
         mClockCards = List.of();
+        if (mWeather != null) {
+            mWeather.removeListener(this);
+            mWeather.onDestroy();
+            mWeather = null;
+        }
         if (mMediaRegistered) MSMHProxy.INSTANCE(mContext).removeMediaMetadataListener(this);
         mMediaRegistered = false;
         disconnectSession();
@@ -324,10 +337,24 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
         if (!mActive) return;
         MediaSessionManagerHelper media = MSMHProxy.INSTANCE(mContext);
         MediaMetadata metadata = media.getCurrentMediaMetadata();
-        CharSequence title = metadata == null ? null
-                : metadata.getText(MediaMetadata.METADATA_KEY_TITLE);
-        CharSequence artist = metadata == null ? null
-                : metadata.getText(MediaMetadata.METADATA_KEY_ARTIST);
+        CharSequence title = null;
+        CharSequence artist = null;
+        if (metadata != null) {
+            title = metadata.getText(MediaMetadata.METADATA_KEY_TITLE);
+            if (TextUtils.isEmpty(title)) {
+                title = metadata.getText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE);
+            }
+            artist = metadata.getText(MediaMetadata.METADATA_KEY_ARTIST);
+            if (TextUtils.isEmpty(artist)) {
+                artist = metadata.getText(MediaMetadata.METADATA_KEY_ALBUM_ARTIST);
+            }
+            if (TextUtils.isEmpty(artist)) {
+                artist = metadata.getText(MediaMetadata.METADATA_KEY_AUTHOR);
+            }
+            if (TextUtils.isEmpty(artist)) {
+                artist = metadata.getText(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE);
+            }
+        }
         if (media.isMediaPlaying() && !TextUtils.isEmpty(title)) {
             Bitmap artwork = media.getMediaBitmap();
             Icon icon = artwork == null ? null : Icon.createWithBitmap(artwork);
@@ -345,6 +372,20 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
     @Override
     public void onPlaybackStateChanged() {
         onMediaMetadataChanged();
+    }
+
+    @Override
+    public void onDataUpdated() {
+        if (!mActive || mWeather == null) return;
+        String text = mWeather.getWeatherTemp();
+        if (mWeather.isWeatherAvailable() && !TextUtils.isEmpty(text)) {
+            mLocal.put(SmartspaceEvent.WEATHER, new SmartspaceCard("local_weather",
+                    SmartspaceEvent.WEATHER, text, null, null, mWeather.getWeatherIcon(),
+                    QuickSpaceActionReceiver.getWeatherAction(), 0));
+        } else {
+            mLocal.remove(SmartspaceEvent.WEATHER);
+        }
+        publish();
     }
 
     private void updateAlarm() {

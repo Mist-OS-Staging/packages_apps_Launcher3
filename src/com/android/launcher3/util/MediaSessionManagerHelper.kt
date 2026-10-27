@@ -94,30 +94,28 @@ class MediaSessionManagerHelper private constructor(private val context: Context
         var localController: MediaController? = null
         val remoteSessions = mutableSetOf<String>()
 
-        sessionControllers
-            .filter { controller ->
-                controller.playbackState?.state == PlaybackState.STATE_PLAYING &&
-                controller.playbackInfo != null
+        val playingControllers = sessionControllers.filter { controller ->
+            controller.playbackState?.state == PlaybackState.STATE_PLAYING
+        }
+
+        playingControllers.forEach { controller ->
+            if (controller.playbackInfo?.playbackType == MediaController.PlaybackInfo.PLAYBACK_TYPE_REMOTE) {
+                remoteSessions.add(controller.packageName)
             }
-            .forEach { controller ->
-                when (controller.playbackInfo?.playbackType) {
-                    MediaController.PlaybackInfo.PLAYBACK_TYPE_REMOTE -> {
-                        remoteSessions.add(controller.packageName)
-                        if (localController?.packageName == controller.packageName) {
-                            localController = null
-                        }
-                    }
-                    MediaController.PlaybackInfo.PLAYBACK_TYPE_LOCAL -> {
-                        if (!remoteSessions.contains(controller.packageName)) {
-                            localController = localController ?: controller
-                        }
-                    }
-                }
-            }
+        }
+
+        localController = playingControllers.firstOrNull { controller ->
+            !remoteSessions.contains(controller.packageName)
+        } ?: playingControllers.firstOrNull()
+
         activeController = localController
         _mediaMetadata.value = localController?.metadata
         _playbackState.value = localController?.playbackState
         saveLastNonNullPackageName()
+        notifyListeners {
+            onMediaMetadataChanged()
+            onPlaybackStateChanged()
+        }
     }
 
     private fun startObservingSessions() {

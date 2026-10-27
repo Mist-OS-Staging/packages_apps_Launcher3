@@ -243,7 +243,6 @@
             android:key="smartspace_events"
             android:title="@string/smartspace_events_title"
             android:summary="@string/smartspace_events_summary"
-            android:dependency="pref_smartspace"
             launcher:iconSpaceReserved="false" />
 
         <ListPreference

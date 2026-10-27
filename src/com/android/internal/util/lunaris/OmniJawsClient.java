@@ -23,6 +23,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class OmniJawsClient {
     private static final String TAG = "OmniJawsClientBridge";
@@ -43,17 +45,30 @@ public class OmniJawsClient {
     }
 
     private static OmniJawsClient sInstance;
+    private final Map<OmniJawsObserver, Object> mProxyMap = new ConcurrentHashMap<>();
     private Object mTargetClient;
     private Class<?> mTargetClass;
 
     public static synchronized OmniJawsClient get() {
+        return get(null);
+    }
+
+    public static synchronized OmniJawsClient get(Context context) {
         if (sInstance == null) {
             sInstance = new OmniJawsClient();
+        }
+        if (context != null) {
+            sInstance.ensureTargetClient(context);
         }
         return sInstance;
     }
 
     public OmniJawsClient() {
+        ensureTargetClient(null);
+    }
+
+    private synchronized void ensureTargetClient(Context context) {
+        if (mTargetClient != null) return;
         String[] candidates = new String[]{
             "com.android.internal.util.mist.OmniJawsClient",
             "com.android.internal.util.crdroid.OmniJawsClient",
@@ -65,18 +80,39 @@ public class OmniJawsClient {
                 try {
                     Method getMethod = clazz.getMethod("get");
                     mTargetClient = getMethod.invoke(null);
-                } catch (NoSuchMethodException e) {
-                    mTargetClient = clazz.getDeclaredConstructor().newInstance();
+                } catch (Throwable t1) {
+                    if (context != null) {
+                        try {
+                            Method getInstance = clazz.getMethod("getInstance", Context.class);
+                            mTargetClient = getInstance.invoke(null, context);
+                        } catch (Throwable t2) {
+                            try {
+                                mTargetClient = clazz.getConstructor(Context.class).newInstance(context);
+                            } catch (Throwable t3) {
+                                mTargetClient = clazz.getDeclaredConstructor().newInstance();
+                            }
+                        }
+                    } else {
+                        try {
+                            mTargetClient = clazz.getDeclaredConstructor().newInstance();
+                        } catch (Throwable ignored) {
+                        }
+                    }
                 }
-                mTargetClass = clazz;
-                Log.i(TAG, "Initialized OmniJawsClient bridge with " + candidate);
-                break;
+                if (mTargetClient != null) {
+                    mTargetClass = clazz;
+                    Log.i(TAG, "Initialized OmniJawsClient bridge with " + candidate);
+                    break;
+                }
             } catch (Throwable ignored) {
             }
         }
     }
 
     public boolean isOmniJawsEnabled(Context context) {
+        if (mTargetClient == null && context != null) {
+            ensureTargetClient(context);
+        }
         if (mTargetClient == null) return false;
         try {
             Method m = mTargetClass.getMethod("isOmniJawsEnabled", Context.class);
@@ -88,6 +124,9 @@ public class OmniJawsClient {
     }
 
     public void queryWeather(Context context) {
+        if (mTargetClient == null && context != null) {
+            ensureTargetClient(context);
+        }
         if (mTargetClient == null) return;
         try {
             Method m = mTargetClass.getMethod("queryWeather", Context.class);
@@ -123,6 +162,9 @@ public class OmniJawsClient {
     }
 
     public Drawable getWeatherConditionImage(Context context, int conditionCode) {
+        if (mTargetClient == null && context != null) {
+            ensureTargetClient(context);
+        }
         if (mTargetClient == null) return null;
         try {
             Method m = mTargetClass.getMethod("getWeatherConditionImage", Context.class, int.class);
@@ -134,6 +176,9 @@ public class OmniJawsClient {
     }
 
     public void addObserver(Context context, OmniJawsObserver observer) {
+        if (mTargetClient == null && context != null) {
+            ensureTargetClient(context);
+        }
         if (mTargetClient == null) return;
         try {
             Class<?> obsClz = null;
@@ -156,6 +201,7 @@ public class OmniJawsClient {
                     return null;
                 };
                 Object proxy = Proxy.newProxyInstance(obsClz.getClassLoader(), new Class<?>[]{obsClz}, handler);
+                mProxyMap.put(observer, proxy);
                 Method add = mTargetClass.getMethod("addObserver", Context.class, obsClz);
                 add.invoke(mTargetClient, context, proxy);
             }
@@ -166,6 +212,7 @@ public class OmniJawsClient {
 
     public void removeObserver(Context context, OmniJawsObserver observer) {
         if (mTargetClient == null) return;
+        Object proxy = mProxyMap.remove(observer);
         try {
             Class<?> obsClz = null;
             for (Class<?> inner : mTargetClass.getDeclaredClasses()) {
@@ -176,7 +223,7 @@ public class OmniJawsClient {
             }
             if (obsClz != null) {
                 Method remove = mTargetClass.getMethod("removeObserver", Context.class, obsClz);
-                remove.invoke(mTargetClient, context, null);
+                remove.invoke(mTargetClient, context, proxy);
             }
         } catch (Throwable t) {
             try {

@@ -104,7 +104,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         // Determine current style with backward compatibility
         int style = getCurrentStyle();
         
-        if (mEventTitle == null || mCurrentStyle != style) {
+        if (mQuickspaceContent == null || mCurrentStyle != style) {
             prepareLayout(style);
         }
         mIsQuickEvent = mController.isQuickEvent();
@@ -336,7 +336,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     private final void bindWeather(View container, TextView title, ImageView icon) {
         if (mDestroyed || mController == null) return;
         
-        if (!mWeatherAvailable || mController.getEventController().isNowPlaying()) {
+        if (!mWeatherAvailable || (mController.getEventController().isNowPlaying() && mCurrentStyle != 2)) {
             container.setVisibility(View.GONE);
             return;
         }
@@ -403,7 +403,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     private void clearOldViewState() {
         View[] vs = new View[]{ mEventTitle, mEventTitleSub, mEventTitleSubColored,
                 mNowPlayingIcon, mEventSubIcon, mWeatherContentSub, mWeatherIconSub, 
-                mWeatherTempSub, mGreetingsExt, mGreetingsExtClock };
+                mWeatherTempSub, mGreetingsExt, mGreetingsExtClock, mQuickspaceDayOfWeek, mQuickspaceClockHour, mQuickspaceClockMinute, mQuickspaceDate, mPSAMessage, mNowPlayingContent, mNowPlayingText, mDateWeatherRow, mContextualInfoRow };
         
         for (View v : vs) {
             if (v != null) {
@@ -565,6 +565,7 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     public void onResume() {
         if (mDestroyed) return;
         if (mController != null && mListenerRegistered) mController.onResume();
+        onDataUpdated();
     }
 
     public void onDestroy() {
