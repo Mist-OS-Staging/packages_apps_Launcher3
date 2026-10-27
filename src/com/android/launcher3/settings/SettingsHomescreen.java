@@ -502,9 +502,9 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
             setQuickspacePrefVisible(
                     LauncherPrefs.QUICKSPACE_CLOCK_SYSTEM_FONT.getSharedPrefKey(), isOosClock);
             setQuickspacePrefVisible(
-                    LauncherPrefs.QUICKSPACE_CLOCK_CUSTOM_COLOR.getSharedPrefKey(), isOosClock);
+                    LauncherPrefs.QUICKSPACE_CLOCK_HOUR_COLOR.getSharedPrefKey(), isOosClock);
             setQuickspacePrefVisible(
-                    LauncherPrefs.QUICKSPACE_CLOCK_COLOR.getSharedPrefKey(), isOosClock);
+                    LauncherPrefs.QUICKSPACE_CLOCK_MINUTE_COLOR.getSharedPrefKey(), isOosClock);
         }
 
         private void setQuickspacePrefVisible(String key, boolean visible) {

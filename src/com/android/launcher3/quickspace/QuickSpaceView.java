@@ -17,6 +17,7 @@ package com.android.launcher3.quickspace;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils.TruncateAt;
@@ -145,6 +146,9 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         if (mQuickspaceClockHour != null) {
             mQuickspaceClockHour.setTextColor(getClockHourColor());
         }
+        if (mQuickspaceClockMinute != null) {
+            mQuickspaceClockMinute.setTextColor(getClockMinuteColor());
+        }
         
         if (mWeatherContentSub != null) {
             mWeatherContentSub.setVisibility(View.VISIBLE);
@@ -179,10 +183,19 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     }
 
     private int getClockHourColor() {
-        if (LauncherPrefs.QUICKSPACE_CLOCK_CUSTOM_COLOR.get(getContext())) {
-            return LauncherPrefs.QUICKSPACE_CLOCK_COLOR.get(getContext());
+        int hourColor = LauncherPrefs.QUICKSPACE_CLOCK_HOUR_COLOR.get(getContext());
+        if (Color.alpha(hourColor) == 0) {
+            hourColor = hourColor == 0 ? 0xFFFFFFFF : (hourColor | 0xFF000000);
         }
-        return getContext().getColor(R.color.quickspace_clock_hour_color);
+        return hourColor;
+    }
+
+    private int getClockMinuteColor() {
+        int minuteColor = LauncherPrefs.QUICKSPACE_CLOCK_MINUTE_COLOR.get(getContext());
+        if (Color.alpha(minuteColor) == 0) {
+            minuteColor = minuteColor == 0 ? 0xFFFFFFFF : (minuteColor | 0xFF000000);
+        }
+        return minuteColor;
     }
 
     private final void loadDoubleLine(boolean useAlternativeQuickspaceUI) {
@@ -376,6 +389,12 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
             mQuickspaceDayOfWeek = findViewById(R.id.quickspace_day_of_week);
             mQuickspaceClockHour = findViewById(R.id.quickspace_clock_hour);
             mQuickspaceClockMinute = findViewById(R.id.quickspace_clock_minute);
+            if (mQuickspaceClockHour != null) {
+                mQuickspaceClockHour.setTextColor(getClockHourColor());
+            }
+            if (mQuickspaceClockMinute != null) {
+                mQuickspaceClockMinute.setTextColor(getClockMinuteColor());
+            }
             mQuickspaceDate = findViewById(R.id.quickspace_date);
             mPSAMessage = findViewById(R.id.quickspace_psa_message);
             mNowPlayingContent = findViewById(R.id.now_playing_content);
