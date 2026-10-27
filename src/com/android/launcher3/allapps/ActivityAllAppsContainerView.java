@@ -1766,9 +1766,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             mSearchContainer.setLayoutParams(lp);
         }
         if (mSearchContainer instanceof AppsSearchContainerLayout) {
-            ((AppsSearchContainerLayout) mSearchContainer).setPlacement(
+            AppsSearchContainerLayout searchLayout = (AppsSearchContainerLayout) mSearchContainer;
+            searchLayout.setPlacement(
                     isSearchBarAtBottom() ? AllAppsSearchBarConfig.Placement.BOTTOM
                             : AllAppsSearchBarConfig.Placement.TOP);
+            searchLayout.setAppearance(AllAppsSearchBarConfig.getAppearance(getContext()));
         }
         if (mHeader != null) {
             removeCustomRules(mHeader);

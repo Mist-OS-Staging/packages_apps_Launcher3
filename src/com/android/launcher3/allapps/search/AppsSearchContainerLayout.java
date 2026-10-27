@@ -47,6 +47,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.app.animation.Interpolators;
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.ExtendedEditText;
 import com.android.launcher3.Insettable;
@@ -188,13 +189,16 @@ public class AppsSearchContainerLayout extends ExtendedEditText
                 Math.round(ICON_VISIBLE_AREA_FACTOR * dp.getWorkspaceProfile().getIconSizePx());
         int iconPadding = cellWidth - iconVisibleSize;
 
-        int myWidth = rowWidth - iconPadding + getPaddingLeft() + getPaddingRight();
-        myWidth = Math.min(myWidth, mMaxBarWidth);
-        float expansion = (mAppearance != null && mAppearance.isNarrow()) ? mWidthExpansion : 1.0f;
-        myWidth = (int) (myWidth * expansion);
+        int contentWidth = rowWidth - iconPadding;
+        int maxAllowedWidth = myRequestedWidth
+                - 2 * (int) (16 * getResources().getDisplayMetrics().density);
 
-        myWidth = Math.min(myWidth, myRequestedWidth
-                - 2 * (int) (16 * getResources().getDisplayMetrics().density));
+        int fullWidth = contentWidth > 0 ? Math.min(contentWidth, maxAllowedWidth) : maxAllowedWidth;
+        fullWidth = Math.min(fullWidth, mMaxBarWidth);
+
+        float expansion = (mAppearance != null && mAppearance.isNarrow()) ? mWidthExpansion : 1.0f;
+        int myWidth = (int) (fullWidth * expansion);
+
         super.onMeasure(makeMeasureSpec(myWidth, EXACTLY), heightMeasureSpec);
     }
 
@@ -290,17 +294,43 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         canvas.restoreToCount(save);
     }
 
-    /** Search icon drawn fixed at the start of the bar. */
-    private void drawSearchIcon(Canvas canvas) {
+    private int getSearchIconSize() {
+        if (mSearchIcon == null) {
+            mSearchIcon = getContext().getDrawable(R.drawable.ic_allapps_search);
+        }
+        return (mSearchIcon != null && mSearchIcon.getIntrinsicWidth() > 0)
+                ? mSearchIcon.getIntrinsicWidth()
+                : (int) (24 * getResources().getDisplayMetrics().density);
+    }
+
+    /** Search icon drawn either as part of the centered group or at the start margin. */
+    private void drawSearchIcon(Canvas canvas, boolean isIdle) {
         if (mSearchIcon == null) {
             mSearchIcon = getContext().getDrawable(R.drawable.ic_allapps_search);
             if (mSearchIcon == null) return;
         }
-        int size = mSearchIcon.getIntrinsicWidth();
-        int margin = (int) (16 * getResources().getDisplayMetrics().density);
+        int size = getSearchIconSize();
         int top = (getHeight() - size) / 2;
-        boolean rtl = getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
-        int left = (rtl ? getWidth() - margin - size : margin) + getScrollX();
+        boolean isRtl = getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+        CharSequence hint = getHint();
+
+        int left;
+        if (isIdle && hint != null && hint.length() > 0) {
+            int iconSpacing = (int) (8 * getResources().getDisplayMetrics().density);
+            float hintWidth = getPaint().measureText(hint, 0, hint.length());
+            float groupWidth = size + iconSpacing + hintWidth;
+            float groupStart = Math.max(0f, (getWidth() - groupWidth) / 2f);
+
+            if (isRtl) {
+                left = (int) (groupStart + groupWidth - size) + getScrollX();
+            } else {
+                left = (int) groupStart + getScrollX();
+            }
+        } else {
+            int margin = (int) (16 * getResources().getDisplayMetrics().density);
+            left = (isRtl ? getWidth() - margin - size : margin) + getScrollX();
+        }
+
         mSearchIcon.setBounds(left, top, left + size, top + size);
         mSearchIcon.draw(canvas);
     }
@@ -308,17 +338,48 @@ public class AppsSearchContainerLayout extends ExtendedEditText
     @Override
     protected void onDraw(Canvas canvas) {
         int save = canvas.save();
+        boolean isIdle = length() == 0 && !isFocused();
         CharSequence hint = getHint();
-        if (length() == 0 && hint != null) {
-            // Hint centered across the entire bar (icon stays in corner)
+        boolean isRtl = getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+
+        if (isIdle && hint != null && hint.length() > 0) {
+            int iconSize = getSearchIconSize();
+            int iconSpacing = (int) (8 * getResources().getDisplayMetrics().density);
             float hintWidth = getPaint().measureText(hint, 0, hint.length());
-            float dx = Math.max(0f, (getWidth() - hintWidth) / 2f - getPaddingStart());
-            boolean rtl = getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
-            canvas.translate(rtl ? -dx : dx, 0);
+            float groupWidth = iconSize + iconSpacing + hintWidth;
+            float groupStart = Math.max(0f, (getWidth() - groupWidth) / 2f);
+
+            float dx;
+            if (isRtl) {
+                float targetHintRight = groupStart + groupWidth - iconSize - iconSpacing;
+                float normalRight = getWidth() - getCompoundPaddingRight();
+                dx = targetHintRight - normalRight;
+            } else {
+                float targetHintLeft = groupStart + iconSize + iconSpacing;
+                float normalLeft = getCompoundPaddingLeft();
+                dx = targetHintLeft - normalLeft;
+            }
+            canvas.translate(dx, 0);
         }
+
         super.onDraw(canvas);
         canvas.restoreToCount(save);
-        drawSearchIcon(canvas);
+
+        drawSearchIcon(canvas, isIdle);
+    }
+
+    @Override
+    protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+        updateWidthState();
+        invalidate();
+    }
+
+    @Override
+    protected void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
+        super.onTextChanged(text, start, lengthBefore, lengthAfter);
+        updateWidthState();
+        invalidate();
     }
 
     @Override
@@ -327,6 +388,7 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         mSearchBarController.initialize(
                 new DefaultAppSearchAlgorithm(getContext(), mLauncher.getUiExecutor(), true),
                 this, mLauncher, this);
+        updateWidthState();
     }
 
     @Override
@@ -337,9 +399,10 @@ public class AppsSearchContainerLayout extends ExtendedEditText
     @Override
     public void resetSearch() {
         mSearchBarController.reset();
+        updateWidthState();
+        invalidate();
     }
 
-    @Override
     public void focusSearchField() {
         mSearchBarController.focusSearchField();
     }
@@ -376,6 +439,7 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         if (items != null && mAppsView != null) {
             mAppsView.setSearchResults(items);
         }
+        updateWidthState();
     }
 
     @Override
@@ -386,26 +450,42 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         if (mAppsView != null) {
             mAppsView.onClearSearchResult();
         }
+        updateWidthState();
+        invalidate();
     }
 
-    private void animateWidth(boolean imeVisible) {
-        if (mImeVisible == imeVisible) {
+    private void updateWidthState() {
+        if (mAppearance != null && mAppearance.isNarrow()) {
+            boolean isSearching = mAppsView != null && mAppsView.isSearching();
+            boolean isActive = isFocused() || mImeVisible || isSearching;
+            float target = isActive ? 1.0f : 0.88f;
+            if (!isLaidOut()) {
+                mWidthExpansion = target;
+                requestLayout();
+                return;
+            }
+            animateWidth(isActive);
+        } else if (mWidthExpansion != 1.0f) {
+            mWidthExpansion = 1.0f;
+            requestLayout();
+        }
+    }
+
+    private void animateWidth(boolean expand) {
+        float target = (mAppearance != null && mAppearance.isNarrow())
+                ? (expand ? 1.0f : 0.88f)
+                : 1.0f;
+        if (mWidthExpansion == target && (mWidthAnimator == null || !mWidthAnimator.isRunning())) {
             return;
         }
-        mImeVisible = imeVisible;
 
         if (mWidthAnimator != null) {
             mWidthAnimator.cancel();
         }
 
-        float target = (mAppearance != null && mAppearance.isNarrow())
-                ? (imeVisible ? 1.0f : 0.88f)
-                : 1.0f;
-        if (mWidthExpansion == target) {
-            return;
-        }
         mWidthAnimator = ValueAnimator.ofFloat(mWidthExpansion, target);
         mWidthAnimator.setDuration(220);
+        mWidthAnimator.setInterpolator(Interpolators.STANDARD);
         mWidthAnimator.addUpdateListener(animator -> {
             mWidthExpansion = (float) animator.getAnimatedValue();
             requestLayout();
@@ -416,12 +496,8 @@ public class AppsSearchContainerLayout extends ExtendedEditText
     @Override
     public WindowInsets onApplyWindowInsets(WindowInsets insets) {
         boolean imeVisible = insets.isVisible(WindowInsets.Type.ime());
-        if (mAppearance != null && mAppearance.isNarrow()) {
-            animateWidth(imeVisible);
-        } else if (mWidthExpansion != 1.0f) {
-            mWidthExpansion = 1.0f;
-            requestLayout();
-        }
+        mImeVisible = imeVisible;
+        updateWidthState();
 
         if (mAppsView != null && mAppsView.isSearchBarAtBottom()) {
             // The bar already rests above the nav bar, and the IME inset includes the nav bar.
@@ -451,13 +527,7 @@ public class AppsSearchContainerLayout extends ExtendedEditText
 
     public void setAppearance(AllAppsSearchBarConfig.Appearance appearance) {
         mAppearance = appearance != null ? appearance : AllAppsSearchBarConfig.Appearance.DEFAULT;
-        if (mAppearance.isNarrow()) {
-            if (mWidthExpansion == 1.0f && !mImeVisible) {
-                mWidthExpansion = 0.88f;
-            }
-        } else {
-            mWidthExpansion = 1.0f;
-        }
+        updateWidthState();
         updateBackgroundAlpha();
         requestLayout();
         invalidate();
