@@ -16,25 +16,33 @@
 
 package com.android.quickstep.recents.style;
 
-import android.view.View;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.android.quickstep.views.RecentsView;
 import com.android.quickstep.views.TaskView;
 
+/**
+ * MIUI-style horizontal carousel: the focused card is full size and the cards on both sides get
+ * smaller and are pulled in behind it, overlapping, with the closest card in front.
+ *
+ * The transform is derived from the card's live position (see {@link StyleGeometry}), not from the
+ * scroll position alone. That lets the neighbours visibly slide into the gap after a card is
+ * swiped away, and keeps the carousel consistent while a card is being dragged.
+ */
 public class HorizontalLayout implements RecentLayoutHandler {
 
-    private static final float CENTER_SCALE = 1.00f;
-    private static final float NEAR_SCALE = 0.90f;
-    private static final float SIDE_SCALE = 0.80f;
-    private static final float FAR_SCALE = 0.70f;
-    private static final float MIN_SCALE = 0.60f;
+    static final float CENTER_SCALE = 1.00f;
+    static final float NEAR_SCALE = 0.90f;
+    static final float SIDE_SCALE = 0.80f;
+    static final float FAR_SCALE = 0.70f;
+    static final float MIN_SCALE = 0.60f;
 
-    private static final float DIST_NEAR = 0.70f;
-    private static final float DIST_SIDE = 1.32f;
-    private static final float DIST_FAR = 1.90f;
+    static final float DIST_NEAR = 0.70f;
+    static final float DIST_SIDE = 1.32f;
+    static final float DIST_FAR = 1.90f;
+
+    private static final float VISIBLE_DISTANCE = 4.0f;
 
     @NonNull
     @Override
@@ -42,20 +50,27 @@ public class HorizontalLayout implements RecentLayoutHandler {
         return RecentStyle.MIUI_HORIZONTAL;
     }
 
+    @Override
+    public boolean followsDismissProgress() {
+        return true;
+    }
+
+    /** The card is flung off the top of the screen without fading. */
+    @Override
+    public float getDismissedTaskAlpha(float dismissProgress) {
+        return 1f;
+    }
+
     @Nullable
     @Override
     public Boolean isTaskViewVisible(@NonNull RecentsView<?, ?> recentsView, @NonNull TaskView taskView) {
-        int childIndex = recentsView.indexOfChild(taskView);
-        if (childIndex < 0) return false;
-        int scroll = recentsView.getPagedOrientationHandler().getPrimaryScroll(recentsView);
-        int pageScroll = recentsView.getScrollForPage(childIndex);
-        int pageSize = recentsView.getLastComputedTaskSize().width();
-        if (pageSize <= 0) pageSize = recentsView.getWidth();
-        if (pageSize <= 0) return true;
-
-        float scrollDelta = scroll - pageScroll;
-        float p = scrollDelta / (float) pageSize;
-        return Math.abs(p) <= 4.0f;
+        if (recentsView.indexOfChild(taskView) < 0) return false;
+        if (!StyleGeometry.isNaturalOrientation(recentsView)) return null;
+        if (taskView.getWidth() <= 0 || recentsView.getWidth() <= 0
+                || recentsView.getLastComputedTaskSize().width() <= 0) return true;
+        float distance = Math.abs(StyleGeometry.getNativeCenterOffset(recentsView, taskView))
+                / StyleGeometry.getNominalPageSize(recentsView);
+        return distance <= VISIBLE_DISTANCE;
     }
 
     @Override
@@ -69,41 +84,38 @@ public class HorizontalLayout implements RecentLayoutHandler {
 
         outTransform.reset();
 
+        // The carousel is horizontal; a rotated Recents keeps the stock layout.
+        if (!StyleGeometry.isNaturalOrientation(recentsView)) {
+            return;
+        }
         int fullWidth = recentsView.getLastComputedTaskSize().width();
         int fullHeight = recentsView.getLastComputedTaskSize().height();
-        if (fullWidth <= 0 || fullHeight <= 0) {
+        if (fullWidth <= 0 || fullHeight <= 0 || taskView.getWidth() <= 0
+                || recentsView.getWidth() <= 0) {
             return;
         }
 
         float density = recentsView.getResources().getDisplayMetrics().density;
         float childSize = (float) fullWidth;
 
-        float p = scrollProgress;
-        float d = Math.abs(p);
+        // Signed distance of the card from the focused position. It already includes the dismiss
+        // translation, so a neighbour sliding into a gap moves continuously through the carousel.
+        float nativeOffset = StyleGeometry.getNativeCenterOffset(recentsView, taskView);
+        float d = Math.abs(nativeOffset) / StyleGeometry.getNominalPageSize(recentsView);
 
-        float scale = getScaleForDistance(d);
-
-        float visualDist = getVisualDistance(d, childSize);
-        float signedVisualOffset = (p >= 0f) ? -visualDist : visualDist;
-
-        float transX = signedVisualOffset + (p * childSize);
-        if (recentsView.isRtl()) {
-            transX = -transX;
-        }
-
-        float elevation = getElevationForDistance(d, density);
-        float alpha = getAlphaForDistance(d);
+        // Pull the card towards the focused one, whichever side of it the card is on.
+        float pullIn = d * childSize - getVisualDistance(d, childSize);
 
         taskView.setColorTint(0f, 0);
 
-        outTransform.scale = scale;
-        outTransform.translationX = transX;
+        outTransform.scale = getScaleForDistance(d);
+        outTransform.translationX = -Math.copySign(pullIn, nativeOffset);
         outTransform.translationY = 0f;
-        outTransform.elevation = elevation;
-        outTransform.alpha = alpha;
+        outTransform.elevation = getElevationForDistance(d, density);
+        outTransform.alpha = getAlphaForDistance(d);
     }
 
-    private float getScaleForDistance(float d) {
+    static float getScaleForDistance(float d) {
         if (d <= 1.0f) {
             return CENTER_SCALE - d * (CENTER_SCALE - NEAR_SCALE);
         } else if (d <= 2.0f) {
@@ -115,7 +127,7 @@ public class HorizontalLayout implements RecentLayoutHandler {
         }
     }
 
-    private float getVisualDistance(float d, float childSize) {
+    static float getVisualDistance(float d, float childSize) {
         if (d <= 1.0f) {
             return d * (DIST_NEAR * childSize);
         } else if (d <= 2.0f) {
@@ -127,7 +139,11 @@ public class HorizontalLayout implements RecentLayoutHandler {
         }
     }
 
-    private float getElevationForDistance(float d, float density) {
+    /**
+     * Strictly decreasing with distance up to the point where the card has faded out, which is
+     * what orders the cards front-to-back: the closer to the focused card, the further in front.
+     */
+    static float getElevationForDistance(float d, float density) {
         if (d <= 1.0f) {
             return (24f - d * 8f) * density;
         } else if (d <= 2.0f) {
@@ -139,7 +155,7 @@ public class HorizontalLayout implements RecentLayoutHandler {
         }
     }
 
-    private float getAlphaForDistance(float d) {
+    static float getAlphaForDistance(float d) {
         if (d <= 2.8f) {
             return 1.0f;
         } else if (d <= 3.8f) {

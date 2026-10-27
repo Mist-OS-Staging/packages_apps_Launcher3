@@ -332,7 +332,7 @@ public class RecentStyleController implements SharedPreferences.OnSharedPreferen
                     taskHeight = recentsView.getHeight() * 0.4f;
                 }
                 float dismissProgress = Math.min(1f, dismissY / Math.max(1f, taskHeight * 0.5f));
-                mCachedTransform.alpha *= Math.max(0f, 1f - dismissProgress);
+                mCachedTransform.alpha *= mActiveHandler.getDismissedTaskAlpha(dismissProgress);
 
                 mCachedTransform.applyTo(taskView);
                 // taskIndex is NOT incremented: dismissed task is excluded from the index sequence.
@@ -352,6 +352,24 @@ public class RecentStyleController implements SharedPreferences.OnSharedPreferen
 
     public void onTaskDismissed(@NonNull RecentsView<?, ?> recentsView, @NonNull TaskView taskView) {
         mActiveHandler.onTaskDismissed(recentsView, taskView);
+    }
+
+    /** Whether the dismiss translation (swipe + neighbour reflow) should be rendered as-is. */
+    public boolean isDismissProgressFollowed() {
+        return isCustomStyleActive() && mActiveHandler.followsDismissProgress();
+    }
+
+    /**
+     * Called whenever a card's dismiss translation changes, i.e. on every frame of a swipe-up or
+     * of the reflow springs that follow it. Re-evaluates the style synchronously so the card's
+     * scale, z-order and position stay in lock-step with its translation (a one-frame lag would
+     * show up as jitter).
+     */
+    public void onDismissTranslationChanged() {
+        if (mRecentsView == null || mIsLaunching || !isDismissProgressFollowed()) {
+            return;
+        }
+        mRecentsView.updateCurveProperties();
     }
 
     public boolean isVerticalScrollStyle() {
@@ -382,19 +400,6 @@ public class RecentStyleController implements SharedPreferences.OnSharedPreferen
     public Boolean isTaskViewVisible(@NonNull RecentsView<?, ?> recentsView, @NonNull TaskView taskView) {
         if (!isCustomStyleActive()) {
             return null;
-        }
-        if (mCurrentStyle == RecentStyle.ONE_UI_STACK) {
-            int childIndex = recentsView.indexOfChild(taskView);
-            if (childIndex < 0) return false;
-            int scroll = recentsView.getPagedOrientationHandler().getPrimaryScroll(recentsView);
-            int pageScroll = recentsView.getScrollForPage(childIndex);
-            int pageSize = recentsView.getLastComputedTaskSize().width();
-            if (pageSize <= 0) pageSize = recentsView.getWidth();
-            if (pageSize <= 0) return true;
-
-            float scrollDelta = scroll - pageScroll;
-            float p = scrollDelta / (float) pageSize;
-            return Math.abs(p) <= 4.5f;
         }
         return mActiveHandler.isTaskViewVisible(recentsView, taskView);
     }

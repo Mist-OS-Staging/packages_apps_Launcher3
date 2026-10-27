@@ -423,14 +423,18 @@ constructor(
 
     private var dismissTranslationX = 0f
         set(value) {
+            val changed = field != value
             field = value
             applyTranslationX()
+            if (changed) recentsView?.recentStyleController?.onDismissTranslationChanged()
         }
 
     private var dismissTranslationY = 0f
         set(value) {
+            val changed = field != value
             field = value
             applyTranslationY()
+            if (changed) recentsView?.recentStyleController?.onDismissTranslationChanged()
         }
 
     private var taskOffsetTranslationX = 0f
@@ -1823,9 +1827,14 @@ constructor(
     }
 
     private fun applyTranslationX() {
-        val isCustomStyle = recentsView?.recentStyleController?.isCustomStyleActive == true
+        val styleController = recentsView?.recentStyleController
+        val isCustomStyle = styleController?.isCustomStyleActive == true
+        // Styles that follow the dismiss progress (iOS) need the reflow translation so neighbours
+        // visibly slide into the gap; the others derive their position from the scroll alone.
+        val showDismissTranslation =
+            !isCustomStyle || styleController?.isDismissProgressFollowed == true
         translationX =
-            (if (isCustomStyle) 0f else dismissTranslationX) +
+            (if (showDismissTranslation) dismissTranslationX else 0f) +
                 taskOffsetTranslationX +
                 taskResistanceTranslationX +
                 splitSelectTranslationX +

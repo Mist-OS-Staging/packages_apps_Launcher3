@@ -275,7 +275,14 @@ class TaskViewDismissTouchController<CONTAINER, T : BaseState<T>>(
         // Add a tiny bit of translation Z, so that it draws on top of other views. This is relevant
         // (e.g.) when we dismiss a task by sliding it upward: if there is a row of icons above, we
         // want the dragged task to stay above all other views.
-        taskBeingDragged.translationZ = 0.1f
+        // Custom styles assign their own per-card elevation (the focused card has the highest), so
+        // the dragged card needs enough lift to stay above it, even when it is a peeking neighbour.
+        taskBeingDragged.translationZ =
+            if (recentsView.recentStyleController?.isCustomStyleActive == true) {
+                DRAGGED_TASK_TRANSLATION_Z_DP * container.resources.displayMetrics.density
+            } else {
+                0.1f
+            }
     }
 
     private fun getBoundedDisplacement(boundedDisplacement: Float, maxDisplacement: Float): Float =
@@ -463,6 +470,8 @@ class TaskViewDismissTouchController<CONTAINER, T : BaseState<T>>(
         private const val TAG = "TaskViewDismissTouchController"
 
         private const val DISMISS_THRESHOLD_FRACTION = 0.5f
+        // Must exceed the highest elevation a recents style assigns to the focused card (24dp).
+        private const val DRAGGED_TASK_TRANSLATION_Z_DP = 48f
         private const val DISMISS_THRESHOLD_HAPTIC_RANGE = 10f
 
         private const val RECENTS_SCALE_ON_DISMISS_CANCEL = 0.9875f
