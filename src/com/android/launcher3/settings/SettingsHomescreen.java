@@ -114,8 +114,11 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (LauncherPrefs.SMARTSPACE_ENABLED.getSharedPrefKey().equals(key)) {
-            LauncherAppState.INSTANCE.executeIfCreated(app -> app.getModel().forceReload());
+        if (LauncherPrefs.SHOW_QUICKSPACE.getSharedPrefKey().equals(key) ||
+                LauncherPrefs.USE_SMARTSPACE.getSharedPrefKey().equals(key) ||
+                LauncherPrefs.QUICKSPACE_UI_STYLE.getSharedPrefKey().equals(key) ||
+                LauncherPrefs.SMARTSPACE_ENABLED.getSharedPrefKey().equals(key)) {
+            LauncherAppState.INSTANCE.executeIfCreated(app -> app.getModel().forceReload("SettingsHomescreen"));
         }
         if (LauncherPrefs.SHOW_HOTSEAT_BG.getSharedPrefKey().equals(key) ||
                 LauncherPrefs.HOTSEAT_OPACITY.getSharedPrefKey().equals(key) ||
@@ -338,7 +341,7 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
                 recreateActivityNow();
             }
             updateQsbStylePrefs();
-            updateSmartspacePermissionPrefs();
+            updateQuickspaceClockColorPrefs();
             LauncherPrefs.getPrefs(getContext())
                     .registerOnSharedPreferenceChangeListener(mPrefListener);
         }
@@ -355,8 +358,8 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
                     if (LauncherPrefs.QSB_STYLE_GOOGLE.getSharedPrefKey().equals(key)) {
                         updateQsbStylePrefs();
                     }
-                    if (key == null || key.startsWith("pref_smartspace")) {
-                        updateSmartspacePermissionPrefs();
+                    if (key == null || key.startsWith("pref_smartspace") || key.startsWith("pref_quickspace")) {
+                        updateQuickspaceClockColorPrefs();
                     }
                 };
 
@@ -447,20 +450,35 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
                 return true;
             });
             category.addPreference(mNotificationPermissionPref);
-            updateSmartspacePermissionPrefs();
+            updateQuickspaceClockColorPrefs();
         }
 
-        private void updateSmartspacePermissionPrefs() {
+        private void updateQuickspaceClockColorPrefs() {
             if (getContext() == null) return;
-            boolean enabled = LauncherPrefs.SMARTSPACE_ENABLED.get(getContext());
+            boolean smartspace = LauncherPrefs.USE_SMARTSPACE.get(getContext());
+            PreferenceGroup glance = findPreference("at_a_glance_category");
+            if (glance != null) {
+                for (int i = 0; i < glance.getPreferenceCount(); i++) {
+                    Preference pref = glance.getPreference(i);
+                    String key = pref.getKey();
+                    if (key != null && key.startsWith("pref_quickspace_")) {
+                        pref.setVisible(!smartspace);
+                    }
+                }
+            }
+            Preference events = findPreference("smartspace_events");
+            if (events != null) {
+                events.setVisible(smartspace);
+                events.setEnabled(smartspace && LauncherPrefs.SHOW_QUICKSPACE.get(getContext()));
+            }
             if (mCalendarPermissionPref != null) {
-                mCalendarPermissionPref.setVisible(enabled
+                mCalendarPermissionPref.setVisible(smartspace
                         && LauncherPrefs.SMARTSPACE_CALENDAR.get(getContext())
                         && getContext().checkSelfPermission(Manifest.permission.READ_CALENDAR)
                                 != PackageManager.PERMISSION_GRANTED);
             }
             if (mBluetoothPermissionPref != null) {
-                mBluetoothPermissionPref.setVisible(enabled
+                mBluetoothPermissionPref.setVisible(smartspace
                         && SmartspaceEvent.BLUETOOTH.isEnabled(getContext())
                         && getContext().checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
                                 != PackageManager.PERMISSION_GRANTED);
@@ -469,9 +487,35 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
                 NotificationManager manager = getContext().getSystemService(NotificationManager.class);
                 boolean granted = manager != null && manager.isNotificationListenerAccessGranted(
                         new ComponentName(getContext(), NotificationListener.class));
-                mNotificationPermissionPref.setVisible(enabled
+                mNotificationPermissionPref.setVisible(smartspace
                         && SmartspaceEvent.TIMERS.isEnabled(getContext()) && !granted);
             }
+            int style;
+            try {
+                style = Integer.parseInt(
+                        LauncherPrefs.get(getContext()).get(LauncherPrefs.QUICKSPACE_UI_STYLE));
+            } catch (NumberFormatException e) {
+                style = LauncherPrefs.get(getContext()).get(LauncherPrefs.SHOW_QUICKSPACE_ALT)
+                        ? 1 : 0;
+            }
+            boolean isOosClock = style == 2 && !smartspace;
+            setQuickspacePrefVisible(
+                    LauncherPrefs.QUICKSPACE_CLOCK_SYSTEM_FONT.getSharedPrefKey(), isOosClock);
+            setQuickspacePrefVisible(
+                    LauncherPrefs.QUICKSPACE_CLOCK_CUSTOM_COLOR.getSharedPrefKey(), isOosClock);
+            setQuickspacePrefVisible(
+                    LauncherPrefs.QUICKSPACE_CLOCK_COLOR.getSharedPrefKey(), isOosClock);
+        }
+
+        private void setQuickspacePrefVisible(String key, boolean visible) {
+            Preference pref = findPreference(key);
+            if (pref != null) {
+                pref.setVisible(visible);
+            }
+        }
+
+        private void updateSmartspacePermissionPrefs() {
+            updateQuickspaceClockColorPrefs();
         }
 
         @Override
@@ -480,7 +524,7 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
             if (requestCode == REQUEST_SMARTSPACE_CALENDAR
                     || requestCode == REQUEST_SMARTSPACE_BLUETOOTH) {
-                updateSmartspacePermissionPrefs();
+                updateQuickspaceClockColorPrefs();
             }
         }
 

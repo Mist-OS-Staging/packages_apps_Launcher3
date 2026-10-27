@@ -218,14 +218,24 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:key="smartspace_category"
-        android:title="@string/smartspace_title">
+        android:key="at_a_glance_category"
+        android:title="@string/at_a_glance_title">
 
         <SwitchPreferenceCompat
-            android:key="pref_smartspace_enabled"
-            android:title="@string/show_smartspace_title"
-            android:summary="@string/show_smartspace_summary"
-            android:defaultValue="false"
+            android:key="pref_quickspace"
+            android:title="@string/show_at_a_glance_title"
+            android:summary="@string/show_at_a_glance_summary"
+            android:defaultValue="true"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_smartspace"
+            android:title="@string/use_smartspace_title"
+            android:summaryOn="@string/use_smartspace_on"
+            android:summaryOff="@string/use_smartspace_off"
+            android:dependency="pref_quickspace"
+            android:defaultValue="true"
             android:persistent="true"
             launcher:iconSpaceReserved="false" />
 
@@ -233,7 +243,100 @@
             android:key="smartspace_events"
             android:title="@string/smartspace_events_title"
             android:summary="@string/smartspace_events_summary"
-            android:dependency="pref_smartspace_enabled"
+            android:dependency="pref_smartspace"
+            launcher:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:key="pref_quickspace_style"
+            android:title="@string/quickspace_style_title"
+            android:summary="%s"
+            android:dependency="pref_quickspace"
+            android:entries="@array/quickspace_style_entries"
+            android:entryValues="@array/quickspace_style_values"
+            android:defaultValue="0"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_quickspace_clock_system_font"
+            android:title="@string/quickspace_clock_system_font_title"
+            android:summary="@string/quickspace_clock_system_font_summary"
+            android:dependency="pref_quickspace"
+            android:defaultValue="false"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_quickspace_clock_custom_color"
+            android:title="@string/quickspace_clock_custom_color_title"
+            android:summary="@string/quickspace_clock_custom_color_summary"
+            android:dependency="pref_quickspace"
+            android:defaultValue="false"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <com.android.launcher3.settings.preferences.ColorPreference
+            android:key="pref_quickspace_clock_color"
+            android:title="@string/quickspace_clock_color_title"
+            android:defaultValue="-113341"
+            android:dependency="pref_quickspace_clock_custom_color"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_quickspace_psonality"
+            android:title="@string/quickspace_psa_title"
+            android:summary="@string/quickspace_psa_summary"
+            android:dependency="pref_quickspace"
+            android:defaultValue="true"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_quickspace_np"
+            android:title="@string/quickspace_now_playing_title"
+            android:summary="@string/quickspace_now_playing_summary"
+            android:dependency="pref_quickspace"
+            android:defaultValue="true"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_quickspace_weather"
+            android:title="@string/quick_event_ambient_weather_title"
+            android:summary="@string/quick_event_ambient_weather_summary"
+            android:dependency="pref_quickspace"
+            android:defaultValue="true"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:key="pref_quickspace_weather_provider"
+            android:title="@string/quickspace_weather_provider_title"
+            android:summary="%s"
+            android:entries="@array/quickspace_weather_provider_entries"
+            android:entryValues="@array/quickspace_weather_provider_values"
+            android:dependency="pref_quickspace_weather"
+            android:defaultValue="auto"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_quickspace_weather_city"
+            android:title="@string/quick_event_weather_city_title"
+            android:summary="@string/quick_event_weather_city_summary"
+            android:dependency="pref_quickspace_weather"
+            android:defaultValue="false"
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_quickspace_weather_text"
+            android:title="@string/quick_event_weather_text_title"
+            android:summary="@string/quick_event_weather_text_summary"
+            android:dependency="pref_quickspace_weather"
+            android:defaultValue="true"
+            android:persistent="true"
             launcher:iconSpaceReserved="false" />
 
     </PreferenceCategory>

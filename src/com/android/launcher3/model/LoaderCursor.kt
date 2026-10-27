@@ -470,8 +470,10 @@ constructor(
 
         if (!occupied.containsKey(item.screenId)) {
             val gridOccupancy = GridOccupancy(countX + 1, countY + 1)
-            if (LauncherPrefs.SMARTSPACE_ENABLED.get(context) && item.screenId == WorkspaceLayoutManager.FIRST_SCREEN_ID) {
-                gridOccupancy.markCells(0, 0, idp.numSearchContainerColumns, 1, true)
+            if (LauncherPrefs.SHOW_QUICKSPACE.get(context) && item.screenId == WorkspaceLayoutManager.FIRST_SCREEN_ID) {
+                val useSmartspace = LauncherPrefs.USE_SMARTSPACE.get(context)
+                val spanY = if (!useSmartspace && LauncherPrefs.QUICKSPACE_UI_STYLE.get(context) == "2") 2 else 1
+                gridOccupancy.markCells(0, 0, idp.numSearchContainerColumns, spanY, true)
             }
             occupied.put(item.screenId, gridOccupancy)
         }

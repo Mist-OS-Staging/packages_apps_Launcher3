@@ -411,6 +411,21 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
 
         @JvmField val SHOW_HOTSEAT_QSB = backedUpItem("pref_show_hotseat_qsb", false)
 
+        @JvmField val SHOW_QUICKSPACE = backedUpItem("pref_quickspace", true)
+        @JvmField val USE_SMARTSPACE = backedUpItem("pref_smartspace", true)
+        @JvmField val SHOW_QUICKSPACE_ALT = backedUpItem("pref_quickspace_alt", false)
+        @JvmField val QUICKSPACE_UI_STYLE = backedUpItem("pref_quickspace_style", "0")
+        @JvmField val QUICKSPACE_CLOCK_SYSTEM_FONT = backedUpItem("pref_quickspace_clock_system_font", false)
+        @JvmField val QUICKSPACE_CLOCK_CUSTOM_COLOR = backedUpItem("pref_quickspace_clock_custom_color", false)
+        @JvmField val QUICKSPACE_CLOCK_COLOR = backedUpItem("pref_quickspace_clock_hour_color", -1)
+        @JvmField val SHOW_QUICKSPACE_PSONALITY = backedUpItem("pref_quickspace_psonality", true)
+        @JvmField val SHOW_QUICKSPACE_NOWPLAYING = backedUpItem("pref_quickspace_np", true)
+        @JvmField val SHOW_QUICKSPACE_WEATHER = backedUpItem("pref_quickspace_weather", true)
+        @JvmField val SHOW_QUICKSPACE_WEATHER_CITY = backedUpItem("pref_quickspace_weather_city", false)
+        @JvmField val SHOW_QUICKSPACE_WEATHER_PROVIDER = backedUpItem("pref_quickspace_weather_provider", "auto")
+        @JvmField val SHOW_QUICKSPACE_WEATHER_TEXT = backedUpItem("pref_quickspace_weather_text", true)
+        @JvmField val SERAPHIX_HOLDER_ID = backedUpItem("pref_seraphix_holder_id", -1)
+
         @JvmField val SMARTSPACE_ENABLED = backedUpItem("pref_smartspace_enabled", false)
         @JvmField val SMARTSPACE_WEATHER = backedUpItem("pref_smartspace_weather", true)
         @JvmField val SMARTSPACE_CALENDAR = backedUpItem("pref_smartspace_calendar", true)

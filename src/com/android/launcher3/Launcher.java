@@ -100,7 +100,7 @@ import static com.android.launcher3.testing.shared.TestProtocol.LAUNCHER_ACTIVIT
 import static com.android.launcher3.testing.shared.TestProtocol.LAUNCHER_ACTIVITY_STOPPED_MESSAGE;
 import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
 import static com.android.launcher3.util.Executors.UI_HELPER_EXECUTOR;
-import com.android.launcher3.smartspace.SmartspaceView;
+import com.android.launcher3.smartspace.AtAGlanceView;
 import com.android.launcher3.util.FlashlightUtils;
 import static com.android.launcher3.util.ItemInfoMatcher.forFolderMatch;
 import static com.android.launcher3.util.SettingsCache.TOUCHPAD_NATURAL_SCROLLING;
@@ -410,7 +410,7 @@ public class Launcher extends StatefulActivity<LauncherState>
     protected WallpaperThemeManager mWallpaperThemeManager;
 
     private static final int REQUEST_TURN_OFF_FLASHLIGHT = 99;
-    private SmartspaceView mSmartspace;
+    private AtAGlanceView mSmartspace;
 
     public static Launcher getLauncher(Context context) {
         return fromContext(context);
@@ -1233,9 +1233,9 @@ public class Launcher extends StatefulActivity<LauncherState>
         // Setup Scrim
         mScrimView = findViewById(R.id.scrim_view);
 
-        // Smartspace
+        // Smartspace / Quickspace
         mSmartspace = findViewById(R.id.reserved_container_workspace);
-        if (!LauncherPrefs.SMARTSPACE_ENABLED.get(this) && mSmartspace != null) {
+        if (!LauncherPrefs.SHOW_QUICKSPACE.get(this) && mSmartspace != null) {
             mSmartspace.setVisibility(View.GONE);
         }
 

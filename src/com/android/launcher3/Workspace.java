@@ -729,7 +729,7 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
     public void bindAndInitFirstWorkspaceScreen() {
         // Add the first page
         CellLayout firstPage = insertNewWorkspaceScreen(Workspace.FIRST_SCREEN_ID, getChildCount());
-        if (!LauncherPrefs.SMARTSPACE_ENABLED.get(getContext())) {
+        if (!LauncherPrefs.SHOW_QUICKSPACE.get(getContext())) {
             mFirstPagePinnedItem = null;
             return;
         }
@@ -740,7 +740,20 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
         }
 
         int cellHSpan = mLauncher.getDeviceProfile().inv.numSearchContainerColumns;
+
+        // Determine cell vertical span based on quickspace style
         int cellVSpan = 1;
+        boolean useSmartspace = LauncherPrefs.USE_SMARTSPACE.get(getContext());
+        if (!useSmartspace) {
+            try {
+                String styleValue = LauncherPrefs.QUICKSPACE_UI_STYLE.get(getContext());
+                int style = Integer.parseInt(styleValue);
+                if (style == 2) {
+                    cellVSpan = 2;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
 
         CellLayoutLayoutParams lp = new CellLayoutLayoutParams(0, 0, cellHSpan, cellVSpan);
         lp.canReorder = false;
