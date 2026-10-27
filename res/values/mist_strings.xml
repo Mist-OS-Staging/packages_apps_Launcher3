@@ -120,6 +120,7 @@
     <string name="pref_show_hotseat_qsb_summary">Show it at the bottom of the Home screen</string>
 
     <!-- App drawer searchbar -->
+    <string name="scroll_category_title">Scroll</string>
     <string name="drawer_search_title">App drawer search bar</string>
     <string name="drawer_search_summary">Show a search bar in the app drawer</string>
     <string name="search_bar_placement_title">Search bar placement</string>

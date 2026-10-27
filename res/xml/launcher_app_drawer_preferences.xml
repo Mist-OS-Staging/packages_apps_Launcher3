@@ -67,6 +67,10 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="@string/scroll_category_title"
+        launcher:iconSpaceReserved="false">
+
     <SwitchPreferenceCompat
         android:key="pref_drawer_scrollbar"
         android:title="@string/drawer_scrollbar_title"
@@ -89,5 +93,7 @@
         settings:min="75"
         settings:units="%"
         android:defaultValue="100" />
+
+    </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>
