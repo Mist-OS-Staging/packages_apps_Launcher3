@@ -46,23 +46,43 @@ constructor(
     @Named(WINDOW_BLUR_STATE) private val blurState: ListenableRef<Boolean>,
 ) : BlurBackgroundHelper() {
 
+    /**
+     * The blur state of one surface (the folder or the popup). Each surface needs its own render
+     * node and blur drawable: a popup can open on top of an open folder, and sharing them lets the
+     * folder draw the node that the popup is recording, which makes the node draw itself.
+     */
+    private inner class BlurLayer(name: String) {
+        val workspaceRenderNode = RenderNode(name)
+        val workspaceRenderNodeOutline = Outline()
+        val crossWindowBlurDrawable: BackgroundBlurDrawable? by lazy {
+            if (!isBlurEnabled()) null
+            else
+                activityContext.dragLayer.getViewRootImpl()
+                    .createBackgroundBlurDrawable()?.apply {
+                        setBlurRadius(folderBlurRadius.toInt())
+                        setVisible(false, false)
+                    }
+        }
+
+        fun close() {
+            if (workspaceRenderNode.hasDisplayList()) {
+                workspaceRenderNode.discardDisplayList()
+            }
+            crossWindowBlurDrawable?.setVisible(false, false)
+        }
+    }
+
     private val folderBlurRadius = activityContext.asContext().resources.getDimension(
         R.dimen.folder_blur_radius
     )
 
     private val cornerRadius = Themes.getDialogCornerRadius(activityContext.asContext())
-    private val workspaceBlurRenderNode = RenderNode("workspaceBlur")
-    private val workspaceBlurRenderNodeOutline = Outline()
     private val bounds = Rect()
-    private val folderBlurDrawable: BackgroundBlurDrawable? by lazy {
-        if (!isBlurEnabled()) null
-        else
-            activityContext.dragLayer.getViewRootImpl()
-                .createBackgroundBlurDrawable()?.apply {
-                    setBlurRadius(folderBlurRadius.toInt())
-                    setVisible(false, false)
-                }
-    }
+    private val folderLayer = BlurLayer("folderWorkspaceBlur")
+    private val popupLayer = BlurLayer("popupWorkspaceBlur")
+
+    /** True while the drag layer is being recorded into a render node. */
+    private var isRecordingSnapshot = false
 
     override fun prepareToOpenFolder(folder: Folder) {
         if (!isBlurEnabled()) {
@@ -76,38 +96,58 @@ constructor(
         folderIcon.setTextVisible(false)
         folderIcon.setIconVisible(false)
 
-        val dragLayer = activityContext.dragLayer
-        val canvas =
-            workspaceBlurRenderNode.beginRecording(dragLayer.getWidth(), dragLayer.getHeight())
-        dragLayer.draw(canvas)
-        workspaceBlurRenderNode.endRecording()
-        workspaceBlurRenderNode.setPosition(0, 0, dragLayer.getWidth(), dragLayer.getHeight())
+        recordWorkspaceSnapshot(folderLayer)
 
         folderIcon.folderName.visibility = folderNameVisibility
         folderIcon.setIconVisible(isIconVisible)
     }
 
     override fun drawFolderBlur(canvas: Canvas, pathWrapper: PathWrapper?, view: View) {
-        if (!isBlurEnabled()) {
-            return
-        }
-
-        drawCrossWindowBlur(canvas, pathWrapper, view)
-        drawWorkspaceBlur(canvas, pathWrapper?.path, view)
+        drawBlur(folderLayer, canvas, pathWrapper, view)
     }
 
-    private fun drawWorkspaceBlur(canvas: Canvas, path: Path?, view: View) {
-        if (!workspaceBlurRenderNode.hasDisplayList()) {
+    private fun drawBlur(layer: BlurLayer, canvas: Canvas, pathWrapper: PathWrapper?, view: View) {
+        // While the drag layer is recorded into a snapshot, views inside it (e.g. an open folder)
+        // must not draw blur: they would add a node to a snapshot that is itself being recorded.
+        if (!isBlurEnabled() || isRecordingSnapshot) {
             return
         }
-        workspaceBlurRenderNode.translationX = -view.left.toFloat()
-        workspaceBlurRenderNode.translationY = -view.top.toFloat()
 
+        drawCrossWindowBlur(layer, canvas, pathWrapper, view)
+        drawWorkspaceBlur(layer, canvas, pathWrapper?.path, view)
+    }
+
+    private fun recordWorkspaceSnapshot(layer: BlurLayer) {
+        val dragLayer = activityContext.dragLayer
+        val node = layer.workspaceRenderNode
+        isRecordingSnapshot = true
+        try {
+            val canvas = node.beginRecording(dragLayer.getWidth(), dragLayer.getHeight())
+            try {
+                dragLayer.draw(canvas)
+            } finally {
+                node.endRecording()
+            }
+        } finally {
+            isRecordingSnapshot = false
+        }
+        node.setPosition(0, 0, dragLayer.getWidth(), dragLayer.getHeight())
+    }
+
+    private fun drawWorkspaceBlur(layer: BlurLayer, canvas: Canvas, path: Path?, view: View) {
+        val node = layer.workspaceRenderNode
+        if (!node.hasDisplayList()) {
+            return
+        }
+        node.translationX = -view.left.toFloat()
+        node.translationY = -view.top.toFloat()
+
+        val outline = layer.workspaceRenderNodeOutline
         if (path != null && !path.isEmpty) {
-            workspaceBlurRenderNodeOutline.setPath(path)
-            workspaceBlurRenderNodeOutline.mPath.offset(view.left.toFloat(), view.top.toFloat())
+            outline.setPath(path)
+            outline.mPath.offset(view.left.toFloat(), view.top.toFloat())
         } else {
-            workspaceBlurRenderNodeOutline.setRoundRect(
+            outline.setRoundRect(
                 view.left,
                 view.top,
                 view.right,
@@ -115,21 +155,26 @@ constructor(
                 cornerRadius,
             )
         }
-        workspaceBlurRenderNode.setOutline(workspaceBlurRenderNodeOutline)
-        workspaceBlurRenderNode.setClipToOutline(true)
+        node.setOutline(outline)
+        node.setClipToOutline(true)
 
-        workspaceBlurRenderNode.setRenderEffect(
+        node.setRenderEffect(
             RenderEffect.createBlurEffect(
                 folderBlurRadius,
                 folderBlurRadius,
                 Shader.TileMode.CLAMP
             )
         )
-        canvas.drawRenderNode(workspaceBlurRenderNode)
+        canvas.drawRenderNode(node)
     }
 
-    private fun drawCrossWindowBlur(canvas: Canvas, pathWrapper: PathWrapper?, view: View) {
-        val d = folderBlurDrawable ?: return
+    private fun drawCrossWindowBlur(
+        layer: BlurLayer,
+        canvas: Canvas,
+        pathWrapper: PathWrapper?,
+        view: View,
+    ) {
+        val d = layer.crossWindowBlurDrawable ?: return
 
         d.setVisible(true, false)
         if (pathWrapper != null) {
@@ -144,10 +189,7 @@ constructor(
     }
 
     override fun folderCloseComplete() {
-        if (workspaceBlurRenderNode.hasDisplayList()) {
-            workspaceBlurRenderNode.discardDisplayList()
-        }
-        folderBlurDrawable?.setVisible(false, false)
+        folderLayer.close()
     }
 
     override fun prepareToOpenPopup(popup: View) {
@@ -158,30 +200,17 @@ constructor(
         val popupVisibility = popup.visibility
         popup.visibility = View.INVISIBLE
 
-        val dragLayer = activityContext.dragLayer
-        val canvas =
-            workspaceBlurRenderNode.beginRecording(dragLayer.getWidth(), dragLayer.getHeight())
-        dragLayer.draw(canvas)
-        workspaceBlurRenderNode.endRecording()
-        workspaceBlurRenderNode.setPosition(0, 0, dragLayer.getWidth(), dragLayer.getHeight())
+        recordWorkspaceSnapshot(popupLayer)
 
         popup.visibility = popupVisibility
     }
 
     override fun drawPopupBlur(canvas: Canvas, pathWrapper: PathWrapper?, view: View) {
-        if (!isBlurEnabled()) {
-            return
-        }
-
-        drawCrossWindowBlur(canvas, pathWrapper, view)
-        drawWorkspaceBlur(canvas, pathWrapper?.path, view)
+        drawBlur(popupLayer, canvas, pathWrapper, view)
     }
 
     override fun popupCloseComplete() {
-        if (workspaceBlurRenderNode.hasDisplayList()) {
-            workspaceBlurRenderNode.discardDisplayList()
-        }
-        folderBlurDrawable?.setVisible(false, false)
+        popupLayer.close()
     }
 
     override fun isBlurEnabled(): Boolean {
