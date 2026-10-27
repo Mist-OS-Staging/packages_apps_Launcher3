@@ -201,10 +201,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             });
         } else if (LauncherPrefs.ALL_APPS_SEARCH_BAR_APPEARANCE.getSharedPrefKey().equals(key)) {
             post(() -> {
-                if (mSearchContainer instanceof AppsSearchContainerLayout) {
-                    ((AppsSearchContainerLayout) mSearchContainer).setAppearance(
-                            AllAppsSearchBarConfig.getAppearance(getContext()));
-                }
+                setUpBottomSearchBar();
+                requestLayout();
             });
         }
     };
@@ -968,6 +966,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
         int topMargin = getContext().getResources().getDimensionPixelSize(
                 R.dimen.all_apps_search_bar_bottom_adjustment);
+        if (isNarrowSearch()) {
+            topMargin -= getNarrowSearchBarSpacingAdjustment();
+        }
         if (includeTabsMargin) {
             topMargin += getContext().getResources().getDimensionPixelSize(
                     R.dimen.all_apps_header_pill_height)
@@ -1734,8 +1735,26 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 LauncherPrefs.get(getContext()).get(LauncherPrefs.ALL_APPS_SEARCH_BAR_PLACEMENT));
     }
 
+    private static final float NARROW_SEARCH_BAR_SPACING_REDUCTION_DP = 2.5f;
+
+    private boolean isNarrowSearch() {
+        if (mSearchContainer instanceof AppsSearchContainerLayout) {
+            return ((AppsSearchContainerLayout) mSearchContainer).isNarrow();
+        }
+        return AllAppsSearchBarConfig.getAppearance(getContext()).isNarrow();
+    }
+
+    private int getNarrowSearchBarSpacingAdjustment() {
+        return Math.round(NARROW_SEARCH_BAR_SPACING_REDUCTION_DP
+                * getResources().getDisplayMetrics().density);
+    }
+
     private int getSearchBarMarginPx() {
-        return getResources().getDimensionPixelSize(R.dimen.all_apps_search_bar_bottom_margin);
+        int margin = getResources().getDimensionPixelSize(R.dimen.all_apps_search_bar_bottom_margin);
+        if (isNarrowSearch()) {
+            margin -= getNarrowSearchBarSpacingAdjustment();
+        }
+        return margin;
     }
 
     public int getSearchBarBottomMargin() {
@@ -1748,6 +1767,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     private void setUpBottomSearchBar() {
+        if (mSearchContainer instanceof AppsSearchContainerLayout) {
+            AppsSearchContainerLayout searchLayout = (AppsSearchContainerLayout) mSearchContainer;
+            searchLayout.setPlacement(
+                    isSearchBarAtBottom() ? AllAppsSearchBarConfig.Placement.BOTTOM
+                            : AllAppsSearchBarConfig.Placement.TOP);
+            searchLayout.setAppearance(AllAppsSearchBarConfig.getAppearance(getContext()));
+        }
         if (mSearchContainer != null
                 && mSearchContainer.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
             RelativeLayout.LayoutParams lp =
@@ -1764,13 +1790,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 lp.bottomMargin = 0;
             }
             mSearchContainer.setLayoutParams(lp);
-        }
-        if (mSearchContainer instanceof AppsSearchContainerLayout) {
-            AppsSearchContainerLayout searchLayout = (AppsSearchContainerLayout) mSearchContainer;
-            searchLayout.setPlacement(
-                    isSearchBarAtBottom() ? AllAppsSearchBarConfig.Placement.BOTTOM
-                            : AllAppsSearchBarConfig.Placement.TOP);
-            searchLayout.setAppearance(AllAppsSearchBarConfig.getAppearance(getContext()));
         }
         if (mHeader != null) {
             removeCustomRules(mHeader);
