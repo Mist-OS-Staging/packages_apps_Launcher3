@@ -86,6 +86,9 @@ open class PopupContainer<T : ActivityContext>(
 
     private var fixedDragLayerPos: Rect? = null
 
+    /** Set when Focus Mode is on for this popup; blurs the app drawer behind it. */
+    var focusMode: FocusModeController? = null
+
     /** Handles a deep shortcut click event. */
     private fun onDeepShortcutClick(item: WorkspaceItemInfo, iconBounds: Rect) {
         if (animationProxyView.parent == null) {
@@ -258,6 +261,7 @@ open class PopupContainer<T : ActivityContext>(
     @CallSuper
     override fun closeComplete() {
         super.closeComplete()
+        focusMode?.release()
         popupContainer.removeView(animationProxyView)
         mActivityContext?.dragController?.removeDragListener(this)
         val openPopup = getOpen(mActivityContext)
@@ -270,10 +274,17 @@ open class PopupContainer<T : ActivityContext>(
     }
 
     @CallSuper
+    override fun onCreateOpenAnimation(anim: AnimatorSet) {
+        super.onCreateOpenAnimation(anim)
+        focusMode?.onOpen(this, anim)
+    }
+
+    @CallSuper
     override fun onCreateCloseAnimation(anim: AnimatorSet) {
         // Animate original icon's text back in.
         anim.play(iconViewController?.getFloatingViewTextAlpha()?.animateToValue(1f))
         iconViewController?.setForceHideDot(false)
+        focusMode?.onClose(anim)
     }
 
     override fun getAccessibilityInitialFocusView(): View {
@@ -321,6 +332,7 @@ open class PopupContainer<T : ActivityContext>(
         // Either the original item or one of the shortcuts was dragged.
         // Hide the container, but don't remove it yet because that interferes with touch events.
         mDeferContainerRemoval = true
+        focusMode?.onDragStarted()
         handleClose(/* animate */ true)
     }
 

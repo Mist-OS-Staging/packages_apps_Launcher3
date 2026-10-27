@@ -122,6 +122,8 @@
     <dimen name="all_apps_search_bar_bottom_margin">8dp</dimen>
     <dimen name="all_apps_search_bar_max_width">600dp</dimen>
     <dimen name="all_apps_search_bar_blur_radius">12dp</dimen>
+    <!-- Blur applied to the app drawer behind the long-press popup when Focus Mode is on -->
+    <dimen name="focus_mode_blur_radius">28dp</dimen>
     <dimen name="all_apps_search_bar_content_overlap">26dp</dimen>
     <!-- affects padding above apps lists when tabs and floating header rows are not visible -->
     <!-- (always affects padding above search results) -->
