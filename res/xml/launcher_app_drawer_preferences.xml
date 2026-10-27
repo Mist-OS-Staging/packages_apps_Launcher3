@@ -36,7 +36,7 @@
         android:key="pref_focus_mode"
         android:title="@string/pref_focus_mode_title"
         android:summary="@string/pref_focus_mode_summary"
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:persistent="true" />
 
     <PreferenceCategory
