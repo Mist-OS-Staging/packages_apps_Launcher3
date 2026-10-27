@@ -84,8 +84,11 @@ public class AppsSearchContainerLayout extends ExtendedEditText
     private final int mContentOverlap;
 
     private static final int SEARCH_BAR_BG_ALPHA = 255;
+    public static final float NARROW_IDLE_WIDTH_EXPANSION = 0.84f;
+    public static final float ACTIVE_WIDTH_EXPANSION = 1.0f;
+    private static final float NARROW_SIDE_INSET_DP = 10f;
     private final int mMaxBarWidth;
-    private float mWidthExpansion = 1.0f;
+    private float mWidthExpansion = ACTIVE_WIDTH_EXPANSION;
     private ValueAnimator mWidthAnimator;
     private boolean mImeVisible;
 
@@ -137,7 +140,8 @@ public class AppsSearchContainerLayout extends ExtendedEditText
 
         mPlacement = AllAppsSearchBarConfig.getPlacement(context);
         mAppearance = AllAppsSearchBarConfig.getAppearance(context);
-        mWidthExpansion = (mAppearance != null && mAppearance.isNarrow()) ? 0.88f : 1.0f;
+        mWidthExpansion = (mAppearance != null && mAppearance.isNarrow())
+                ? NARROW_IDLE_WIDTH_EXPANSION : ACTIVE_WIDTH_EXPANSION;
         updateBackgroundAlpha();
     }
 
@@ -196,8 +200,17 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         int fullWidth = contentWidth > 0 ? Math.min(contentWidth, maxAllowedWidth) : maxAllowedWidth;
         fullWidth = Math.min(fullWidth, mMaxBarWidth);
 
-        float expansion = (mAppearance != null && mAppearance.isNarrow()) ? mWidthExpansion : 1.0f;
+        float expansion = (mAppearance != null && mAppearance.isNarrow())
+                ? mWidthExpansion : ACTIVE_WIDTH_EXPANSION;
         int myWidth = (int) (fullWidth * expansion);
+        if (mAppearance != null && mAppearance.isNarrow()) {
+            // Trim NARROW_SIDE_INSET_DP off each side while idle, easing back to the full active
+            // width as the bar expands for typing.
+            float idle = Math.max(0f, Math.min(1f, (ACTIVE_WIDTH_EXPANSION - expansion)
+                    / (ACTIVE_WIDTH_EXPANSION - NARROW_IDLE_WIDTH_EXPANSION)));
+            myWidth -= Math.round(2 * NARROW_SIDE_INSET_DP
+                    * getResources().getDisplayMetrics().density * idle);
+        }
 
         super.onMeasure(makeMeasureSpec(myWidth, EXACTLY), heightMeasureSpec);
     }
@@ -458,23 +471,23 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         if (mAppearance != null && mAppearance.isNarrow()) {
             boolean isSearching = mAppsView != null && mAppsView.isSearching();
             boolean isActive = isFocused() || mImeVisible || isSearching;
-            float target = isActive ? 1.0f : 0.88f;
+            float target = isActive ? ACTIVE_WIDTH_EXPANSION : NARROW_IDLE_WIDTH_EXPANSION;
             if (!isLaidOut()) {
                 mWidthExpansion = target;
                 requestLayout();
                 return;
             }
             animateWidth(isActive);
-        } else if (mWidthExpansion != 1.0f) {
-            mWidthExpansion = 1.0f;
+        } else if (mWidthExpansion != ACTIVE_WIDTH_EXPANSION) {
+            mWidthExpansion = ACTIVE_WIDTH_EXPANSION;
             requestLayout();
         }
     }
 
     private void animateWidth(boolean expand) {
         float target = (mAppearance != null && mAppearance.isNarrow())
-                ? (expand ? 1.0f : 0.88f)
-                : 1.0f;
+                ? (expand ? ACTIVE_WIDTH_EXPANSION : NARROW_IDLE_WIDTH_EXPANSION)
+                : ACTIVE_WIDTH_EXPANSION;
         if (mWidthExpansion == target && (mWidthAnimator == null || !mWidthAnimator.isRunning())) {
             return;
         }
@@ -539,6 +552,10 @@ public class AppsSearchContainerLayout extends ExtendedEditText
 
     public AllAppsSearchBarConfig.Appearance getAppearance() {
         return mAppearance;
+    }
+
+    public boolean isNarrow() {
+        return mAppearance != null && mAppearance.isNarrow();
     }
 
     @Override

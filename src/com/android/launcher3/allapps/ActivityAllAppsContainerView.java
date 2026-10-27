@@ -201,10 +201,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             });
         } else if (LauncherPrefs.ALL_APPS_SEARCH_BAR_APPEARANCE.getSharedPrefKey().equals(key)) {
             post(() -> {
-                if (mSearchContainer instanceof AppsSearchContainerLayout) {
-                    ((AppsSearchContainerLayout) mSearchContainer).setAppearance(
-                            AllAppsSearchBarConfig.getAppearance(getContext()));
-                }
+                setUpBottomSearchBar();
+                requestLayout();
             });
         }
     };
@@ -968,6 +966,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
         int topMargin = getContext().getResources().getDimensionPixelSize(
                 R.dimen.all_apps_search_bar_bottom_adjustment);
+        if (isNarrowSearch()) {
+            topMargin -= getNarrowSearchBarSpacingAdjustment()
+                    + getNarrowSearchBarListGapAdjustment();
+        }
         if (includeTabsMargin) {
             topMargin += getContext().getResources().getDimensionPixelSize(
                     R.dimen.all_apps_header_pill_height)
@@ -1709,7 +1711,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     bottomOffset += mSearchContainer != null ? mSearchContainer.getHeight() : 0;
                 } else if (isSearchBarAtBottom()) {
                     bottomOffset += (mSearchContainer != null ? mSearchContainer.getHeight() : 0)
-                            + getSearchBarMarginPx();
+                            + getSearchBarMarginPx() - getNarrowSearchBarListGapAdjustment();
                 }
                 mRecyclerView.setPadding(mPadding.left, mPadding.top, mPadding.right,
                         mPadding.bottom + bottomOffset);
@@ -1734,8 +1736,54 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 LauncherPrefs.get(getContext()).get(LauncherPrefs.ALL_APPS_SEARCH_BAR_PLACEMENT));
     }
 
+    private static final float NARROW_SEARCH_BAR_SPACING_REDUCTION_DP = 2.5f;
+    private static final float NARROW_SEARCH_BAR_GAP_REDUCTION_DP = 5f;
+    /** Extra trim applied only to the gap between the bar and the app list (50.3dp -> 48dp). */
+    private static final float NARROW_SEARCH_BAR_LIST_GAP_REDUCTION_DP = 2.3f;
+
+    private boolean isNarrowSearch() {
+        if (mSearchContainer instanceof AppsSearchContainerLayout) {
+            return ((AppsSearchContainerLayout) mSearchContainer).isNarrow();
+        }
+        return AllAppsSearchBarConfig.getAppearance(getContext()).isNarrow();
+    }
+
+    private int getNarrowSearchBarSpacingAdjustment() {
+        return Math.round(NARROW_SEARCH_BAR_SPACING_REDUCTION_DP
+                * getResources().getDisplayMetrics().density);
+    }
+
+    /**
+     * Extra tightening for the narrow / narrow blur bar: shaves this much off both the gap between
+     * the sheet handle and the bar and the gap between the bar and the app list.
+     */
+    private int getNarrowSearchBarGapAdjustment() {
+        if (!isNarrowSearch()) {
+            return 0;
+        }
+        return Math.round(NARROW_SEARCH_BAR_GAP_REDUCTION_DP
+                * getResources().getDisplayMetrics().density);
+    }
+
+    /** Total tightening of the gap between the bar and the app list. */
+    private int getNarrowSearchBarListGapAdjustment() {
+        if (!isNarrowSearch()) {
+            return 0;
+        }
+        return getNarrowSearchBarGapAdjustment() + Math.round(
+                NARROW_SEARCH_BAR_LIST_GAP_REDUCTION_DP * getResources().getDisplayMetrics().density);
+    }
+
     private int getSearchBarMarginPx() {
-        return getResources().getDimensionPixelSize(R.dimen.all_apps_search_bar_bottom_margin);
+        int margin = getResources().getDimensionPixelSize(R.dimen.all_apps_search_bar_bottom_margin);
+        if (isNarrowSearch()) {
+            margin -= getNarrowSearchBarSpacingAdjustment();
+        }
+        return margin;
+    }
+
+    private int getSearchBarTopMargin() {
+        return Math.max(mInsets.top, 0) + getSearchBarMarginPx() - getNarrowSearchBarGapAdjustment();
     }
 
     public int getSearchBarBottomMargin() {
@@ -1748,6 +1796,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     private void setUpBottomSearchBar() {
+        if (mSearchContainer instanceof AppsSearchContainerLayout) {
+            AppsSearchContainerLayout searchLayout = (AppsSearchContainerLayout) mSearchContainer;
+            searchLayout.setPlacement(
+                    isSearchBarAtBottom() ? AllAppsSearchBarConfig.Placement.BOTTOM
+                            : AllAppsSearchBarConfig.Placement.TOP);
+            searchLayout.setAppearance(AllAppsSearchBarConfig.getAppearance(getContext()));
+        }
         if (mSearchContainer != null
                 && mSearchContainer.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
             RelativeLayout.LayoutParams lp =
@@ -1760,17 +1815,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             } else {
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                lp.topMargin = Math.max(mInsets.top, 0) + getSearchBarMarginPx();
+                lp.topMargin = getSearchBarTopMargin();
                 lp.bottomMargin = 0;
             }
             mSearchContainer.setLayoutParams(lp);
-        }
-        if (mSearchContainer instanceof AppsSearchContainerLayout) {
-            AppsSearchContainerLayout searchLayout = (AppsSearchContainerLayout) mSearchContainer;
-            searchLayout.setPlacement(
-                    isSearchBarAtBottom() ? AllAppsSearchBarConfig.Placement.BOTTOM
-                            : AllAppsSearchBarConfig.Placement.TOP);
-            searchLayout.setAppearance(AllAppsSearchBarConfig.getAppearance(getContext()));
         }
         if (mHeader != null) {
             removeCustomRules(mHeader);
@@ -1819,7 +1867,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 lp.topMargin = 0;
             } else {
                 lp.bottomMargin = 0;
-                lp.topMargin = Math.max(mInsets.top, 0) + getSearchBarMarginPx();
+                lp.topMargin = getSearchBarTopMargin();
             }
             mSearchContainer.setLayoutParams(lp);
         }
