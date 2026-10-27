@@ -5,7 +5,6 @@ import static com.android.launcher3.util.Executors.UI_HELPER_EXECUTOR;
 import android.app.smartspace.SmartspaceTarget;
 import android.app.smartspace.SmartspaceTargetEvent;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Outline;
 import android.graphics.drawable.Drawable;
 import android.icu.text.DateFormat;
@@ -28,7 +27,6 @@ import android.widget.LinearLayout;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 
-import com.android.launcher3.LauncherPrefs;
 import com.android.launcher3.PagedView;
 import com.android.launcher3.R;
 import com.android.launcher3.Workspace;
@@ -44,7 +42,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public class SmartspaceView extends LinearLayout
-        implements Workspace.ScrollableContent, SharedPreferences.OnSharedPreferenceChangeListener {
+        implements Workspace.ScrollableContent {
     private static final String HOME_PAGE = "date_weather";
     private static final long WEATHER_RESUME_TIMEOUT_MS = 2000;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
@@ -71,9 +69,6 @@ public class SmartspaceView extends LinearLayout
     private SmartspaceCard mDisplayed;
     private String mSelectedKey = HOME_PAGE;
     private boolean mActive;
-    private boolean mResumed;
-    private boolean mVisible;
-    private boolean mDestroyed;
     private boolean mUpdatingPages;
     private boolean mResumingWeather;
     private boolean mWeatherIconLoaded;
@@ -126,62 +121,17 @@ public class SmartspaceView extends LinearLayout
     }
 
     @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        if (mDestroyed) return;
-        LauncherPrefs.getPrefs(getContext()).registerOnSharedPreferenceChangeListener(this);
-        updateListening();
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        LauncherPrefs.getPrefs(getContext()).unregisterOnSharedPreferenceChangeListener(this);
-        setActive(false);
-        super.onDetachedFromWindow();
-    }
-
-    @Override
-    public void onVisibilityAggregated(boolean isVisible) {
-        super.onVisibilityAggregated(isVisible);
-        mVisible = isVisible;
-        updateListening();
-    }
-
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-        if (key == null || key.startsWith("pref_smartspace")) {
-            refreshSettings();
-        }
-    }
-
-    public void onResume() {
-        mResumed = true;
-        updateListening();
-    }
-
-    public void onPause() {
-        mResumed = false;
-        updateListening();
-    }
-
-    public void onDestroy() {
-        mDestroyed = true;
-        LauncherPrefs.getPrefs(getContext()).unregisterOnSharedPreferenceChangeListener(this);
-        setActive(false);
-        for (EventPage page : mEventPages.values()) page.release();
-    }
-
-    private void updateListening() {
-        boolean active = mResumed && mVisible && isAttachedToWindow() && !mDestroyed;
-        setActive(active);
-    }
-
-    @Override
     public boolean canScrollHorizontally() {
         return mPager != null && mPager.getPageCount() > 1;
     }
 
-    void setActive(boolean active) {
+    @Override
+    protected void onDetachedFromWindow() {
+        setActive(false);
+        super.onDetachedFromWindow();
+    }
+
+    public void setActive(boolean active) {
         if (mActive == active) return;
         mActive = active;
         if (active) {
@@ -207,7 +157,7 @@ public class SmartspaceView extends LinearLayout
         mController.setActive(active);
     }
 
-    void refreshSettings() {
+    public void refreshSettings() {
         boolean active = mActive;
         setActive(false);
         mResumingEvents.clear();

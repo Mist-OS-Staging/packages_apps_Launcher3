@@ -67,10 +67,10 @@ public class AtAGlanceView extends FrameLayout
         if (key == null || LauncherPrefs.USE_SMARTSPACE.getSharedPrefKey().equals(key)) {
             updateMode();
         }
-        if (key == null || key.startsWith("pref_smartspace_")) {
+        if (key == null || key.startsWith("pref_smartspace") || "smartspace_events".equals(key)) {
             if (mSmartspace != null) mSmartspace.refreshSettings();
         }
-        if (key == null || key.startsWith("pref_quickspace_")) {
+        if (key == null || key.startsWith("pref_quickspace")) {
             if (mQuickspace != null) mQuickspace.onDataUpdated();
         }
     }
@@ -96,7 +96,8 @@ public class AtAGlanceView extends FrameLayout
     }
 
     private void updateListening() {
-        boolean active = mResumed && mVisible && isAttachedToWindow() && !mDestroyed;
+        boolean visible = mVisible || isShown();
+        boolean active = mResumed && visible && isAttachedToWindow() && !mDestroyed;
         if (mSmartspace != null) mSmartspace.setActive(active);
         if (mQuickspace != null) {
             if (active) mQuickspace.onResume();

@@ -170,11 +170,13 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
         if (SmartspaceEvent.WEATHER.isEnabled(mContext)) {
             mWeather = new QuickspaceController(mContext, true);
             mWeather.addListener(this);
+            mWeather.onResume();
         }
         if (SmartspaceEvent.MUSIC.isEnabled(mContext)) {
             try {
                 MSMHProxy.INSTANCE(mContext).addMediaMetadataListener(this);
                 mMediaRegistered = true;
+                onMediaMetadataChanged();
             } catch (RuntimeException e) {
                 Log.w(TAG, "Cannot observe media", e);
             }
@@ -204,6 +206,7 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
         mClockCards = List.of();
         if (mWeather != null) {
             mWeather.removeListener(this);
+            mWeather.onPause();
             mWeather.onDestroy();
             mWeather = null;
         }
@@ -344,6 +347,9 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
             if (TextUtils.isEmpty(title)) {
                 title = metadata.getText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE);
             }
+            if (TextUtils.isEmpty(title) && metadata.getDescription() != null) {
+                title = metadata.getDescription().getTitle();
+            }
             artist = metadata.getText(MediaMetadata.METADATA_KEY_ARTIST);
             if (TextUtils.isEmpty(artist)) {
                 artist = metadata.getText(MediaMetadata.METADATA_KEY_ALBUM_ARTIST);
@@ -353,6 +359,9 @@ final class SmartspaceController implements MediaSessionManagerHelper.MediaMetad
             }
             if (TextUtils.isEmpty(artist)) {
                 artist = metadata.getText(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE);
+            }
+            if (TextUtils.isEmpty(artist) && metadata.getDescription() != null) {
+                artist = metadata.getDescription().getSubtitle();
             }
         }
         if (media.isMediaPlaying() && !TextUtils.isEmpty(title)) {
