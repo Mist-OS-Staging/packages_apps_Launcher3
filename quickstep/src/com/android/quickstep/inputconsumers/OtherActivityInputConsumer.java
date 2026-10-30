@@ -35,6 +35,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.PointF;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -103,6 +104,12 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
     private AbsSwipeUpHandler mInteractionHandler;
     private final FinishImmediatelyHandler mCleanupHandler = new FinishImmediatelyHandler();
 
+    // Settings.System key (Mistify > Miscellaneous > Gestures), enabled by default.
+    private static final String DELIBERATE_HOME_SWIPE_SETTING = "gesture_deliberate_home_swipe";
+    // Minimum finger travel, in dp, for a swipe from the gesture pill to count.
+    private static final float MIN_DELIBERATE_SWIPE_DP = 40f;
+
+    private final boolean mContinuingPreviousGesture;
     private final boolean mIsDeferredDownTarget;
     private final boolean mIsDeferredDownDevice;
     private final PointF mDownPos = new PointF();
@@ -159,6 +166,7 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
         mInputEventReceiver = inputEventReceiver;
 
         boolean continuingPreviousGesture = mTaskAnimationManager.isRecentsAnimationRunning();
+        mContinuingPreviousGesture = continuingPreviousGesture;
         mIsDeferredDownTarget = !continuingPreviousGesture && isDeferredDownTarget;
         // TODO: 432133436 - Remove mIsDeferredDownDevice when a proper fix is merged.
         final DesktopVisibilityController desktopVisibilityController =
@@ -483,7 +491,9 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
 
         boolean isCanceled = ev.getActionMasked() == ACTION_CANCEL;
         if (mPassedWindowMoveSlop && mInteractionHandler != null) {
-            if (isCanceled) {
+            // A light tap or tiny drift on the gesture pill is not a deliberate swipe: cancel it
+            // so the app stays in front instead of being sent home.
+            if (isCanceled || shouldIgnoreAccidentalSwipe()) {
                 mInteractionHandler.onGestureCancelled();
             } else {
                 mVelocityTracker.computeCurrentVelocity(PX_PER_MS);
@@ -534,6 +544,25 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
         }
         cleanupAfterGesture();
         TraceHelper.INSTANCE.endSection();
+    }
+
+    /**
+     * Returns true if the "deliberate home swipe" setting is on and this (new) gesture ended after
+     * moving less than {@link #MIN_DELIBERATE_SWIPE_DP}, i.e. it was most likely an accidental
+     * touch on the gesture pill rather than an intended swipe.
+     */
+    private boolean shouldIgnoreAccidentalSwipe() {
+        if (mContinuingPreviousGesture || !mDeviceState.isFullyGesturalNavMode()
+                || mGestureState.isTrackpadGesture()) {
+            return false;
+        }
+        if (Settings.System.getInt(getContentResolver(), DELIBERATE_HOME_SWIPE_SETTING, 1) == 0) {
+            return false;
+        }
+        float minDistance = MIN_DELIBERATE_SWIPE_DP
+                * getResources().getDisplayMetrics().density;
+        return squaredHypot(mLastPos.x - mDownPos.x, mLastPos.y - mDownPos.y)
+                < minDistance * minDistance;
     }
 
     private void cleanupAfterGesture() {
