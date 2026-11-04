@@ -110,6 +110,7 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
     private static final float MIN_DELIBERATE_SWIPE_DP = 40f;
 
     private final boolean mContinuingPreviousGesture;
+    private final boolean mDeferDownForDeliberateSwipe;
     private final boolean mIsDeferredDownTarget;
     private final boolean mIsDeferredDownDevice;
     private final PointF mDownPos = new PointF();
@@ -173,6 +174,10 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
                 DesktopVisibilityController.INSTANCE.get(base);
         mIsDeferredDownDevice = desktopVisibilityController.isInDesktopMode(
                 mDeviceState.getDisplayId());
+
+        // Like when the keyboard is showing, don't start the home/recents animation on touch-down
+        // so that a plain tap on the pill never visibly shrinks the app.
+        mDeferDownForDeliberateSwipe = isDeliberateSwipeRequired();
 
         mTouchSlop = mDeviceState.getTouchSlop();
         mSquaredTouchSlop = mDeviceState.getSquaredTouchSlop();
@@ -552,11 +557,7 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
      * touch on the gesture pill rather than an intended swipe.
      */
     private boolean shouldIgnoreAccidentalSwipe() {
-        if (mContinuingPreviousGesture || !mDeviceState.isFullyGesturalNavMode()
-                || mGestureState.isTrackpadGesture()) {
-            return false;
-        }
-        if (Settings.System.getInt(getContentResolver(), DELIBERATE_HOME_SWIPE_SETTING, 1) == 0) {
+        if (!mDeferDownForDeliberateSwipe) {
             return false;
         }
         float minDistance = MIN_DELIBERATE_SWIPE_DP
@@ -622,7 +623,20 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
     }
 
     private boolean needDeferDown() {
-        return mIsDeferredDownTarget || mIsDeferredDownDevice;
+        return mIsDeferredDownTarget || mIsDeferredDownDevice || mDeferDownForDeliberateSwipe;
+    }
+
+    /**
+     * Whether new gestures from the gesture pill must be deliberate swipes (see
+     * {@link #DELIBERATE_HOME_SWIPE_SETTING}). Only applies to full gesture navigation, and not to
+     * trackpad gestures or the continuation of a gesture that is already running.
+     */
+    private boolean isDeliberateSwipeRequired() {
+        return !mContinuingPreviousGesture
+                && mDeviceState.isFullyGesturalNavMode()
+                && !mGestureState.isTrackpadGesture()
+                && Settings.System.getInt(
+                        getContentResolver(), DELIBERATE_HOME_SWIPE_SETTING, 1) != 0;
     }
 
     /**
