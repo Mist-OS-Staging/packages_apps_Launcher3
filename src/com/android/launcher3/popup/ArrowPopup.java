@@ -53,6 +53,8 @@ import com.android.launcher3.AbstractFloatingView;
 import com.android.launcher3.InsettableFrameLayout;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
+import com.android.launcher3.glass.LauncherGlassDrawable;
+import com.android.launcher3.glass.LauncherLiquidGlass;
 import com.android.launcher3.dragndrop.DragLayer;
 import com.android.launcher3.shortcuts.DeepShortcutView;
 import com.android.launcher3.util.RunnableList;
@@ -126,6 +128,10 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
 
     // The rect string of the view that the arrow is attached to, in screen reference frame.
     protected int mArrowColor;
+    // Liquid glass settings while this popup is shown, or null when glass is off.
+    private final LauncherLiquidGlass.Config mGlass;
+    private final boolean mGlassDark;
+    private LauncherGlassDrawable mGlassRim;
 
     protected float mElevation;
 
@@ -164,6 +170,15 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
            popupPrimaryColor = Color.argb(120, Color.red(popupPrimaryColor), Color.green(popupPrimaryColor), Color.blue(popupPrimaryColor));
             mArrowColor = Color.argb(120, Color.red(mArrowColor), Color.green(mArrowColor), Color.blue(mArrowColor));
         }
+        // Liquid glass: glass rows over the popup blur (only when that blur is there, so the
+        // shortcuts never sit on the bare workspace).
+        mGlass = mBlurBackgroundHelper != null && mBlurBackgroundHelper.isBlurEnabled()
+                ? LauncherLiquidGlass.get(context) : null;
+        mGlassDark = mGlass != null && LauncherLiquidGlass.isNightMode(context);
+        if (mGlass != null) {
+            popupPrimaryColor = glassRowColor();
+            mArrowColor = popupPrimaryColor;
+        }
         mRoundedTop.setColor(popupPrimaryColor);
         mRoundedTop.setCornerRadii(new float[]{mOutlineRadius, mOutlineRadius, mOutlineRadius,
                 mOutlineRadius, smallerRadius, smallerRadius, smallerRadius, smallerRadius});
@@ -185,7 +200,11 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
             mColors = new int[]{getContext().getColor(R.color.materialColorSurfaceContainer)};
         }
 
-        if (mBlurBackgroundHelper != null && mBlurBackgroundHelper.isBlurEnabled()) {
+        if (mGlass != null) {
+            for (int i = 0; i < mColors.length; i++) {
+                mColors[i] = glassRowColor();
+            }
+        } else if (mBlurBackgroundHelper != null && mBlurBackgroundHelper.isBlurEnabled()) {
             for (int i = 0; i < mColors.length; i++) {
                 mColors[i] = Color.argb(120, Color.red(mColors[i]), Color.green(mColors[i]), Color.blue(mColors[i]));
             }
@@ -354,6 +373,37 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
     protected void dispatchDraw(Canvas canvas) {
         mBlurBackgroundHelper.drawPopupBlur(canvas, null, this);
         super.dispatchDraw(canvas);
+        if (mGlass != null) {
+            drawGlassRims(canvas);
+        }
+    }
+
+    /** Readable glass tint for popup rows (shortcut labels sit on it). */
+    private int glassRowColor() {
+        final float alpha = Math.max(mGlass.tintAlpha(mGlassDark), mGlassDark ? 0.5f : 0.58f);
+        return mGlass.tintColor(mGlassDark, alpha);
+    }
+
+    /** Lit rim around each visible popup section. */
+    private void drawGlassRims(Canvas canvas) {
+        if (mGlassRim == null) {
+            mGlassRim = new LauncherGlassDrawable(getResources().getDisplayMetrics().density);
+            mGlassRim.setRimOnly(true);
+        }
+        mGlassRim.setConfig(mGlass);
+        mGlassRim.setDark(mGlassDark);
+        mGlassRim.setCornerRadius(mOutlineRadius);
+        for (int i = 0; i < getChildCount(); i++) {
+            final View child = getChildAt(i);
+            if (child == mArrow || child.getVisibility() != VISIBLE
+                    || child.getBackground() == null && !isShortcutContainer(child)) {
+                continue;
+            }
+            mGlassRim.setAlpha(Math.round(child.getAlpha() * 255f));
+            mGlassRim.setBounds(child.getLeft(), child.getTop(), child.getRight(),
+                    child.getBottom());
+            mGlassRim.draw(canvas);
+        }
     }
 
     private int getArrowLeft() {

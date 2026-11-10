@@ -87,6 +87,8 @@ import com.android.launcher3.allapps.search.SearchAdapterProvider;
 import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.keyboard.FocusedItemDecorator;
 import com.android.launcher3.keyboard.ViewGroupFocusHelper;
+import com.android.launcher3.glass.LauncherGlassDrawable;
+import com.android.launcher3.glass.LauncherLiquidGlass;
 import com.android.launcher3.model.StringCache;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.model.repository.StringCacheRepository;
@@ -164,6 +166,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     protected FloatingHeaderView mHeader;
     protected final List<AllAppsRow> mAdditionalHeaderRows = new ArrayList<>();
     protected View mBottomSheetBackground;
+    private LauncherGlassDrawable mGlassSheetRim;
     protected RecyclerViewFastScroller mFastScroller;
     private ConstraintLayout mFastScrollLetterLayout;
 
@@ -1514,6 +1517,16 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         final float bottomWithOffset = panel.getBottom() + bottomOffsetPx;
         // Draw full background panel if presenting on a sheet.
         int backgroundColor = getBackgroundColor();
+        // Liquid glass: only over the drawer blur. Without it the workspace would show through
+        // the app labels, so the stock opaque sheet stays.
+        final LauncherLiquidGlass.Config glass = isBackgroundBlurEnabled()
+                ? LauncherLiquidGlass.get(getContext()) : null;
+        final boolean glassDark = glass != null && LauncherLiquidGlass.isNightMode(getContext());
+        if (glass != null) {
+            // App labels sit on the sheet: keep at least a reading-strength tint.
+            final float alpha = Math.max(glass.tintAlpha(glassDark), glassDark ? 0.5f : 0.58f);
+            backgroundColor = glass.tintColor(glassDark, alpha);
+        }
         float backgroundAlpha = Color.alpha(backgroundColor) / 255.0f;
         mHeaderPaint.setColor(backgroundColor);
         mHeaderPaint.setAlpha((int) (backgroundAlpha * 255));
@@ -1526,10 +1539,29 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mTmpPath.reset();
         mTmpPath.addRoundRect(mTmpRectF, mBottomSheetCornerRadii, Direction.CW);
         canvas.drawPath(mTmpPath, mHeaderPaint);
+        if (glass != null) {
+            drawGlassSheetRim(canvas, glass, glassDark);
+        }
 
         // TODO (b/414671116): Apply header protection whenever search bar is focused.
         // applyHeaderProtection(canvas, scale, backgroundAlpha, topNoScale, topWithScale,
         //         leftWithScale, rightWithScale);
+    }
+
+    /** Sheen and lit rim of the glass drawer sheet, inside the sheet outline. */
+    private void drawGlassSheetRim(Canvas canvas, LauncherLiquidGlass.Config glass,
+            boolean dark) {
+        if (mGlassSheetRim == null) {
+            mGlassSheetRim = new LauncherGlassDrawable(getResources().getDisplayMetrics().density);
+            mGlassSheetRim.setRimOnly(true);
+        }
+        mGlassSheetRim.setConfig(glass);
+        mGlassSheetRim.setDark(dark);
+        mGlassSheetRim.setCornerRadius(mBottomSheetCornerRadii[0]);
+        mGlassSheetRim.setAlpha(Math.round(getAlpha() * 255f));
+        mGlassSheetRim.setBounds(Math.round(mTmpRectF.left), Math.round(mTmpRectF.top),
+                Math.round(mTmpRectF.right), Math.round(mTmpRectF.bottom));
+        mGlassSheetRim.draw(canvas);
     }
 
     private void applyHeaderProtection(Canvas canvas, float scale, float backgroundAlpha,

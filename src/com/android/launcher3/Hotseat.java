@@ -25,6 +25,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.Gravity;
@@ -41,9 +42,12 @@ import com.android.launcher3.ShortcutAndWidgetContainer.TranslationProvider;
 import com.android.launcher3.celllayout.CellLayoutLayoutParams;
 import com.android.launcher3.dagger.LauncherComponentProvider;
 import com.android.launcher3.dragndrop.SystemDragItemInfo;
+import com.android.launcher3.glass.LauncherGlassDrawable;
+import com.android.launcher3.glass.LauncherLiquidGlass;
 import com.android.launcher3.homescreenfiles.HomeScreenFilesUtilsKt;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.model.data.LauncherAppWidgetInfo;
+import com.android.launcher3.util.BlurBackgroundHelper;
 import com.android.launcher3.util.HorizontalInsettableView;
 import com.android.launcher3.util.LauncherBindableItemsContainer.ItemOperator;
 import com.android.launcher3.util.MultiPropertyFactory;
@@ -99,6 +103,12 @@ public class Hotseat extends CellLayout implements Insettable {
 
     private final @Nullable View mQsb;
 
+    // Liquid glass dock (Settings > Mistify > Themes > Liquid glass).
+    private final LauncherGlassDrawable mGlassDock;
+    private final Rect mGlassDockBounds = new Rect();
+    private final Rect mGlassChildBounds = new Rect();
+    private final Runnable mGlassListener = this::invalidate;
+
     public Hotseat(Context context) {
         this(context, null);
     }
@@ -129,6 +139,78 @@ public class Hotseat extends CellLayout implements Insettable {
         mIconsAlphaChannels.setUpdateVisibility(true);
         mIconsTranslationXFactory = new MultiPropertyFactory<>(getShortcutsAndWidgets(),
                 VIEW_TRANSLATE_X, ICONS_TRANSLATION_X_CHANNELS_COUNT, Float::sum);
+        mGlassDock = new LauncherGlassDrawable(getResources().getDisplayMetrics().density);
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        LauncherLiquidGlass.addListener(getContext(), mGlassListener);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        LauncherLiquidGlass.removeListener(mGlassListener);
+        mActivity.getActivityComponent().getBlurBackgroundHelper().clearHotseatBlur();
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        drawGlassDock(canvas);
+        super.dispatchDraw(canvas);
+    }
+
+    /** iOS style dock: a glass platter behind the hotseat icons. */
+    private void drawGlassDock(Canvas canvas) {
+        final LauncherLiquidGlass.Config glass = LauncherLiquidGlass.get(getContext());
+        final BlurBackgroundHelper blur =
+                mActivity.getActivityComponent().getBlurBackgroundHelper();
+        final ShortcutAndWidgetContainer icons = getShortcutsAndWidgets();
+        if (glass == null || mHasVerticalHotseat || icons.getVisibility() != VISIBLE) {
+            blur.clearHotseatBlur();
+            return;
+        }
+
+        mGlassDockBounds.setEmpty();
+        for (int i = 0; i < icons.getChildCount(); i++) {
+            final View child = icons.getChildAt(i);
+            if (child.getVisibility() != VISIBLE) continue;
+            mGlassChildBounds.set(child.getLeft(), child.getTop(), child.getRight(),
+                    child.getBottom());
+            mGlassDockBounds.union(mGlassChildBounds);
+        }
+        if (mGlassDockBounds.isEmpty()) {
+            blur.clearHotseatBlur();
+            return;
+        }
+        mGlassDockBounds.offset(icons.getLeft() + Math.round(icons.getTranslationX()),
+                icons.getTop() + Math.round(icons.getTranslationY()));
+        final float density = getResources().getDisplayMetrics().density;
+        mGlassDockBounds.inset(-Math.round(10 * density), -Math.round(8 * density));
+        mGlassDockBounds.intersect(0, 0, getWidth(), getHeight());
+
+        // The blur region lives outside the view tree, so fold in the alpha of every ancestor.
+        float alpha = icons.getAlpha();
+        for (View v = this; v != null;
+                v = v.getParent() instanceof View ? (View) v.getParent() : null) {
+            alpha *= v.getAlpha();
+        }
+        final float radius = Math.min(mGlassDockBounds.height() / 2f, 30 * density);
+        if (glass.getLite()) {
+            // Smooth glass: no blur region that SurfaceFlinger recomposites on every swipe frame.
+            blur.clearHotseatBlur();
+        } else {
+            blur.drawHotseatBlur(canvas, mGlassDockBounds, radius,
+                    Math.round(glass.blurRadiusPx(density)), alpha, this);
+        }
+
+        mGlassDock.setConfig(glass);
+        mGlassDock.setDark(LauncherLiquidGlass.isNightMode(getContext()));
+        mGlassDock.setCornerRadius(radius);
+        mGlassDock.setAlpha(Math.round(alpha * 255f));
+        mGlassDock.setBounds(mGlassDockBounds);
+        mGlassDock.draw(canvas);
     }
 
     /** Provides translation X for hotseat icons for the channel. */

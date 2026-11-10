@@ -213,6 +213,38 @@ constructor(
         popupLayer.close()
     }
 
+    private var hotseatBlur: BackgroundBlurDrawable? = null
+
+    override fun drawHotseatBlur(
+        canvas: Canvas,
+        bounds: Rect,
+        cornerRadius: Float,
+        blurRadius: Int,
+        alpha: Float,
+        view: View,
+    ) {
+        if (!isBlurEnabled() || blurRadius <= 0) {
+            clearHotseatBlur()
+            return
+        }
+        val d =
+            hotseatBlur
+                ?: view.viewRootImpl?.createBackgroundBlurDrawable()?.also { hotseatBlur = it }
+                ?: return
+        d.setVisible(true, false)
+        d.setBlurRadius(blurRadius)
+        d.setCornerRadius(cornerRadius)
+        // The blur region is composited outside the view tree, so it never sees view alpha.
+        d.alpha = (alpha.coerceIn(0f, 1f) * 255f).toInt()
+        d.bounds = bounds
+        d.draw(canvas)
+    }
+
+    override fun clearHotseatBlur() {
+        hotseatBlur?.setVisible(false, false)
+        hotseatBlur = null
+    }
+
     override fun isBlurEnabled(): Boolean {
         return blurState.value
     }

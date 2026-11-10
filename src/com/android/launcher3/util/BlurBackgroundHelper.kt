@@ -17,6 +17,7 @@
 package com.android.launcher3.util
 
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.view.View
 import com.android.launcher3.dagger.ActivityContextSingleton
 import com.android.launcher3.folder.Folder
@@ -45,4 +46,20 @@ constructor() {
     open fun popupCloseComplete() {}
 
     open fun isBlurEnabled() = false
+
+    /**
+     * Draws the blurred wallpaper behind the Liquid glass dock, inside [bounds] (in [view]
+     * coordinates). [alpha] is 0..1 and should include the alpha of the dock and its parents.
+     */
+    open fun drawHotseatBlur(
+        canvas: Canvas,
+        bounds: Rect,
+        cornerRadius: Float,
+        blurRadius: Int,
+        alpha: Float,
+        view: View,
+    ) {}
+
+    /** Removes the dock blur, e.g. when Liquid glass is switched off. */
+    open fun clearHotseatBlur() {}
 }

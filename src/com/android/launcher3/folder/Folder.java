@@ -95,6 +95,8 @@ import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.dagger.LauncherComponentProvider;
 import com.android.launcher3.dragndrop.DragController.DragListener;
 import com.android.launcher3.dragndrop.DragOptions;
+import com.android.launcher3.glass.LauncherGlassDrawable;
+import com.android.launcher3.glass.LauncherLiquidGlass;
 import com.android.launcher3.graphics.PathWrapper;
 import com.android.launcher3.graphics.ShapeDelegate;
 import com.android.launcher3.graphics.ThemeManager;
@@ -271,6 +273,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
     private KeyboardInsetAnimationCallback mKeyboardInsetAnimationCallback;
 
     private final @NonNull GradientDrawable mBackground;
+    private @Nullable LauncherGlassDrawable mGlassBackground;
     private final BoxSelectionHelper mBoxSelectionHelper;
     private final BlurBackgroundHelper mBlurBackgroundHelper;
 
@@ -1907,7 +1910,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             canvas.clipPath(mClipPath.getPath());
 
             mBlurBackgroundHelper.drawFolderBlur(canvas, mClipPath, this);
-            mBackground.draw(canvas);
+            drawFolderBackground(canvas);
 
             if (!mIsAnimatingClosed) {
                 // If animating open, clip the content to the clip path to keep in bounds.
@@ -1920,10 +1923,31 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             }
         } else {
             mBlurBackgroundHelper.drawFolderBlur(canvas, null, this);
-            mBackground.draw(canvas);
+            drawFolderBackground(canvas);
 
             super.dispatchDraw(canvas);
         }
+    }
+
+    /**
+     * The folder platter. With Liquid glass on it becomes glass over the blurred workspace and
+     * wallpaper that the blur helper already drew, instead of the opaque folder colour.
+     */
+    private void drawFolderBackground(Canvas canvas) {
+        final LauncherLiquidGlass.Config glass = LauncherLiquidGlass.get(getContext());
+        if (glass == null) {
+            mBackground.draw(canvas);
+            return;
+        }
+        if (mGlassBackground == null) {
+            mGlassBackground = new LauncherGlassDrawable(getResources().getDisplayMetrics().density);
+        }
+        mGlassBackground.setConfig(glass);
+        mGlassBackground.setDark(LauncherLiquidGlass.isNightMode(getContext()));
+        mGlassBackground.setCornerRadius(mBackground.getCornerRadius());
+        mGlassBackground.setAlpha(mBackground.getAlpha());
+        mGlassBackground.setBounds(mBackground.getBounds());
+        mGlassBackground.draw(canvas);
     }
 
     public FolderPagedView getContent() {
