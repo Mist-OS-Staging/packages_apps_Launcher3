@@ -43,8 +43,10 @@ import com.android.launcher3.views.ClipIconView;
 import com.android.quickstep.RemoteTargetGluer.RemoteTargetHandle;
 import com.android.quickstep.orientation.RecentsPagedOrientationHandler;
 import com.android.quickstep.util.AnimatorControllerWithResistance;
+import com.android.quickstep.util.NothingAppAnimation;
 import com.android.quickstep.util.RectFSpringAnim;
 import com.android.quickstep.util.RectFSpringAnim.DefaultSpringConfig;
+import com.android.quickstep.util.RectFSpringAnim.NothingSpringConfig;
 import com.android.quickstep.util.RectFSpringAnim.TaskbarHotseatSpringConfig;
 import com.android.quickstep.util.RectFSpringAnim.WidgetSpringConfig;
 import com.android.quickstep.util.SurfaceTransaction.SurfaceProperties;
@@ -213,6 +215,11 @@ public abstract class SwipeUpAnimationLogic implements
                     dp.getDeviceProperties().getAvailableWidthPx(),
                     dp.getDeviceProperties().getAvailableHeightPx()
             );
+            if (NothingAppAnimation.isEnabled(mContext)) {
+                return NothingAppAnimation.getDefaultWindowTargetRect(
+                        dp.getWorkspaceProfile().getIconSizePx(), primaryDimension,
+                        secondaryDimension);
+            }
             final float targetX =  primaryDimension / 2f;
             final float targetY = secondaryDimension - dp.getHotseatProfile().getBarSizePx();
             // Fallback to animate to center of screen.
@@ -401,7 +408,11 @@ public abstract class SwipeUpAnimationLogic implements
         boolean useTaskbarHotseatParams =
                 mDp.getDeviceProperties().getTaskbarConfiguration().isTaskbarPresent()
                 && homeAnimationFactory.isInHotseat();
-        RectFSpringAnim anim = new RectFSpringAnim(useTaskbarHotseatParams
+        final boolean useNothing = targetTaskView == null
+                && NothingAppAnimation.isEnabled(mContext);
+        RectFSpringAnim anim = new RectFSpringAnim(useNothing
+                ? new NothingSpringConfig(mContext, mDp, startRect, targetRect)
+                : useTaskbarHotseatParams
                 ? new TaskbarHotseatSpringConfig(mContext, mDp, startRect, targetRect)
                 : (homeAnimationFactory.isWidget()
                         ? new WidgetSpringConfig(mContext, mDp, startRect, targetRect)
@@ -415,7 +426,8 @@ public abstract class SwipeUpAnimationLogic implements
                 homeToWindowPositionMap,
                 transformParams,
                 taskViewSimulator,
-                invariantStartRect);
+                invariantStartRect,
+                anim);
         anim.addAnimatorListener(runner);
         anim.addOnUpdateListener(runner);
         return anim;
@@ -428,6 +440,8 @@ public abstract class SwipeUpAnimationLogic implements
 
         final Rect mCropRect = new Rect();
         final Matrix mMatrix = new Matrix();
+        private final RectF mNothingCropRectF = new RectF();
+        private final boolean mNothingAnimation;
 
         final RectF mWindowCurrentRect = new RectF();
         final Matrix mHomeToWindowPositionMap;
@@ -459,7 +473,9 @@ public abstract class SwipeUpAnimationLogic implements
                 Matrix homeToWindowPositionMap,
                 TransformParams transformParams,
                 TaskViewSimulator taskViewSimulator,
-                RectF invariantStartRect) {
+                RectF invariantStartRect,
+                RectFSpringAnim spring) {
+            mNothingAnimation = spring.isNothing() && factory.getTargetTaskView() == null;
             mAnimationFactory = factory;
             mHomeAnim = factory.createActivityAnimationToHome();
             mCropRectF = cropRectF;
@@ -471,7 +487,13 @@ public abstract class SwipeUpAnimationLogic implements
             // End on a "round-enough" radius so that the shape reveal doesn't have to do too much
             // rounding at the end of the animation.
             mStartRadius = taskViewSimulator.getCurrentCornerRadius();
-            mEndRadius = factory.getEndRadius(cropRectF);
+            float endRadius = factory.getEndRadius(cropRectF);
+            // The Nothing window is cropped instead of stretched, so its radius is applied in
+            // the target space and must end at the size of the target, not of the window.
+            mEndRadius = mNothingAnimation && !factory.isWidget()
+                    ? endRadius * spring.getTargetRect().width()
+                            / Math.max(1f, cropRectF.width())
+                    : endRadius;
 
             mRunningTaskViewStartRectF = invariantStartRect;
             mTargetTaskView = factory.getTargetTaskView();
@@ -494,7 +516,15 @@ public abstract class SwipeUpAnimationLogic implements
             if (mTargetTaskView == null) {
                 mHomeToWindowPositionMap.mapRect(mWindowCurrentRect, currentRect);
 
-                if (mAnimationFactory.isWidget()) {
+                if (mNothingAnimation) {
+                    float scale = NothingAppAnimation.updateWindowCrop(mCropRectF,
+                            mWindowCurrentRect, mMatrix, mNothingCropRectF);
+                    if (scale <= 0f) {
+                        return;
+                    }
+                    mNothingCropRectF.round(mCropRect);
+                    cornerRadius /= scale;
+                } else if (mAnimationFactory.isWidget()) {
                     RectF cropRectF = new RectF();
                     float scale;
                     if (mCropRectF.height() > mCropRectF.width()) {

@@ -19,6 +19,7 @@ package com.android.quickstep.util;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -129,6 +130,8 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
     protected final float mDampingX;
     protected final float mDampingY;
     protected final float mRectStiffness;
+    private final float mRectDamping;
+    private final boolean mNothing;
 
     public RectFSpringAnim(SpringConfig config) {
         mStartRect = config.startRect;
@@ -143,12 +146,23 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
         mDampingX = config.dampingX;
         mDampingY = config.dampingY;
         mRectStiffness = config.rectStiffness;
+        mRectDamping = config.rectDamping;
+        mNothing = config instanceof NothingSpringConfig;
 
         mCurrentY = getTrackedYFromRect(mStartRect);
     }
 
     public RectF getTargetRect() {
         return mTargetRect;
+    }
+
+    /** Returns true if this animation uses the Nothing OS style app transition. */
+    public boolean isNothing() {
+        return mNothing;
+    }
+
+    public boolean isRunning() {
+        return mAnimsStarted && !isEnded();
     }
 
     private float getTrackedYFromRect(RectF rect) {
@@ -257,13 +271,12 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
                         .setStartVelocity(yVelocityPxPerS)
                         .addEndListener(onYEndListener);
 
-        float dampingZ = rp.getFloat(R.dimen.swipe_up_rect_scale_damping_ratio_v2);
         mRectScaleAnim =
                 new SpringAnimation(this, RECT_SCALE_PROGRESS)
                         .setSpring(
                                 new SpringForce(1f)
                                         .setStiffness(mRectStiffness)
-                                        .setDampingRatio(dampingZ))
+                                        .setDampingRatio(mRectDamping))
                         .setStartVelocity(velocityPxPerMs.y * minVisibleChange)
                         .setMaxValue(1f)
                         .setMinimumVisibleChange(minVisibleChange)
@@ -282,6 +295,9 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
         for (Animator.AnimatorListener animatorListener : mAnimatorListeners) {
             animatorListener.onAnimationStart(null);
         }
+        if (mNothing && !ValueAnimator.areAnimatorsEnabled()) {
+            end();
+        }
     }
 
     public void end() {
@@ -296,6 +312,11 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
                 mRectScaleAnim.skipToEnd();
             }
             mCurrentScaleProgress = mRectScaleAnim.getSpring().getFinalPosition();
+            if (mNothing) {
+                // skipToEnd() only lands on the next frame, snap to the target right away.
+                mCurrentCenterX = mTargetRect.centerX();
+                mCurrentY = getTrackedYFromRect(mTargetRect);
+            }
 
             // Ensures that we end the animation with the final values.
             mRectXAnimEnded = false;
@@ -322,10 +343,16 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
         }
 
         if (!mOnUpdateListeners.isEmpty()) {
-            float currentWidth = Utilities.mapRange(mCurrentScaleProgress, mStartRect.width(),
+            float sizeProgress = mNothing
+                    ? NothingAppAnimation.getSizeProgress(mCurrentScaleProgress)
+                    : mCurrentScaleProgress;
+            float currentWidth = Utilities.mapRange(sizeProgress, mStartRect.width(),
                     mTargetRect.width());
-            float currentHeight = Utilities.mapRange(mCurrentScaleProgress, mStartRect.height(),
-                    mTargetRect.height());
+            float currentHeight = mNothing
+                    ? NothingAppAnimation.getHeight(sizeProgress, mStartRect.width(),
+                            mStartRect.height(), mTargetRect.width(), mTargetRect.height())
+                    : Utilities.mapRange(sizeProgress, mStartRect.height(),
+                            mTargetRect.height());
             switch (mTracking) {
                 case TRACKING_TOP:
                     mCurrentRect.set(mCurrentCenterX - currentWidth / 2,
@@ -417,6 +444,7 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
         protected float dampingX;
         protected float dampingY;
         protected float rectStiffness;
+        protected float rectDamping;
         protected float minVisChange;
         protected int maxVelocityPxPerS;
 
@@ -427,6 +455,7 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
             ResourceProvider rp = DynamicResource.provider(context);
             minVisChange = rp.getDimension(R.dimen.swipe_up_fling_min_visible_change);
             maxVelocityPxPerS = (int) rp.getDimension(R.dimen.swipe_up_max_velocity);
+            rectDamping = rp.getFloat(R.dimen.swipe_up_rect_scale_damping_ratio_v2);
         }
     }
 
@@ -480,6 +509,28 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
                 }
             }
             return tracking;
+        }
+    }
+
+    /**
+     * Spring configuration parameters for the Nothing OS style app transitions.
+     */
+    public static class NothingSpringConfig extends DefaultSpringConfig {
+        public NothingSpringConfig(Context context, DeviceProfile deviceProfile,
+                RectF startRect, RectF targetRect) {
+            super(context, deviceProfile, startRect, targetRect);
+            stiffnessX = NothingAppAnimation.STIFFNESS_X;
+            stiffnessY = NothingAppAnimation.STIFFNESS_Y;
+            rectStiffness = NothingAppAnimation.STIFFNESS_SCALE;
+            dampingX = NothingAppAnimation.DAMPING_RATIO;
+            dampingY = NothingAppAnimation.DAMPING_RATIO;
+            rectDamping = NothingAppAnimation.DAMPING_RATIO;
+        }
+
+        public NothingSpringConfig(Context context, DeviceProfile deviceProfile,
+                RectF startRect, RectF targetRect, @Tracking int tracking) {
+            this(context, deviceProfile, startRect, targetRect);
+            this.tracking = tracking;
         }
     }
 
