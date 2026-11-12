@@ -43,6 +43,7 @@ import com.android.launcher3.Insettable;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
 import com.android.launcher3.model.data.ItemInfo;
+import com.android.launcher3.util.AppReloader;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.PackageManagerHelper;
 import com.android.launcher3.util.SystemUiController;
@@ -98,6 +99,11 @@ public class InfoBottomSheet extends AbstractSlideInView<Launcher> implements In
                 R.string.app_info_last_update).findViewById(android.R.id.summary);
         mSourceRow = addRow(rows, R.drawable.ic_app_info_source, R.string.app_info_source);
         mSourceSummary = mSourceRow.findViewById(android.R.id.summary);
+        View customIconRow = addRow(rows, R.drawable.ic_themes,
+                R.string.app_info_custom_icon_title);
+        ((TextView) customIconRow.findViewById(android.R.id.summary))
+                .setText(R.string.app_info_custom_icon_summary);
+        customIconRow.setOnClickListener(v -> pickCustomIcon());
         View iconPackRow = addRow(rows, R.drawable.ic_app_info_icon_pack, R.string.icon_pack_title);
         mIconPackSummary = iconPackRow.findViewById(android.R.id.summary);
         iconPackRow.setOnClickListener(v -> pickIconPack());
@@ -190,6 +196,21 @@ public class InfoBottomSheet extends AbstractSlideInView<Launcher> implements In
                         .setNegativeButton(android.R.string.cancel, null)
                         .show();
             });
+        });
+    }
+
+    private void pickCustomIcon() {
+        ItemInfo itemInfo = mItemInfo;
+        if (itemInfo == null || itemInfo.getTargetComponent() == null) return;
+        ComponentKey key = componentKey(itemInfo);
+        Context context = getContext().getApplicationContext();
+        IconPickerBottomSheet picker = (IconPickerBottomSheet) mActivityContext
+                .getLayoutInflater()
+                .inflate(R.layout.icon_picker_bottom_sheet, mActivityContext.getDragLayer(),
+                        false);
+        picker.show(key, packLabel -> {
+            mIconPackSummary.setText(packLabel);
+            THREAD_POOL_EXECUTOR.execute(() -> AppReloader.get(context).reload(key));
         });
     }
 

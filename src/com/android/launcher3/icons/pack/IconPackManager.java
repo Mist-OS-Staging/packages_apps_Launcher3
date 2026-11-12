@@ -40,7 +40,9 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -195,6 +197,19 @@ public class IconPackManager extends BroadcastReceiver {
         }
     }
 
+    /** Returns every icon of {@code packPackage}, for the custom icon picker. */
+    public List<IconPack.IconEntry> getAllIconEntries(String packPackage) {
+        IconPack pack = mProviders.get(packPackage);
+        if (pack == null) return Collections.emptyList();
+        try {
+            return pack.getAllIconEntries(mContext.getPackageManager());
+        } catch (PackageManager.NameNotFoundException | XmlPullParserException
+                | IOException e) {
+            Log.e(TAG, "Failed to enumerate icons in pack " + packPackage, e);
+            return Collections.emptyList();
+        }
+    }
+
     /**
      * Creates a resolver that can load the icon once.
      * This resolver should not be stored, as the resolution strategy could change when
@@ -211,6 +226,18 @@ public class IconPackManager extends BroadcastReceiver {
             try {
                 PackageManager pm = mContext.getPackageManager();
                 IconPack.Data data = pack.getData(pm);
+                String explicitDrawable =
+                        IconDatabase.getExplicitDrawableForComponent(mContext, key);
+                if (explicitDrawable != null) {
+                    // An icon picked by the user wins over the appfilter.
+                    int drawableId = pack.getResources(pm)
+                            .getIdentifier(explicitDrawable, "drawable", packPackage);
+                    if (drawableId != 0) {
+                        return new IconResolverExternal(pm, pack.getAi(), drawableId,
+                                data.calendarPrefix.get(key.componentName),
+                                data.clockMetadata.get(drawableId));
+                    }
+                }
                 if (data.drawables.containsKey(key.componentName)) {
                     int drawableId = pack.getDrawableId(pm, key.componentName);
                     if (drawableId != 0) {
