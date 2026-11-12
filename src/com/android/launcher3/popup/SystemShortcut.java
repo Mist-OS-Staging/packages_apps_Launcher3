@@ -28,6 +28,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.util.Log;
+import android.view.InflateException;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ImageView;
@@ -40,6 +41,7 @@ import androidx.annotation.Nullable;
 
 import com.android.launcher3.AbstractFloatingView;
 import com.android.launcher3.AbstractFloatingViewHelper;
+import com.android.launcher3.Launcher;
 import com.android.launcher3.DropTargetHandler;
 import com.android.launcher3.Flags;
 import com.android.launcher3.LauncherModel;
@@ -49,6 +51,7 @@ import com.android.launcher3.SecondaryDropTarget;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
 import com.android.launcher3.allapps.PrivateProfileManager;
+import com.android.launcher3.customization.InfoBottomSheet;
 import com.android.launcher3.dagger.LauncherComponentProvider;
 import com.android.launcher3.logging.StatsLogManager;
 import com.android.launcher3.model.data.ItemInfo;
@@ -259,6 +262,11 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
         @Override
         public void onClick(View view) {
             Rect sourceBounds = Utilities.getViewBounds(view);
+            if (showInfoBottomSheet(view, sourceBounds)) {
+                mTarget.getStatsLogManager().logger().withItemInfo(mItemInfo)
+                        .log(LAUNCHER_SYSTEM_SHORTCUT_APP_INFO_TAP);
+                return;
+            }
             ActivityOptionsWrapper options = mTarget.getActivityLaunchOptions(view, mItemInfo);
             // Dismiss the taskMenu when the app launch animation is complete
             options.onEndCallback.add(this::dismissTaskMenuView);
@@ -266,6 +274,32 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
                     sourceBounds, options.toBundle());
             mTarget.getStatsLogManager().logger().withItemInfo(mItemInfo)
                     .log(LAUNCHER_SYSTEM_SHORTCUT_APP_INFO_TAP);
+        }
+
+        /**
+         * Shows the app info bottom sheet for items on the home screen and in the app drawer.
+         * Recents, the taskbar and other surfaces keep opening the system app info screen.
+         *
+         * @return true if the sheet was shown.
+         */
+        private boolean showInfoBottomSheet(View view, Rect sourceBounds) {
+            if (!(mTarget instanceof Launcher launcher)
+                    || mItemInfo.itemType == ITEM_TYPE_TASK
+                    || mItemInfo.getTargetComponent() == null
+                    || launcher.getStateManager().getState().isRecentsViewVisible) {
+                return false;
+            }
+            InfoBottomSheet sheet;
+            try {
+                sheet = (InfoBottomSheet) launcher.getLayoutInflater().inflate(
+                        R.layout.app_info_bottom_sheet, launcher.getDragLayer(), false);
+            } catch (InflateException e) {
+                Log.e(TAG, "Unable to inflate the app info sheet", e);
+                return false;
+            }
+            AbstractFloatingView.closeAllOpenViews(launcher, true);
+            sheet.populateAndShow(mItemInfo, sourceBounds, view.getContext());
+            return true;
         }
 
         public static class SplitAccessibilityInfo {
