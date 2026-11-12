@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 Mist OS
+     SPDX-License-Identifier: Apache-2.0
+
+     Outline of the selected font, same as Mistify's selector_border_edge_custom.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_activated="true">
+        <shape android:shape="rectangle">
+            <stroke
+                android:color="?android:attr/colorAccent"
+                android:width="2dp" />
+            <corners android:radius="?android:attr/dialogCornerRadius" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <stroke
+                android:color="@android:color/transparent"
+                android:width="0dp" />
+            <corners android:radius="?android:attr/dialogCornerRadius" />
+        </shape>
+    </item>
+</selector>
