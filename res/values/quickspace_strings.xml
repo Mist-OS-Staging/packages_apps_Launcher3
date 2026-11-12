@@ -61,7 +61,7 @@
     <string-array name="quickspace_style_entries">
         <item>Default</item>
         <item>Extended</item>
-        <item>OOS Clock</item>
+        <item>Mistify Clock</item>
     </string-array>
     <string-array name="quickspace_style_values" translatable="false">
         <item>0</item>
@@ -70,15 +70,15 @@
     </string-array>
 
     <string name="quickspace_clock_system_font_title">Use system font</string>
-    <string name="quickspace_clock_system_font_summary">Use the system font for the OOS clock and its accompanying text</string>
+    <string name="quickspace_clock_system_font_summary">Use the system font for the Mistify clock and its accompanying text</string>
 
-    <!-- Quickspace OOS clock custom font -->
-    <string name="quickspace_clock_font_title">OOS clock font</string>
+    <!-- Quickspace Mistify clock custom font -->
+    <string name="quickspace_clock_font_title">Mistify clock font</string>
     <string name="quickspace_clock_font_default">Clock default</string>
     <string name="quickspace_clock_font_system_default">System default</string>
-    <string name="quickspace_clock_font_disabled_summary">Turn off Use system font to pick a font for the OOS clock</string>
+    <string name="quickspace_clock_font_disabled_summary">Turn off Use system font to pick a font for the Mistify clock</string>
 
-    <!-- Quickspace OOS clock color -->
+    <!-- Quickspace Mistify clock color -->
     <string name="quickspace_clock_hour_color_title">Mistify clock hour color</string>
     <string name="quickspace_clock_minute_color_title">Mistify clock minute color</string>
     
