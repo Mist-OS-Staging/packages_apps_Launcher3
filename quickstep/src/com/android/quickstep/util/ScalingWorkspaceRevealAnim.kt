@@ -261,6 +261,11 @@ class ScalingWorkspaceRevealAnim(
         hotseat.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         animation.addListener(
             object : AnimatorListenerAdapter() {
+                override fun onAnimationStart(animation: Animator) {
+                    super.onAnimationStart(animation)
+                    AnimationBoost.requestForAnimation(launcher.workspace)
+                }
+
                 override fun onAnimationCancel(animation: Animator) {
                     super.onAnimationCancel(animation)
                     Log.d(TAG, "onAnimationCancel")

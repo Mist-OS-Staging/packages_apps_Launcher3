@@ -70,6 +70,7 @@ import com.android.launcher3.taskbar.TaskbarInteractor;
 import com.android.launcher3.uioverrides.QuickstepLauncher;
 import com.android.launcher3.util.NavigationMode;
 import com.android.launcher3.widget.LauncherAppWidgetHostView;
+import com.android.quickstep.util.AnimationBoost;
 import com.android.quickstep.util.BackAnimState;
 import com.android.quickstep.util.ScalingWorkspaceRevealAnim;
 import com.android.systemui.shared.system.QuickStepContract;
@@ -330,6 +331,7 @@ public class LauncherBackAnimationController {
             return;
         }
 
+        AnimationBoost.requestForAnimation(mLauncher.getDragLayer());
         mTransaction
                 .show(mBackTarget.leash)
                 .setAnimationTransaction();

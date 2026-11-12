@@ -61,6 +61,7 @@ import com.android.launcher3.touch.PagedOrientationHandler;
 import com.android.launcher3.touch.PagedOrientationHandler.ChildBounds;
 import com.android.launcher3.util.EdgeEffectCompat;
 import com.android.launcher3.util.IntSet;
+import com.android.launcher3.util.InteractionBoost;
 import com.android.launcher3.util.Thunk;
 import com.android.launcher3.views.ActivityContext;
 
@@ -1723,6 +1724,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
     }
 
     protected boolean snapToPageWithVelocity(int whichPage, int velocity) {
+        InteractionBoost.request(400);
         whichPage = validateNewPage(whichPage);
         int halfScreenSize = mOrientationHandler.getMeasuredSize(this) / 2;
 

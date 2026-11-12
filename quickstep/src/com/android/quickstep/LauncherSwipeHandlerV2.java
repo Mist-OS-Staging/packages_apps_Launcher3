@@ -51,6 +51,7 @@ import com.android.launcher3.views.FloatingIconView;
 import com.android.launcher3.views.FloatingView;
 import com.android.launcher3.widget.LauncherAppWidgetHostView;
 import com.android.quickstep.util.ActiveGestureLog;
+import com.android.quickstep.util.AnimationBoost;
 import com.android.quickstep.util.NothingAppAnimation;
 import com.android.quickstep.util.RectFSpringAnim;
 import com.android.quickstep.util.ScalingWorkspaceRevealAnim;
@@ -117,6 +118,7 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
             };
         }
 
+        AnimationBoost.requestForAnimation(mContainer.getDragLayer());
         TaskView sourceTaskView = mRecentsView == null && targetTaskView == null
                 ? null
                 : targetTaskView == null

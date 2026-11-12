@@ -30,6 +30,7 @@ import com.android.launcher3.LauncherAnimationRunner.RemoteAnimationFactory
 import com.android.launcher3.util.Executors
 import com.android.launcher3.util.RunnableList
 import com.android.launcher3.util.ViewEx.findInParentTree
+import com.android.quickstep.util.AnimationBoost
 import com.android.systemui.animation.ActivityTransitionAnimator
 import com.android.systemui.animation.ActivityTransitionAnimator.Callback
 import com.android.systemui.animation.ActivityTransitionAnimator.Controller
@@ -99,6 +100,10 @@ class ContainerAnimationRunner(
                         },
                     listener =
                         object : Listener {
+                            override fun onTransitionAnimationStart() {
+                                AnimationBoost.requestForAnimation(launcher.dragLayer)
+                            }
+
                             override fun onTransitionAnimationEnd(
                                 transaction: SurfaceControl.Transaction
                             ) {
