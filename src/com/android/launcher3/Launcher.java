@@ -221,6 +221,7 @@ import com.android.launcher3.util.BackPressHandler;
 import com.android.launcher3.util.CannedAnimationCoordinator;
 import com.android.launcher3.util.ContextTracker;
 import com.android.launcher3.util.IntSet;
+import com.android.launcher3.util.InteractionBoost;
 import com.android.launcher3.util.ItemInflater;
 import com.android.launcher3.util.KeyboardShortcutsDelegate;
 import com.android.launcher3.util.LauncherBindableItemsContainer;
@@ -1129,6 +1130,8 @@ public class Launcher extends StatefulActivity<LauncherState>
 
     @Override
     protected void onResume() {
+        // Returning home animates the workspace, have the clocks up for it.
+        InteractionBoost.request(500);
         TraceHelper.INSTANCE.beginSection(ON_RESUME_EVT);
         super.onResume();
         if (mSmartspace != null) {

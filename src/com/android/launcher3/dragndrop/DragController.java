@@ -49,6 +49,7 @@ import com.android.launcher3.model.data.AppPairInfo;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.model.data.ItemInfoWithIcon;
 import com.android.launcher3.model.data.WorkspaceItemInfo;
+import com.android.launcher3.util.InteractionBoost;
 import com.android.launcher3.util.TouchController;
 import com.android.launcher3.util.TouchUtil;
 import com.android.launcher3.views.ActivityContext;
@@ -283,6 +284,7 @@ public class DragController implements DragDriver.EventListener, TouchController
             float initialDragViewScale,
             float dragViewScaleOnDrop,
             DragOptions options) {
+        InteractionBoost.request(500);
         if (PROFILE_DRAWING_DURING_DRAG) {
             android.os.Debug.startMethodTracing("Launcher");
         }

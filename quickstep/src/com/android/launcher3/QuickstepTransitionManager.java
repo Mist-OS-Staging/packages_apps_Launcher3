@@ -154,6 +154,7 @@ import com.android.quickstep.SplitRecentsAnimUtils;
 import com.android.quickstep.SystemUiProxy;
 import com.android.quickstep.TaskViewUtils;
 import com.android.quickstep.util.AlreadyStartedBackAnimState;
+import com.android.quickstep.util.AnimationBoost;
 import com.android.quickstep.util.AnimatorBackState;
 import com.android.quickstep.util.BackAnimState;
 import com.android.quickstep.util.CrossDisplayMoveTransition;
@@ -2297,6 +2298,7 @@ public class QuickstepTransitionManager implements OnDeviceProfileChangeListener
             RectF startRect,
             float startWindowCornerRadius,
             boolean fromPredictiveBack) {
+        AnimationBoost.requestForAnimation(mDragLayer);
         View launcherView = findLauncherView(appTargets);
         if (launcherView != null
                 && launcherView.getTag() instanceof ItemInfo info
@@ -2540,6 +2542,7 @@ public class QuickstepTransitionManager implements OnDeviceProfileChangeListener
                 RemoteAnimationTarget[] wallpaperTargets,
                 RemoteAnimationTarget[] nonAppTargets,
                 LauncherAnimationRunner.AnimationResult result) {
+            AnimationBoost.requestForAnimation(mDragLayer);
             AnimatedSurface[] appSurfaces = AnimatedSurfaceUtils.mapFromTargets(appTargets);
             AnimatedSurface[] wallpaperSurfaces =
                     AnimatedSurfaceUtils.mapFromTargets(wallpaperTargets);
