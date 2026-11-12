@@ -86,7 +86,7 @@ constructor(
         windowCornerRadius = radius
     }
 
-    fun getCornerRadius(progress: Float): Float =
+    open fun getCornerRadius(progress: Float): Float =
         Utilities.mapRange(progress, startRadius, endRadius)
 
     override fun onUpdate(currentRectF: RectF, progress: Float) {
@@ -147,7 +147,7 @@ constructor(
     }
 
     /** Alpha interpolates between [1, 0] between progress values [start, end] */
-    private fun getWindowAlpha(progress: Float): Float =
+    protected open fun getWindowAlpha(progress: Float): Float =
         when {
             progress <= ALPHA_START_PROGRESS -> 1f
             progress >= alphaEndProgress -> 0f

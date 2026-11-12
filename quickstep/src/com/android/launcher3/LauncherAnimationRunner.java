@@ -34,6 +34,8 @@ import androidx.annotation.BinderThread;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 
+import com.android.quickstep.util.RectFSpringAnim;
+
 import com.android.systemui.animation.RemoteAnimationDelegate;
 import com.android.systemui.animation.RemoteAnimationRunnerCompat;
 
@@ -136,6 +138,12 @@ public class LauncherAnimationRunner extends RemoteAnimationRunnerCompat {
         private Runnable mOnCompleteCallback;
         private boolean mFinished = false;
         private boolean mInitialized = false;
+        @Nullable
+        private AnimatorSet mAnimator;
+        @Nullable
+        private RectFSpringAnim mWindowSpring;
+        private boolean mAnimatorEnded;
+        private boolean mSpringEnded = true;
 
         private AnimationResult(Runnable syncFinishRunnable, Runnable asyncFinishRunnable) {
             mSyncFinishRunnable = syncFinishRunnable;
@@ -145,6 +153,15 @@ public class LauncherAnimationRunner extends RemoteAnimationRunnerCompat {
         @UiThread
         private void finish() {
             if (!mFinished) {
+                mFinished = true;
+                if (mWindowSpring != null) {
+                    // The remote animation is finishing early (e.g. cancelled), make sure the
+                    // window spring does not keep touching released surfaces.
+                    if (mWindowSpring.isRunning()) mWindowSpring.end();
+                    if (!mAnimatorEnded && mAnimator != null && mAnimator.isStarted()) {
+                        mAnimator.cancel();
+                    }
+                }
                 mSyncFinishRunnable.run();
                 UI_HELPER_EXECUTOR.execute(() -> {
                     mASyncFinishRunnable.run();
@@ -152,8 +169,11 @@ public class LauncherAnimationRunner extends RemoteAnimationRunnerCompat {
                         MAIN_EXECUTOR.execute(mOnCompleteCallback);
                     }
                 });
-                mFinished = true;
             }
+        }
+
+        private void finishIfAnimationsEnded() {
+            if (mAnimatorEnded && mSpringEnded) finish();
         }
 
         @UiThread
@@ -169,17 +189,42 @@ public class LauncherAnimationRunner extends RemoteAnimationRunnerCompat {
         @UiThread
         public void setAnimation(AnimatorSet animation, Context context,
                 @Nullable Runnable onCompleteCallback, boolean skipFirstFrame) {
+            setAnimation(animation, context, onCompleteCallback, skipFirstFrame, null);
+        }
+
+        /**
+         * Sets the animation to play for this transition.
+         * @param windowSpring Optional spring driving the window that may outlive
+         *                     {@code animation}. The transition only finishes once both ended.
+         */
+        @UiThread
+        public void setAnimation(AnimatorSet animation, Context context,
+                @Nullable Runnable onCompleteCallback, boolean skipFirstFrame,
+                @Nullable RectFSpringAnim windowSpring) {
             if (mInitialized) {
                 throw new IllegalStateException("Animation already initialized");
             }
             mInitialized = true;
+            mAnimator = animation;
             mOnCompleteCallback = onCompleteCallback;
+            mWindowSpring = animation == null ? null : windowSpring;
+            mSpringEnded = mWindowSpring == null;
+            if (mWindowSpring != null) {
+                mWindowSpring.addAnimatorListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator ignored) {
+                        mSpringEnded = true;
+                        finishIfAnimationsEnded();
+                    }
+                });
+            }
             if (animation == null) {
                 finish();
             } else if (mFinished) {
                 // Animation callback was already finished, skip the animation.
                 animation.start();
                 animation.end();
+                if (mWindowSpring != null) mWindowSpring.end();
                 if (mOnCompleteCallback != null) {
                     mOnCompleteCallback.run();
                 }
@@ -188,7 +233,11 @@ public class LauncherAnimationRunner extends RemoteAnimationRunnerCompat {
                 animation.addListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
-                        finish();
+                        mAnimatorEnded = true;
+                        // The spring may not have been started (e.g. animation cancelled
+                        // before it began), do not wait for it in that case.
+                        mSpringEnded |= mWindowSpring == null || !mWindowSpring.isRunning();
+                        finishIfAnimationsEnded();
                     }
                 });
                 if (skipFirstFrame) {

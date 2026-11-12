@@ -47,7 +47,13 @@ class AnimatorBackState(private val springAnim: RectFSpringAnim?, private val an
     }
 
     override fun applyToAnimationResult(result: AnimationResult, c: Context) {
-        result.setAnimation(anim, c)
+        if (springAnim?.isNothing == true) {
+            // The Nothing window spring can outlive the content animation, keep the transition
+            // alive until the window has landed.
+            result.setAnimation(anim ?: AnimatorSet(), c, null, false, springAnim)
+        } else {
+            result.setAnimation(anim, c)
+        }
     }
 
     override fun start(stateManager: StateManager<LauncherState, Launcher>) {

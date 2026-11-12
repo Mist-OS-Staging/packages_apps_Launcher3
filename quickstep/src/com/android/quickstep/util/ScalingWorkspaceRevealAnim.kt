@@ -89,7 +89,10 @@ class ScalingWorkspaceRevealAnim(
         val BLUR_INTERPOLATOR = Interpolators.clampToProgress(EMPHASIZED, 0f, 0.666f)
     }
 
-    private val animation = PendingAnimation(SCALE_DURATION_MS)
+    private val isNothingAnimation = NothingAppAnimation.isEnabled(launcher)
+    private val duration =
+        if (isNothingAnimation) NothingAppAnimation.WORKSPACE_DURATION_MS else SCALE_DURATION_MS
+    private val animation = PendingAnimation(duration)
     private var blurLayer: SurfaceControl? = null
     private var surfaceTransactionApplier: SurfaceTransactionApplier =
         SurfaceTransactionApplier(launcher.dragLayer)
@@ -123,6 +126,8 @@ class ScalingWorkspaceRevealAnim(
         val fromSize =
             if (workspace.scaleX != MAX_SIZE) {
                 workspace.scaleX
+            } else if (isNothingAnimation) {
+                NothingAppAnimation.WORKSPACE_MIN_SCALE
             } else {
                 MIN_SIZE
             }
@@ -147,15 +152,24 @@ class ScalingWorkspaceRevealAnim(
         if (playAlphaReveal) {
             // Fade in quickly at the beginning of the animation, so the content doesn't look like
             // it's popping into existence out of nowhere.
-            val fadeClamp = FADE_DURATION_MS.toFloat() / SCALE_DURATION_MS
-            workspace.alpha = MIN_ALPHA
+            val fadeDuration =
+                if (isNothingAnimation) NothingAppAnimation.WORKSPACE_FADE_DURATION_MS
+                else FADE_DURATION_MS
+            val fadeClamp = fadeDuration.toFloat() / duration
+            // Nothing transitions continue from the current alpha so an interrupted launch
+            // does not flash the home screen.
+            val startAlpha =
+                if (!isNothingAnimation) MIN_ALPHA
+                else if (workspace.alpha != MAX_ALPHA) workspace.alpha
+                else NothingAppAnimation.WORKSPACE_MIN_ALPHA
+            workspace.alpha = startAlpha
             animation.setFloat(
                 workspace,
                 VIEW_ALPHA,
                 MAX_ALPHA,
                 Interpolators.clampToProgress(LINEAR, 0f, fadeClamp),
             )
-            hotseat.alpha = MIN_ALPHA
+            hotseat.alpha = startAlpha
             // This needs to use setViewAlpha instead of setFloat (like workspace).
             // This is because hotseat visibility can also be changed based off of alpha in
             // WorkspaceRevealAnim which also calls setViewAlpha.
@@ -168,7 +182,7 @@ class ScalingWorkspaceRevealAnim(
         }
 
         val transitionConfig = StateAnimationConfig()
-        transitionConfig.duration = SCALE_DURATION_MS
+        transitionConfig.duration = duration
 
         var depthController: LauncherDepthController? = null
         if (playBlur) {
@@ -204,6 +218,8 @@ class ScalingWorkspaceRevealAnim(
                 transitionConfig,
             )
         }
+
+        val nothingSibling = siblingAnimation?.takeIf { it.isNothing }
 
         // To avoid awkward jumps in icon position, we want the sibling animation to always be
         // targeting the current position. Since we can't easily access this, instead we calculate
@@ -248,6 +264,9 @@ class ScalingWorkspaceRevealAnim(
                 override fun onAnimationCancel(animation: Animator) {
                     super.onAnimationCancel(animation)
                     Log.d(TAG, "onAnimationCancel")
+                    // Home was interrupted (e.g. by another launch), the window spring would
+                    // keep chasing a target that no longer moves.
+                    nothingSibling?.cancel()
                 }
 
                 override fun onAnimationPause(animation: Animator) {

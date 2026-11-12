@@ -51,6 +51,7 @@ import com.android.launcher3.views.FloatingIconView;
 import com.android.launcher3.views.FloatingView;
 import com.android.launcher3.widget.LauncherAppWidgetHostView;
 import com.android.quickstep.util.ActiveGestureLog;
+import com.android.quickstep.util.NothingAppAnimation;
 import com.android.quickstep.util.RectFSpringAnim;
 import com.android.quickstep.util.ScalingWorkspaceRevealAnim;
 import com.android.quickstep.util.TaskViewSimulator;
@@ -135,6 +136,14 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
         if (mHandOffAnimationToHome || !canUseWorkspaceView || appCanEnterPip || mIsSwipeForSplit) {
             return new LauncherHomeAnimationFactory() {
 
+                @Override
+                protected float getWindowAlpha(float progress) {
+                    // Nothing has no icon to morph into here, keep the window until it is a dot.
+                    return targetTaskView == null && NothingAppAnimation.isEnabled(mContext)
+                            ? NothingAppAnimation.getFallbackWindowAlpha(progress)
+                            : super.getWindowAlpha(progress);
+                }
+
                 @Nullable
                 @Override
                 public TaskView getTargetTaskView() {
@@ -198,6 +207,13 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
             }
 
             @Override
+            protected float getWindowAlpha(float progress) {
+                return isNothingAnimation()
+                        ? NothingAppAnimation.getWindowAlpha(progress, false /* opening */)
+                        : super.getWindowAlpha(progress);
+            }
+
+            @Override
             public void update(
                     RectF currentRect,
                     float progress,
@@ -205,9 +221,14 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
                     int overlayAlpha) {
                 // We want the icon alpha to be 1 once this threshold is met, so that it can be
                 // seen morphing into the icon shape. But before the threshold, we want to limit
-                // the alpha to reduce the blur effect behind the window.
-                float iconAlpha = Interpolators.clampToProgress(progress, 0f, windowAlphaThreshold);
-                floatingIconView.update(iconAlpha, currentRect, progress, windowAlphaThreshold,
+                // the alpha to reduce the blur effect behind the window. Nothing keeps the icon
+                // fully opaque below the fading window.
+                boolean nothing = isNothingAnimation();
+                float iconAlpha = nothing ? 1f
+                        : Interpolators.clampToProgress(progress, 0f, windowAlphaThreshold);
+                float shapeProgressStart = nothing
+                        ? NothingAppAnimation.SHAPE_PROGRESS_START : windowAlphaThreshold;
+                floatingIconView.update(iconAlpha, currentRect, progress, shapeProgressStart,
                         radius, false, overlayAlpha);
             }
 
@@ -313,7 +334,11 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
             public void update(RectF currentRect, float progress, float radius, int overlayAlpha) {
                 super.update(currentRect, progress, radius, overlayAlpha);
 
-                if (Flags.widgetReturnAnimationMinorFixes()) {
+                if (isNothingAnimation()) {
+                    float foregroundAlpha = mapBoundToRange(progress, 0.8f, 1f, 0f, 1f, LINEAR);
+                    floatingWidgetView.update(currentRect, floatingWidgetAlpha, foregroundAlpha,
+                            1f - foregroundAlpha, 1f - progress);
+                } else if (Flags.widgetReturnAnimationMinorFixes()) {
 
                     // The progress parameter represents the scaling progress (closing
                     // window down to the size of FloatingWidget). currentPosProgress is
@@ -349,6 +374,9 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
 
             @Override
             protected float getWindowAlpha(float progress) {
+                if (isNothingAnimation()) {
+                    return NothingAppAnimation.getWindowAlpha(progress, false /* opening */);
+                }
                 return 1 - mapBoundToRange(progress, 0, 0.5f, 0, 1, LINEAR);
             }
 
@@ -412,6 +440,11 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
             if (isWidget()) {
                 mAlphaEndProgress = ALPHA_END_PROGRESS_WIDGET;
             }
+        }
+
+        /** Returns true if the window is animating home with the Nothing OS style transition. */
+        protected boolean isNothingAnimation() {
+            return mSiblingAnimation != null && mSiblingAnimation.isNothing();
         }
 
         @Override
