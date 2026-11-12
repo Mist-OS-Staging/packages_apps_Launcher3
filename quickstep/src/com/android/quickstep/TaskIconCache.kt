@@ -24,6 +24,8 @@ import android.os.UserHandle
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
 import androidx.core.graphics.drawable.toDrawable
+import com.android.launcher3.LauncherPrefChangeListener
+import com.android.launcher3.LauncherPrefs
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
 import com.android.launcher3.concurrent.annotations.Ui
@@ -78,6 +80,11 @@ constructor(
 
     private var taskVisualsChangeListener: TaskVisualsChangeListener? = null
 
+    // Held as a field, shared preferences only keep weak references to their listeners.
+    private val iconPackListener = LauncherPrefChangeListener { key ->
+        if (key == LauncherPrefs.ICON_PACK.sharedPrefKey) clearCache()
+    }
+
     init {
         // TODO (b/397205964): this will need to be updated when we support caches for different
         //  displays.
@@ -95,6 +102,12 @@ constructor(
             Runnable { themeManager.removeChangeListener(themeChangeListener) }
         }
         daggerSingletonTracker.addCloseable(themeManagerWrapper)
+
+        val prefs = LauncherPrefs.get(context)
+        prefs.addListener(iconPackListener, LauncherPrefs.ICON_PACK)
+        daggerSingletonTracker.addCloseable {
+            prefs.removeListener(iconPackListener, LauncherPrefs.ICON_PACK)
+        }
     }
 
     private fun onDisplayInfoChanged(flags: Int) {

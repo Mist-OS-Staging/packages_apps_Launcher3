@@ -16,8 +16,10 @@
 package com.android.launcher3.icons;
 
 import android.content.Context;
+import android.content.pm.ComponentInfo;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Log;
@@ -27,6 +29,7 @@ import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.dagger.ApplicationContext;
 import com.android.launcher3.dagger.LauncherAppSingleton;
 import com.android.launcher3.graphics.ThemeManager;
+import com.android.launcher3.icons.pack.IconPackIcons;
 
 import org.xmlpull.v1.XmlPullParser;
 
@@ -59,6 +62,11 @@ public class LauncherIconProvider extends IconProvider {
         super(context);
         mThemeManager = themeManager;
         mThemedIconMap = FeatureFlags.USE_LOCAL_ICON_OVERRIDES.get() ? null : DISABLED_MAP;
+    }
+
+    @Override
+    public Drawable getIcon(ComponentInfo info, int iconDpi) {
+        return IconPackIcons.getIcon(mContext, info, iconDpi, () -> super.getIcon(info, iconDpi));
     }
 
     @Override

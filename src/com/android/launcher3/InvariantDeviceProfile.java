@@ -21,6 +21,7 @@ import static com.android.launcher3.LauncherPrefs.DB_FILE;
 import static com.android.launcher3.LauncherPrefs.ENABLE_TWOLINE_ALLAPPS_TOGGLE;
 import static com.android.launcher3.LauncherPrefs.FIXED_LANDSCAPE_MODE;
 import static com.android.launcher3.LauncherPrefs.FONT_SIZE;
+import static com.android.launcher3.LauncherPrefs.ICON_PACK;
 import static com.android.launcher3.LauncherPrefs.ICON_SIZE;
 import static com.android.launcher3.LauncherPrefs.GRID_NAME;
 import static com.android.launcher3.LauncherPrefs.NON_FIXED_LANDSCAPE_GRID_NAME;
@@ -244,6 +245,9 @@ public class InvariantDeviceProfile {
     @GridType
     public int gridType;
     public String dbFile;
+
+    /** Global icon pack, part of the model state so a change rebuilds the icon cache. */
+    public String iconPack;
     public int defaultLayoutId;
     public boolean[] inlineQsb = new boolean[COUNT_SIZES];
 
@@ -305,7 +309,8 @@ public class InvariantDeviceProfile {
             } else if (WORKSPACE_ITEMS_LABEL_HIDDEN.getSharedPrefKey().equals(key)
                     && com.android.systemui.shared.Flags.workspaceItemsLabelHidden()) {
                 onConfigChanged();
-            } else if (ALLAPPS_THEMED_ICONS.getSharedPrefKey().equals(key)) {
+            } else if (ALLAPPS_THEMED_ICONS.getSharedPrefKey().equals(key)
+                    || ICON_PACK.getSharedPrefKey().equals(key)) {
                 onConfigChanged();
             } else if (SHOW_DESKTOP_LABELS.getSharedPrefKey().equals(key) ||
                     SHOW_DRAWER_LABELS.getSharedPrefKey().equals(key) ||
@@ -435,6 +440,7 @@ public class InvariantDeviceProfile {
             maxIconSize = Math.max(maxIconSize, iconSize[i]);
         }
         iconBitmapSize = ResourceUtils.pxFromDp(maxIconSize, metrics);
+        iconPack = mPrefs.get(ICON_PACK);
 
         fillResIconDpi = getLauncherIconDensity(iconBitmapSize);
 
@@ -554,7 +560,8 @@ public class InvariantDeviceProfile {
     private Object[] toModelState() {
         return new Object[]{
                 numColumns, numRows, numSearchContainerColumns, numDatabaseHotseatIcons,
-                iconBitmapSize, fillResIconDpi, numDatabaseAllAppsColumns, dbFile, mLocale};
+                iconPack, iconBitmapSize, fillResIconDpi, numDatabaseAllAppsColumns, dbFile,
+                mLocale};
     }
 
     /** Updates IDP using the provided context. Notifies listeners of change. */
