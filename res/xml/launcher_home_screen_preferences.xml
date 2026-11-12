@@ -265,6 +265,14 @@
             android:persistent="true"
             launcher:iconSpaceReserved="false" />
 
+        <com.android.launcher3.settings.QuickspaceClockFontPreference
+            android:key="pref_quickspace_clock_font"
+            android:title="@string/quickspace_clock_font_title"
+            android:dependency="pref_quickspace"
+            android:defaultValue=""
+            android:persistent="true"
+            launcher:iconSpaceReserved="false" />
+
         <com.android.launcher3.mist.colorpicker.ColorPickerPreference
             android:key="pref_quickspace_clock_hour_color"
             android:title="@string/quickspace_clock_hour_color_title"
