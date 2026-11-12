@@ -37,6 +37,7 @@ public class IconPack {
     private final CharSequence mPackageLabel;
     private Data mData;
     private Resources mRes;
+    private List<IconEntry> mAllEntries;
 
     IconPack(ApplicationInfo ai, CharSequence label) {
         mAi = ai;
@@ -71,12 +72,31 @@ public class IconPack {
         return res.getIdentifier(data.drawables.get(name), "drawable", pkg);
     }
 
+    /** Returns every icon the pack offers, for the custom icon picker. */
+    public synchronized List<IconEntry> getAllIconEntries(PackageManager pm)
+            throws PackageManager.NameNotFoundException, XmlPullParserException, IOException {
+        if (mAllEntries == null) {
+            mAllEntries = IconPackParser.parseAllEntries(pm, getResources(pm), getPackage());
+        }
+        return mAllEntries;
+    }
+
     synchronized Resources getResources(PackageManager pm)
             throws PackageManager.NameNotFoundException {
         if (mRes == null) {
             mRes = pm.getResourcesForApplication(getPackage());
         }
         return mRes;
+    }
+
+    public static class IconEntry {
+        public final String drawableName;
+        public final int resId;
+
+        IconEntry(String drawableName, int resId) {
+            this.drawableName = drawableName;
+            this.resId = resId;
+        }
     }
 
     static class Data {
