@@ -421,6 +421,8 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
         @JvmField val SHOW_QUICKSPACE_ALT = backedUpItem("pref_quickspace_alt", false)
         @JvmField val QUICKSPACE_UI_STYLE = backedUpItem("pref_quickspace_style", "0")
         @JvmField val QUICKSPACE_CLOCK_SYSTEM_FONT = backedUpItem("pref_quickspace_clock_system_font", false)
+        // Font overlay package used only by the OOS clock; empty = the clock's own font.
+        @JvmField val QUICKSPACE_CLOCK_FONT = backedUpItem("pref_quickspace_clock_font", "")
         @JvmField val QUICKSPACE_CLOCK_HOUR_COLOR = backedUpItem("pref_quickspace_clock_hour_color", -1)
         @JvmField val QUICKSPACE_CLOCK_MINUTE_COLOR = backedUpItem("pref_quickspace_clock_minute_color", -1)
         @JvmField val SHOW_QUICKSPACE_PSONALITY = backedUpItem("pref_quickspace_psonality", true)

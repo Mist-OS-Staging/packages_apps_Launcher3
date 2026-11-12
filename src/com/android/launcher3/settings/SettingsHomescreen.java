@@ -502,9 +502,25 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
             setQuickspacePrefVisible(
                     LauncherPrefs.QUICKSPACE_CLOCK_SYSTEM_FONT.getSharedPrefKey(), isOosClock);
             setQuickspacePrefVisible(
+                    LauncherPrefs.QUICKSPACE_CLOCK_FONT.getSharedPrefKey(), isOosClock);
+            updateQuickspaceClockFontPref();
+            setQuickspacePrefVisible(
                     LauncherPrefs.QUICKSPACE_CLOCK_HOUR_COLOR.getSharedPrefKey(), isOosClock);
             setQuickspacePrefVisible(
                     LauncherPrefs.QUICKSPACE_CLOCK_MINUTE_COLOR.getSharedPrefKey(), isOosClock);
+        }
+
+        /** The OOS clock's own font is used only while "Use system font" is off. */
+        private void updateQuickspaceClockFontPref() {
+            Preference fontPref = findPreference(
+                    LauncherPrefs.QUICKSPACE_CLOCK_FONT.getSharedPrefKey());
+            if (fontPref == null) return;
+            boolean systemFont = LauncherPrefs.QUICKSPACE_CLOCK_SYSTEM_FONT.get(getContext());
+            // android:dependency on pref_quickspace still applies on top of this.
+            fontPref.setEnabled(!systemFont);
+            if (fontPref instanceof QuickspaceClockFontPreference) {
+                ((QuickspaceClockFontPreference) fontPref).updateSummary();
+            }
         }
 
         private void setQuickspacePrefVisible(String key, boolean visible) {

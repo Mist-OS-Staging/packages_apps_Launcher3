@@ -17,6 +17,7 @@ package com.android.launcher3.quickspace;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -85,6 +86,12 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
     private boolean mIsAlternateStyle = false;
     private int mCurrentStyle = -1;
 
+    // OOS clock style: text views that take the clock font, their layout fonts, and the
+    // base typeface currently applied (null while the layout's own fonts are shown).
+    private TextView[] mOosFontViews;
+    private Typeface[] mOosOriginalTypefaces;
+    private Typeface mOosAppliedTypeface;
+
     public QuickspaceController mController;
 
     private final List<WeakReference<ViewTreeObserver.OnGlobalLayoutListener>> 
@@ -149,7 +156,8 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
         if (mQuickspaceClockMinute != null) {
             mQuickspaceClockMinute.setTextColor(getClockMinuteColor());
         }
-        
+        applyOosClockFonts();
+
         if (mWeatherContentSub != null) {
             mWeatherContentSub.setVisibility(View.VISIBLE);
         }
@@ -196,6 +204,61 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
             minuteColor = minuteColor == 0 ? 0xFFFFFFFF : (minuteColor | 0xFF000000);
         }
         return minuteColor;
+    }
+
+    /** Remembers the OOS clock layout's own fonts so they can be restored. */
+    private void cacheOosClockFonts() {
+        mOosFontViews = new TextView[] {
+                mQuickspaceDayOfWeek, mQuickspaceClockHour, mQuickspaceClockMinute,
+                mQuickspaceDate, mWeatherTempSub, mPSAMessage, mNowPlayingText };
+        mOosOriginalTypefaces = new Typeface[mOosFontViews.length];
+        for (int i = 0; i < mOosFontViews.length; i++) {
+            TextView tv = mOosFontViews[i];
+            mOosOriginalTypefaces[i] = tv != null ? tv.getTypeface() : null;
+        }
+        mOosAppliedTypeface = null;
+    }
+
+    /**
+     * Applies the OOS clock font: the system font, a font picked for this clock only, or the
+     * clock's own font. Re-resolved on every refresh so preference changes and system font
+     * changes show up without restarting the launcher.
+     */
+    private void applyOosClockFonts() {
+        if (mOosFontViews == null || mOosOriginalTypefaces == null) return;
+        Typeface base = QuickspaceClockFonts.resolveBaseTypeface(getContext());
+        if (base == null) {
+            if (mOosAppliedTypeface == null) return;
+            for (int i = 0; i < mOosFontViews.length; i++) {
+                if (mOosFontViews[i] != null) {
+                    mOosFontViews[i].setTypeface(mOosOriginalTypefaces[i]);
+                }
+            }
+            mOosAppliedTypeface = null;
+            return;
+        }
+        if (base.equals(mOosAppliedTypeface)) return;
+        Typeface medium = Typeface.create(base, 500, false);
+        Typeface bold = Typeface.create(base, 700, false);
+        setOosTypeface(mQuickspaceDayOfWeek, medium);
+        setOosTypeface(mQuickspaceClockHour, bold);
+        setOosTypeface(mQuickspaceClockMinute, bold);
+        setOosTypeface(mQuickspaceDate, base);
+        setOosTypeface(mWeatherTempSub, base);
+        setOosTypeface(mPSAMessage, base);
+        setOosTypeface(mNowPlayingText, base);
+        mOosAppliedTypeface = base;
+    }
+
+    private static void setOosTypeface(TextView tv, Typeface typeface) {
+        if (tv != null) tv.setTypeface(typeface);
+    }
+
+    @Override
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Font overlay changes update resources; pick up the new system font.
+        if (!mDestroyed && mCurrentStyle == 2) applyOosClockFonts();
     }
 
     private final void loadDoubleLine(boolean useAlternativeQuickspaceUI) {
@@ -401,15 +464,11 @@ public class QuickSpaceView extends FrameLayout implements OnDataListener {
             mNowPlayingText = findViewById(R.id.now_playing_text);
             mDateWeatherRow = findViewById(R.id.date_weather_row);
             mContextualInfoRow = findViewById(R.id.contextual_info_row);
-            if (LauncherPrefs.QUICKSPACE_CLOCK_SYSTEM_FONT.get(getContext())) {
-                mQuickspaceDayOfWeek.setTypeface(Typeface.create(Typeface.DEFAULT, 500, false));
-                mQuickspaceClockHour.setTypeface(Typeface.DEFAULT_BOLD);
-                mQuickspaceClockMinute.setTypeface(Typeface.DEFAULT_BOLD);
-                mQuickspaceDate.setTypeface(Typeface.DEFAULT);
-                mWeatherTempSub.setTypeface(Typeface.DEFAULT);
-                mPSAMessage.setTypeface(Typeface.DEFAULT);
-                mNowPlayingText.setTypeface(Typeface.DEFAULT);
-            }
+            cacheOosClockFonts();
+            applyOosClockFonts();
+        } else {
+            mOosFontViews = null;
+            mOosOriginalTypefaces = null;
         }
         
         // Fallback for backward compatibility
