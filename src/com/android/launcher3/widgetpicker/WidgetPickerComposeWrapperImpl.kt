@@ -46,6 +46,7 @@ import com.android.launcher3.dragndrop.PinItemDragListener
 import com.android.launcher3.util.ApiWrapper
 import com.android.launcher3.util.PackageUserKey
 import com.android.launcher3.util.WindowBlurState
+import com.android.launcher3.util.setLauncherContent
 import com.android.launcher3.widgetpicker.WidgetPickerConfig.Companion.EXTRA_IS_PENDING_WIDGET_DRAG
 import com.android.launcher3.widgetpicker.data.repository.WidgetAppIconsRepository
 import com.android.launcher3.widgetpicker.data.repository.WidgetUsersRepository
@@ -220,7 +221,7 @@ constructor(
                 WindowBlurState.getInstance(activity.asContext()).value
 
         composeView.apply {
-            setContent {
+            setLauncherContent {
                 val scope = rememberCoroutineScope()
                 val view = LocalView.current
 

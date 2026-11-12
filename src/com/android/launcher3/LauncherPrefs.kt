@@ -271,6 +271,10 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
                 DefaultsValueProvider.get(context).enableTwoLineToggle
             }
 
+        @JvmField val OVERSCROLL_STIFFNESS = backedUpItem("pref_overscroll_stiffness", 200)
+        @JvmField val OVERSCROLL_DAMPING_RATIO = backedUpItem("pref_overscroll_damping_ratio", 50)
+        @JvmField val OVERSCROLL_MAX_STRETCH = backedUpItem("pref_overscroll_max_stretch", 15)
+        @JvmField val OVERSCROLL_VELOCITY_SCALE = backedUpItem("pref_overscroll_velocity_scale", 25)
         @JvmField val SHOW_DESKTOP_LABELS = backedUpItem("pref_desktop_show_labels", true)
         @JvmField val SHOW_DRAWER_LABELS = backedUpItem("pref_drawer_show_labels", true)
         @JvmField val WORKSPACE_LOCK = backedUpItem("pref_workspace_lock", false)
