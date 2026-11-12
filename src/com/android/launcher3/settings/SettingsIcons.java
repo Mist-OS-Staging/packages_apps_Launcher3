@@ -37,6 +37,7 @@ import com.android.launcher3.BuildConfig;
 import com.android.launcher3.InvariantDeviceProfile;
 import com.android.launcher3.LauncherFiles;
 import com.android.launcher3.R;
+import com.android.launcher3.customization.IconDatabase;
 import com.android.launcher3.display.DisplayController;
 import com.android.launcher3.display.LauncherDisplayInfo;
 import com.android.launcher3.util.SafeCloseable;
@@ -269,6 +270,11 @@ public class SettingsIcons extends CollapsingToolbarBaseActivity
         @Override
         public void onResume() {
             super.onResume();
+
+            Preference iconPack = findPreference(IconDatabase.KEY_ICON_PACK);
+            if (iconPack != null) {
+                iconPack.setSummary(IconDatabase.getGlobalLabel(requireContext()));
+            }
 
             if (isAdded() && !mPreferenceHighlighted) {
                 PreferenceHighlighter highlighter = createHighlighter();

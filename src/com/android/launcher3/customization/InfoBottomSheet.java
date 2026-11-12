@@ -21,6 +21,7 @@ import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
 import static com.android.launcher3.util.Executors.THREAD_POOL_EXECUTOR;
 
 import android.app.ActivityOptions;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -42,6 +43,7 @@ import com.android.launcher3.Insettable;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
 import com.android.launcher3.model.data.ItemInfo;
+import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.PackageManagerHelper;
 import com.android.launcher3.util.SystemUiController;
 import com.android.launcher3.util.Themes;
@@ -66,6 +68,7 @@ public class InfoBottomSheet extends AbstractSlideInView<Launcher> implements In
     private TextView mLastUpdateSummary;
     private TextView mSourceSummary;
     private View mSourceRow;
+    private TextView mIconPackSummary;
 
     public InfoBottomSheet(Context context) {
         this(context, null);
@@ -95,6 +98,9 @@ public class InfoBottomSheet extends AbstractSlideInView<Launcher> implements In
                 R.string.app_info_last_update).findViewById(android.R.id.summary);
         mSourceRow = addRow(rows, R.drawable.ic_app_info_source, R.string.app_info_source);
         mSourceSummary = mSourceRow.findViewById(android.R.id.summary);
+        View iconPackRow = addRow(rows, R.drawable.ic_app_info_icon_pack, R.string.icon_pack_title);
+        mIconPackSummary = iconPackRow.findViewById(android.R.id.summary);
+        iconPackRow.setOnClickListener(v -> pickIconPack());
         View moreRow = addRow(rows, R.drawable.ic_info_no_shadow, R.string.app_info_more);
         moreRow.findViewById(android.R.id.summary).setVisibility(GONE);
         moreRow.setOnClickListener(v -> openSystemAppInfo());
@@ -144,14 +150,45 @@ public class InfoBottomSheet extends AbstractSlideInView<Launcher> implements In
             CharSequence lastUpdate = extractor.getLastUpdate();
             CharSequence source = extractor.getSource();
             Intent marketIntent = extractor.getMarketIntent();
+            CharSequence iconPack = IconPackChoices.currentLabel(context, componentKey(itemInfo));
             MAIN_EXECUTOR.execute(() -> {
                 if (mItemInfo != itemInfo) return;
+                mIconPackSummary.setText(iconPack);
                 mVersionSummary.setText(version);
                 mLastUpdateSummary.setText(lastUpdate);
                 mSourceSummary.setText(source);
                 if (marketIntent != null) {
                     mSourceRow.setOnClickListener(v -> openStore(marketIntent));
                 }
+            });
+        });
+    }
+
+    private static ComponentKey componentKey(ItemInfo itemInfo) {
+        return new ComponentKey(itemInfo.getTargetComponent(), itemInfo.user);
+    }
+
+    private void pickIconPack() {
+        ItemInfo itemInfo = mItemInfo;
+        if (itemInfo == null || itemInfo.getTargetComponent() == null) return;
+        ComponentKey key = componentKey(itemInfo);
+        Context context = getContext().getApplicationContext();
+        // Finding the packs with an icon for this app parses them, keep it off the main thread.
+        THREAD_POOL_EXECUTOR.execute(() -> {
+            IconPackChoices choices = IconPackChoices.load(context, key);
+            MAIN_EXECUTOR.execute(() -> {
+                if (!isOpen() || mItemInfo != itemInfo) return;
+                new AlertDialog.Builder(mActivityContext)
+                        .setTitle(R.string.icon_pack_title)
+                        .setSingleChoiceItems(choices.labels, choices.checkedIndex,
+                                (dialog, which) -> {
+                                    dialog.dismiss();
+                                    mIconPackSummary.setText(choices.labels[which]);
+                                    THREAD_POOL_EXECUTOR.execute(
+                                            () -> choices.apply(context, key, which));
+                                })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
             });
         });
     }

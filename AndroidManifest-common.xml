@@ -209,6 +209,13 @@
             android:autoRemoveFromRecents="true" />
 
         <activity
+            android:name="com.android.launcher3.icons.pack.IconPackSettingsActivity"
+            android:label="@string/icon_pack_title"
+            android:theme="@style/HomeSettings.Theme"
+            android:exported="false"
+            android:autoRemoveFromRecents="true" />
+
+        <activity
             android:name="com.android.launcher3.settings.SettingsOverscroll"
             android:label="@string/overscroll_settings_title"
             android:theme="@style/HomeSettings.Theme"
