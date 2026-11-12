@@ -104,4 +104,9 @@
     <!-- View tag key used to store SpringAnimation data. -->
     <item type="id" name="spring_animation_tag" />
 
+    <!-- View tag keys used by the spring overscroll. -->
+    <item type="id" name="launcher_spring_scroll_observer" />
+    <item type="id" name="launcher_spring_vertical" />
+    <item type="id" name="launcher_spring_horizontal" />
+
 </resources>

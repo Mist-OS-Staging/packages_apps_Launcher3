@@ -209,6 +209,13 @@
             android:autoRemoveFromRecents="true" />
 
         <activity
+            android:name="com.android.launcher3.settings.SettingsOverscroll"
+            android:label="@string/overscroll_settings_title"
+            android:theme="@style/HomeSettings.Theme"
+            android:exported="false"
+            android:autoRemoveFromRecents="true" />
+
+        <activity
             android:name="com.android.launcher3.settings.SettingsMisc"
             android:label="@string/misc_category_title"
             android:theme="@style/HomeSettings.Theme"
