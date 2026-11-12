@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 Mist OS
+     SPDX-License-Identifier: Apache-2.0
+
+     One font in the OOS clock font picker, same look as Mistify's fonts_option.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:background="@drawable/quickspace_font_option_bg">
+
+    <TextView
+        android:id="@+id/quickspace_font_option_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="8dp"
+        android:textAlignment="center"
+        android:textSize="15sp"
+        android:lineHeight="15sp"
+        android:textColor="?android:attr/textColorPrimary" />
+</LinearLayout>
