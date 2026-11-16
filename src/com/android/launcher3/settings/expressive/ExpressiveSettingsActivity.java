@@ -57,6 +57,8 @@ public abstract class ExpressiveSettingsActivity extends FragmentActivity {
     private boolean mBarShown;
     private int mPreviewHeight;
     private int mLastOffset;
+    private boolean mLightHeader;
+    private boolean mLightBar;
 
     protected abstract SettingsCategory getSettingsCategory();
 
@@ -93,13 +95,9 @@ public abstract class ExpressiveSettingsActivity extends FragmentActivity {
         findViewById(R.id.settings_page_back).setOnClickListener(
                 v -> getOnBackPressedDispatcher().onBackPressed());
 
-        WindowInsetsController controller = getWindow().getInsetsController();
-        if (controller != null) {
-            boolean lightHeader = Color.luminance(container) > 0.5f;
-            controller.setSystemBarsAppearance(
-                    lightHeader ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
-        }
+        mLightHeader = Color.luminance(container) > 0.5f;
+        mLightBar = Color.luminance(getColor(R.color.settings_expressive_surface_high)) > 0.5f;
+        updateStatusBarIcons();
 
         mHeaderHeight = dp(HEADER_HEIGHT_DP);
         mBarHeight = dp(BAR_HEIGHT_DP);
@@ -251,6 +249,7 @@ public abstract class ExpressiveSettingsActivity extends FragmentActivity {
             return;
         }
         mBarShown = shown;
+        updateStatusBarIcons();
         mBarBackground.animate().alpha(shown ? 1f : 0f).setDuration(200).start();
         mBarTitle.animate().alpha(shown ? 1f : 0f).setDuration(200).start();
         if (shown) {
@@ -258,6 +257,17 @@ public abstract class ExpressiveSettingsActivity extends FragmentActivity {
             ExpressiveMotion.springTo(mBarTitle, DynamicAnimation.TRANSLATION_Y, 0f,
                     ExpressiveMotion.SPATIAL_STIFFNESS, ExpressiveMotion.SPATIAL_DAMPING);
         }
+    }
+
+    private void updateStatusBarIcons() {
+        WindowInsetsController controller = getWindow().getInsetsController();
+        if (controller == null) {
+            return;
+        }
+        boolean light = mBarShown ? mLightBar : mLightHeader;
+        controller.setSystemBarsAppearance(
+                light ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
+                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
     }
 
     private static void setHeight(View view, int height) {
