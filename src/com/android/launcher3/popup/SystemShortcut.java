@@ -30,6 +30,7 @@ import android.os.UserHandle;
 import android.util.Log;
 import android.view.InflateException;
 import android.view.View;
+import android.view.ViewParent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -50,6 +51,7 @@ import com.android.launcher3.R;
 import com.android.launcher3.SecondaryDropTarget;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
+import com.android.launcher3.allapps.PinnedAppsRowView;
 import com.android.launcher3.allapps.PinnedAppsStore;
 import com.android.launcher3.allapps.PrivateProfileManager;
 import com.android.launcher3.customization.InfoBottomSheet;
@@ -372,6 +374,61 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
         public void onClick(View view) {
             PinnedAppsStore.setPinned(view.getContext(), mItemInfo, !mIsPinned);
             AbstractFloatingView.closeAllOpenViews(mTarget);
+        }
+    }
+
+    public static final Factory<ActivityContext> MOVE_PINNED_LEFT =
+            (activity, itemInfo, originalView) ->
+                    MovePinned.create(activity, itemInfo, originalView, true);
+
+    public static final Factory<ActivityContext> MOVE_PINNED_RIGHT =
+            (activity, itemInfo, originalView) ->
+                    MovePinned.create(activity, itemInfo, originalView, false);
+
+    public static class MovePinned<T extends ActivityContext> extends SystemShortcut<T> {
+
+        private final PinnedAppsRowView mRow;
+        private final int mDelta;
+
+        private MovePinned(T target, ItemInfo itemInfo, @NonNull View originalView,
+                PinnedAppsRowView row, int delta, boolean left, boolean rtl) {
+            super(left != rtl ? R.drawable.ic_chevron_start : R.drawable.ic_chevron_end,
+                    left ? R.string.pinned_apps_move_left : R.string.pinned_apps_move_right,
+                    target, itemInfo, originalView, false);
+            mRow = row;
+            mDelta = delta;
+        }
+
+        @Nullable
+        static <T extends ActivityContext> MovePinned<T> create(T target, ItemInfo itemInfo,
+                @Nullable View originalView, boolean left) {
+            if (originalView == null || itemInfo == null) {
+                return null;
+            }
+            PinnedAppsRowView row = null;
+            for (ViewParent parent = originalView.getParent(); parent != null;
+                    parent = parent.getParent()) {
+                if (parent instanceof PinnedAppsRowView pinnedRow) {
+                    row = pinnedRow;
+                    break;
+                }
+            }
+            if (row == null) {
+                return null;
+            }
+            int index = row.indexOfPinned(itemInfo);
+            boolean rtl = originalView.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+            int delta = left != rtl ? -1 : 1;
+            if (index < 0 || index + delta < 0 || index + delta >= row.getPinnedCount()) {
+                return null;
+            }
+            return new MovePinned<>(target, itemInfo, originalView, row, delta, left, rtl);
+        }
+
+        @Override
+        public void onClick(View view) {
+            AbstractFloatingView.closeAllOpenViews(mTarget);
+            mRow.movePinnedApp(mItemInfo, mDelta);
         }
     }
 

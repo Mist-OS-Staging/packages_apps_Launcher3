@@ -82,6 +82,15 @@
     <string name="pin_to_drawer">Pin to drawer</string>
     <string name="unpin_from_drawer">Unpin from drawer</string>
     <string name="title_pinned_apps">Pinned apps</string>
+    <string name="pinned_apps_move_left">Move left</string>
+    <string name="pinned_apps_move_right">Move right</string>
+    <string name="pinned_apps_move_up">Move up</string>
+    <string name="pinned_apps_move_down">Move down</string>
+    <string name="pinned_apps_settings_summary">Change the order of pinned apps or unpin them</string>
+    <string name="pinned_apps_settings_hint">Drag apps to change their order at the top of the app drawer.</string>
+    <string name="pinned_apps_settings_empty">No pinned apps yet. Long-press an app in the app drawer and tap Pin to drawer.</string>
+    <string name="pinned_apps_drag_description">Drag to reorder</string>
+    <string name="pinned_apps_unpin_description">Unpin %1$s</string>
 
     <!-- Trust apps -->
     <string name="trust_apps_manager_name">Hidden &amp; protected apps</string>

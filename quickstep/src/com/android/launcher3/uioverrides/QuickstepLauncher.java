@@ -62,6 +62,8 @@ import com.android.launcher3.applibrary.AppLibraryTouchController;
 import static com.android.launcher3.popup.SystemShortcut.FLOATING;
 import static com.android.launcher3.popup.SystemShortcut.INSTALL;
 import static com.android.launcher3.popup.SystemShortcut.KILL_APP;
+import static com.android.launcher3.popup.SystemShortcut.MOVE_PINNED_LEFT;
+import static com.android.launcher3.popup.SystemShortcut.MOVE_PINNED_RIGHT;
 import static com.android.launcher3.popup.SystemShortcut.PIN_TO_DRAWER;
 import static com.android.launcher3.popup.SystemShortcut.PRIVATE_PROFILE_INSTALL;
 import static com.android.launcher3.popup.SystemShortcut.REMOVE;
@@ -595,6 +597,8 @@ public class QuickstepLauncher extends Launcher implements RecentsViewContainer,
                 && (container == CONTAINER_ALL_APPS
                 || container == CONTAINER_ALL_APPS_PREDICTION)) {
             shortcuts.add(PIN_TO_DRAWER);
+            shortcuts.add(MOVE_PINNED_LEFT);
+            shortcuts.add(MOVE_PINNED_RIGHT);
             if (Utilities.isWorkspaceEditAllowed(this)) {
                 shortcuts.add(ADD_TO_HOME_SCREEN);
             }

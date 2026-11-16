@@ -91,6 +91,8 @@ import static com.android.launcher3.model.data.ItemInfoWithIcon.FLAG_NOT_PINNABL
 import static com.android.launcher3.popup.SystemShortcut.ADD_TO_HOME_SCREEN;
 import static com.android.launcher3.popup.SystemShortcut.APP_INFO;
 import static com.android.launcher3.popup.SystemShortcut.INSTALL;
+import static com.android.launcher3.popup.SystemShortcut.MOVE_PINNED_LEFT;
+import static com.android.launcher3.popup.SystemShortcut.MOVE_PINNED_RIGHT;
 import static com.android.launcher3.popup.SystemShortcut.PIN_TO_DRAWER;
 import static com.android.launcher3.popup.SystemShortcut.UNINSTALL;
 import static com.android.launcher3.popup.SystemShortcut.REMOVE;
@@ -2929,7 +2931,8 @@ public class Launcher extends StatefulActivity<LauncherState>
             boolean isPinnable = itemInfo instanceof ItemInfoWithIcon info
                     && (info.runtimeStatusFlags & FLAG_NOT_PINNABLE) == 0;
             if (isPinnable) {
-                return Stream.of(APP_INFO, WIDGETS, INSTALL, PIN_TO_DRAWER, ADD_TO_HOME_SCREEN);
+                return Stream.of(APP_INFO, WIDGETS, INSTALL, PIN_TO_DRAWER, MOVE_PINNED_LEFT,
+                        MOVE_PINNED_RIGHT, ADD_TO_HOME_SCREEN);
             } else {
                 return Stream.of(APP_INFO, WIDGETS, INSTALL);
             }

@@ -18,6 +18,7 @@ package com.android.launcher3.allapps;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 
 import static com.android.launcher3.LauncherPrefs.PINNED_APPS;
+import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ORDER;
 import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_ALL_APPS;
 
 import android.content.Context;
@@ -43,6 +44,7 @@ import com.android.launcher3.R;
 import com.android.launcher3.anim.AlphaUpdateListener;
 import com.android.launcher3.keyboard.FocusIndicatorHelper;
 import com.android.launcher3.keyboard.FocusIndicatorHelper.SimpleFocusIndicatorHelper;
+import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.model.data.WorkspaceItemInfo;
 import com.android.launcher3.views.ActivityContext;
 
@@ -90,13 +92,13 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         super.onAttachedToWindow();
         mActivityContext.addOnDeviceProfileChangeListener(this);
         mAllAppsStore.addUpdateListener(this);
-        LauncherPrefs.get(getContext()).addListener(this, PINNED_APPS);
+        LauncherPrefs.get(getContext()).addListener(this, PINNED_APPS, PINNED_APPS_ORDER);
         updatePinnedApps();
     }
 
     @Override
     protected void onDetachedFromWindow() {
-        LauncherPrefs.get(getContext()).removeListener(this, PINNED_APPS);
+        LauncherPrefs.get(getContext()).removeListener(this, PINNED_APPS, PINNED_APPS_ORDER);
         mAllAppsStore.removeUpdateListener(this);
         mActivityContext.removeOnDeviceProfileChangeListener(this);
         for (int i = 0; i < getChildCount(); i++) {
@@ -175,9 +177,41 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
 
     @Override
     public void onPrefChanged(String key) {
-        if (PINNED_APPS.getSharedPrefKey().equals(key)) {
+        if (PINNED_APPS.getSharedPrefKey().equals(key)
+                || PINNED_APPS_ORDER.getSharedPrefKey().equals(key)) {
             updatePinnedApps();
         }
+    }
+
+    public int getPinnedCount() {
+        return mPinnedApps.size();
+    }
+
+    public int indexOfPinned(ItemInfo itemInfo) {
+        String key = PinnedAppsStore.encode(getContext(), itemInfo);
+        if (key == null) {
+            return -1;
+        }
+        for (int i = 0; i < mPinnedApps.size(); i++) {
+            if (key.equals(PinnedAppsStore.encode(getContext(), mPinnedApps.get(i)))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public void movePinnedApp(ItemInfo itemInfo, int delta) {
+        int from = indexOfPinned(itemInfo);
+        int to = from + delta;
+        if (from < 0 || to < 0 || to >= mPinnedApps.size()) {
+            return;
+        }
+        List<String> keys = new ArrayList<>(mPinnedApps.size());
+        for (WorkspaceItemInfo info : mPinnedApps) {
+            keys.add(PinnedAppsStore.encode(getContext(), info));
+        }
+        keys.add(to, keys.remove(from));
+        PinnedAppsStore.setOrder(getContext(), keys);
     }
 
     @Override
