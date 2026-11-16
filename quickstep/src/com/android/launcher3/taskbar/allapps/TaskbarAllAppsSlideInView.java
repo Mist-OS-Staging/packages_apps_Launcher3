@@ -84,7 +84,9 @@ public class TaskbarAllAppsSlideInView extends AbstractSlideInView<TaskbarOverla
         mHandler = new Handler(Looper.myLooper());
         mMaxBlurRadius = shouldReduceWorkspaceBlurUsage(context)
                 ? 0
-                : BaseDepthControllerImpl.getMaxBlurRadius(context);
+                : Math.round(BaseDepthControllerImpl.getMaxBlurRadius(context)
+                        * BaseDepthControllerImpl.getBlurScaleForOpacity(
+                                LauncherPrefs.APP_DRAWER_OPACITY.get(context)));
     }
 
     void init(TaskbarAllAppsCallbacks callbacks, TaskbarUiState taskbarUiState) {

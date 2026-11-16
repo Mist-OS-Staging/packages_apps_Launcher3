@@ -136,6 +136,9 @@ public class BaseDepthControllerImpl<
                     if (LauncherPrefs.BLUR_DEPTH.getSharedPrefKey().equals(key)) {
                         mMaxBlurRadius = getMaxBlurRadius(mContainer);
                         applyDepthAndBlur();
+                    } else if (LauncherPrefs.APP_DRAWER_OPACITY.getSharedPrefKey().equals(key)
+                            || LauncherPrefs.RECENTS_OPACITY.getSharedPrefKey().equals(key)) {
+                        applyDepthAndBlur();
                     }
                 }
             };
@@ -167,9 +170,11 @@ public class BaseDepthControllerImpl<
         mEarlyWakeupInfo.token = new Binder();
         mEarlyWakeupInfo.trace = BaseDepthControllerImpl.class.getName();
 
-        LauncherPrefs.get(container).addListener(mBlurDepthListener, LauncherPrefs.BLUR_DEPTH);
+        LauncherPrefs.get(container).addListener(mBlurDepthListener, LauncherPrefs.BLUR_DEPTH,
+                LauncherPrefs.APP_DRAWER_OPACITY, LauncherPrefs.RECENTS_OPACITY);
         mContainer.closeOnDestroy(() -> LauncherPrefs.get(container)
-                .removeListener(mBlurDepthListener, LauncherPrefs.BLUR_DEPTH));
+                .removeListener(mBlurDepthListener, LauncherPrefs.BLUR_DEPTH,
+                        LauncherPrefs.APP_DRAWER_OPACITY, LauncherPrefs.RECENTS_OPACITY));
 
         mContainer.closeOnDestroy(blurState.forEach(mContainer.getUiExecutor(), blurEnabled -> {
             if (mCrossWindowBlursEnabled == blurEnabled) {
@@ -180,6 +185,19 @@ public class BaseDepthControllerImpl<
             applyDepthAndBlur();
             return null;
         }));
+    }
+
+    /**
+     * Blur scale for a background opacity setting. The blur stays full down to 20% opacity and
+     * fades out below it, so 0% leaves the background fully clear.
+     */
+    public static float getBlurScaleForOpacity(int opacity) {
+        return Math.max(0f, Math.min(1f, opacity / 20f));
+    }
+
+    /** Scale applied to the blur radius, for the screen currently showing. */
+    protected float getBlurScale() {
+        return 1f;
     }
 
     /** Max blur radius in pixels, from the background blur depth setting (in dp). */
@@ -279,7 +297,7 @@ public class BaseDepthControllerImpl<
         SurfaceControl blurSurface = mBlurSurface != null ? mBlurSurface : mBaseSurface;
 
         int previousBlur = mCurrentBlur;
-        int newBlur = shouldBlur() ? (int) (blurAmount * mMaxBlurRadius) : 0;
+        int newBlur = shouldBlur() ? (int) (blurAmount * mMaxBlurRadius * getBlurScale()) : 0;
         int delta = Math.abs(newBlur - previousBlur);
         if (skipSimilarBlur && delta < Utilities.dpToPx(1) && newBlur != 0 && previousBlur != 0
                 && blurAmount != 1f) {

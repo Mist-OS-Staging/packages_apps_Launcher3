@@ -26,14 +26,19 @@ import android.view.View;
 import android.view.ViewRootImpl;
 import android.view.ViewTreeObserver;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.android.launcher3.LauncherPrefs;
+import com.android.launcher3.LauncherState;
 import com.android.launcher3.anim.PendingAnimation;
 import com.android.launcher3.statemanager.BaseState;
+import com.android.launcher3.statemanager.StateManager;
 import com.android.launcher3.statemanager.StateManager.StateHandler;
 import com.android.launcher3.statemanager.StatefulContainer;
 import com.android.launcher3.states.StateAnimationConfig;
 import com.android.launcher3.util.ListenableRef;
+import com.android.quickstep.fallback.RecentsState;
 import com.android.quickstep.util.BaseDepthControllerImpl;
 
 import java.io.PrintWriter;
@@ -142,6 +147,36 @@ public class DepthController<
     protected void applyDepthAndBlur() {
         ensureDependencies();
         super.applyDepthAndBlur();
+    }
+
+    @Override
+    protected float getBlurScale() {
+        StateManager<STATE, ?> stateManager = mContainer.getStateManager();
+        if (stateManager == null) {
+            return 1f;
+        }
+        float scale = getBlurScale(stateManager.getTargetState());
+        if (scale < 0) {
+            scale = getBlurScale(stateManager.getState());
+        }
+        if (scale < 0) {
+            scale = getBlurScale(stateManager.getCurrentStableState());
+        }
+        return scale < 0 ? 1f : scale;
+    }
+
+    private float getBlurScale(@Nullable STATE state) {
+        if (state == null) {
+            return -1f;
+        }
+        if (state == LauncherState.ALL_APPS || state == LauncherState.APP_LIBRARY) {
+            return getBlurScaleForOpacity(LauncherPrefs.APP_DRAWER_OPACITY.get(mContainer));
+        }
+        if ((state instanceof LauncherState launcherState && launcherState.isRecentsViewVisible)
+                || state instanceof RecentsState) {
+            return getBlurScaleForOpacity(LauncherPrefs.RECENTS_OPACITY.get(mContainer));
+        }
+        return -1f;
     }
 
     @Override
