@@ -65,7 +65,6 @@ import static com.android.launcher3.popup.SystemShortcut.KILL_APP;
 import static com.android.launcher3.popup.SystemShortcut.PIN_TO_DRAWER;
 import static com.android.launcher3.popup.SystemShortcut.PRIVATE_PROFILE_INSTALL;
 import static com.android.launcher3.popup.SystemShortcut.REMOVE;
-import static com.android.launcher3.popup.SystemShortcut.UNINSTALL;
 import static com.android.launcher3.popup.SystemShortcut.UNINSTALL_APP;
 import static com.android.launcher3.popup.SystemShortcut.WIDGETS;
 import static com.android.launcher3.taskbar.LauncherTaskbarUIController.ALL_APPS_PAGE_PROGRESS_INDEX;
@@ -580,7 +579,7 @@ public class QuickstepLauncher extends Launcher implements RecentsViewContainer,
         }
 
         shortcuts.addAll(getSplitShortcuts());
-        shortcuts.add(UNINSTALL);
+        shortcuts.add(UNINSTALL_APP);
         shortcuts.add(FLOATING);
         shortcuts.add(WIDGETS);
         shortcuts.add(KILL_APP);
@@ -602,9 +601,6 @@ public class QuickstepLauncher extends Launcher implements RecentsViewContainer,
         }
         shortcuts.add(DONT_SUGGEST_APP);
         shortcuts.add(PRIVATE_PROFILE_INSTALL);
-        if (Flags.enablePrivateSpace()) {
-            shortcuts.add(UNINSTALL_APP);
-        }
         if (mBubbleFeatureConfig.areAppBubblesSupported()) {
             shortcuts.add(BUBBLE_SHORTCUT);
         }
