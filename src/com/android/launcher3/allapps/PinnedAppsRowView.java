@@ -25,6 +25,7 @@ import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_ALL_APP
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.InsetDrawable;
@@ -84,6 +85,8 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
     private final List<WorkspaceItemInfo> mPinnedApps = new ArrayList<>();
     private final List<LinearLayout> mIconRows = new ArrayList<>();
     private final TextView mTitleView;
+    private final GradientDrawable mCardBackground;
+    private final int mCardColor;
     private final int mTitleHeight;
     private FloatingHeaderView mParent;
     @Nullable
@@ -110,10 +113,11 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
 
         int insetTop = dp(CARD_INSET_TOP_DP);
         int insetBottom = dp(CARD_INSET_BOTTOM_DP);
-        GradientDrawable card = new GradientDrawable();
-        card.setColor(Themes.getAttrColor(context, R.attr.allappsHeaderProtectionColor));
-        card.setCornerRadius(dp(CARD_RADIUS_DP));
-        setBackground(new InsetDrawable(card, 0, insetTop, 0, insetBottom));
+        mCardColor = Themes.getAttrColor(context, R.attr.allappsHeaderProtectionColor);
+        mCardBackground = new GradientDrawable();
+        mCardBackground.setColor(mCardColor);
+        mCardBackground.setCornerRadius(dp(CARD_RADIUS_DP));
+        setBackground(new InsetDrawable(mCardBackground, 0, insetTop, 0, insetBottom));
         setClipToOutline(true);
         int paddingHorizontal = dp(CARD_PADDING_HORIZONTAL_DP);
         setPadding(paddingHorizontal, insetTop + dp(CARD_PADDING_TOP_DP), paddingHorizontal,
@@ -325,8 +329,23 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         }
     }
 
+    /** Whether the drawer shows pinned apps and the app list on separate background panels. */
+    public static boolean isCardStyle(Context context) {
+        return LauncherPrefs.get(context).get(DRAWER_CARD_STYLE);
+    }
+
+    public int getCardInsetTop() {
+        return dp(CARD_INSET_TOP_DP);
+    }
+
+    public int getCardInsetBottom() {
+        return dp(CARD_INSET_BOTTOM_DP);
+    }
+
     private void updateTitleVisibility() {
-        mTitleView.setVisibility(AllAppsCardDecoration.isEnabled(getContext()) ? GONE : VISIBLE);
+        boolean cardStyle = isCardStyle(getContext());
+        mTitleView.setVisibility(cardStyle ? GONE : VISIBLE);
+        mCardBackground.setColor(cardStyle ? Color.TRANSPARENT : mCardColor);
     }
 
     private void readLayoutPrefs() {

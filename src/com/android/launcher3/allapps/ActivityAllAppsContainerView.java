@@ -854,6 +854,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     protected void updateHeaderScroll(int scrolledOffset) {
+        if (PinnedAppsRowView.isCardStyle(getContext())) {
+            invalidateHeader();
+        }
         float prog = Utilities.boundToRange((float) scrolledOffset / mHeaderThreshold, 0f, 1f);
         int headerColor = getHeaderColor(prog);
         int tabsAlpha = mHeader.getPeripheralProtectionHeight(/* expectedHeight */ false) == 0 ? 0
@@ -1522,6 +1525,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         final float leftWithScale = left + horizontalScaleOffset;
         final float rightWithScale = right - horizontalScaleOffset;
         final float bottomWithOffset = panel.getBottom() + bottomOffsetPx;
+        if (PinnedAppsRowView.isCardStyle(getContext())) {
+            drawCardPanels(canvas, leftWithScale, rightWithScale, topWithScale, translationY,
+                    bottomWithOffset);
+            return;
+        }
         // Draw full background panel if presenting on a sheet.
         int backgroundColor = getBackgroundColor();
         float backgroundAlpha = Color.alpha(backgroundColor) / 255.0f;
@@ -1540,6 +1548,62 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         // TODO (b/414671116): Apply header protection whenever search bar is focused.
         // applyHeaderProtection(canvas, scale, backgroundAlpha, topNoScale, topWithScale,
         //         leftWithScale, rightWithScale);
+    }
+
+    private void drawCardPanels(Canvas canvas, float left, float right, float panelTop,
+            float translationY, float bottom) {
+        int backgroundColor = getBackgroundColor();
+        int backgroundAlpha = Color.alpha(backgroundColor);
+        mHeaderPaint.setColor(backgroundColor);
+
+        View pinnedView = findViewById(R.id.pinned_apps_row);
+        if (pinnedView instanceof PinnedAppsRowView pinned
+                && pinned.getVisibility() == VISIBLE && pinned.getAlpha() > 0f) {
+            float top = getOffsetInContainer(pinned) + translationY;
+            float cardTop = Math.max(panelTop, top + pinned.getCardInsetTop());
+            float cardBottom = top + pinned.getHeight() - pinned.getCardInsetBottom();
+            if (cardBottom > cardTop) {
+                float radius = mBottomSheetCornerRadii[0];
+                mHeaderPaint.setAlpha(Math.round(backgroundAlpha * pinned.getAlpha()));
+                mTmpRectF.set(left, cardTop, right, cardBottom);
+                canvas.drawRoundRect(mTmpRectF, radius, radius, mHeaderPaint);
+            }
+        }
+
+        float listTop = panelTop;
+        RecyclerView list = getActiveRecyclerView();
+        if (list != null) {
+            for (int i = 0; i < list.getChildCount(); i++) {
+                View child = list.getChildAt(i);
+                if (list.getChildAdapterPosition(child) == 0) {
+                    listTop = Math.max(panelTop, getOffsetInContainer(child) + translationY);
+                    break;
+                }
+            }
+        }
+        if (bottom > listTop) {
+            mHeaderPaint.setAlpha(backgroundAlpha);
+            mTmpRectF.set(left, listTop, right, bottom);
+            mTmpPath.reset();
+            mTmpPath.addRoundRect(mTmpRectF, mBottomSheetCornerRadii, Direction.CW);
+            canvas.drawPath(mTmpPath, mHeaderPaint);
+        }
+    }
+
+    private float getOffsetInContainer(View view) {
+        float offset = 0;
+        View current = view;
+        while (current != null && current != this) {
+            offset += current.getTop() + current.getTranslationY();
+            if (!(current.getParent() instanceof View parent)) {
+                break;
+            }
+            if (parent != this) {
+                offset -= parent.getScrollY();
+            }
+            current = parent;
+        }
+        return offset;
     }
 
     private void applyHeaderProtection(Canvas canvas, float scale, float backgroundAlpha,
@@ -1696,10 +1760,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     new ViewGroupFocusHelper(mRecyclerView)) : new FocusedItemDecorator(
                     mRecyclerView);
             mRecyclerView.addItemDecoration(focusedItemDecorator);
-            if (!isSearch()) {
-                mRecyclerView.addItemDecoration(
-                        new AllAppsCardDecoration(mRecyclerView.getContext()));
-            }
             mOnFocusChangeListener = focusedItemDecorator.getFocusListener();
             mAdapter.setIconFocusListener(mOnFocusChangeListener);
             applyPadding();

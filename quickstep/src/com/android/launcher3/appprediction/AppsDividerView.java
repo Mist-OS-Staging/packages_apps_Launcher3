@@ -37,6 +37,7 @@ import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.allapps.FloatingHeaderRow;
 import com.android.launcher3.allapps.FloatingHeaderView;
+import com.android.launcher3.allapps.PinnedAppsRowView;
 import com.android.launcher3.util.Themes;
 
 /**
@@ -148,7 +149,8 @@ public class AppsDividerView extends View implements FloatingHeaderRow {
                 }
                 previousRow = mRows[i];
             }
-            if (previousRow == null || !previousRow.shouldDraw()) {
+            if (previousRow == null || !previousRow.shouldDraw()
+                    || previousRow instanceof PinnedAppsRowView) {
                 dividerType = DividerType.NONE;
             } else {
                 boolean aboveAppGrid = true;
