@@ -17,6 +17,7 @@ package com.android.launcher3.allapps;
 
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 
+import static com.android.launcher3.LauncherPrefs.DRAWER_CARD_STYLE;
 import static com.android.launcher3.LauncherPrefs.PINNED_APPS;
 import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ORDER;
 import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ROWS;
@@ -133,6 +134,7 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         mTitleView.setPaddingRelative(titleGap * 2, 0, titleGap * 2, titleGap);
         mTitleView.setAccessibilityHeading(true);
         addView(mTitleView, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mTitleHeight));
+        updateTitleVisibility();
 
         readLayoutPrefs();
         updateVisibility();
@@ -157,14 +159,14 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         mActivityContext.addOnDeviceProfileChangeListener(this);
         mAllAppsStore.addUpdateListener(this);
         LauncherPrefs.get(getContext()).addListener(this, PINNED_APPS, PINNED_APPS_ORDER,
-                PINNED_APPS_ROWS);
+                PINNED_APPS_ROWS, DRAWER_CARD_STYLE);
         updatePinnedApps();
     }
 
     @Override
     protected void onDetachedFromWindow() {
         LauncherPrefs.get(getContext()).removeListener(this, PINNED_APPS, PINNED_APPS_ORDER,
-                PINNED_APPS_ROWS);
+                PINNED_APPS_ROWS, DRAWER_CARD_STYLE);
         mAllAppsStore.removeUpdateListener(this);
         mActivityContext.removeOnDeviceProfileChangeListener(this);
         for (LinearLayout iconRow : mIconRows) {
@@ -182,7 +184,8 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
     public int getExpectedHeight() {
         DeviceProfile deviceProfile = mActivityContext.getDeviceProfile();
         int perRowHeight = deviceProfile.getAllAppsProfile().getCellHeightPx();
-        int totalHeight = Math.max(1, mIconRows.size()) * perRowHeight + mTitleHeight;
+        int titleHeight = mTitleView.getVisibility() == VISIBLE ? mTitleHeight : 0;
+        int totalHeight = Math.max(1, mIconRows.size()) * perRowHeight + titleHeight;
         return getVisibility() == GONE ? 0 : totalHeight + getPaddingTop() + getPaddingBottom();
     }
 
@@ -236,7 +239,13 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
 
     @Override
     public void onPrefChanged(String key) {
-        if (PINNED_APPS_ROWS.getSharedPrefKey().equals(key)) {
+        if (DRAWER_CARD_STYLE.getSharedPrefKey().equals(key)) {
+            updateTitleVisibility();
+            requestLayout();
+            if (mParent != null) {
+                mParent.onHeightUpdated();
+            }
+        } else if (PINNED_APPS_ROWS.getSharedPrefKey().equals(key)) {
             readLayoutPrefs();
             clearIconRows();
             updatePinnedApps();
@@ -314,6 +323,10 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         for (WorkspaceItemInfo info : mPinnedApps) {
             writer.println(prefix + "\t\t" + info);
         }
+    }
+
+    private void updateTitleVisibility() {
+        mTitleView.setVisibility(AllAppsCardDecoration.isEnabled(getContext()) ? GONE : VISIBLE);
     }
 
     private void readLayoutPrefs() {

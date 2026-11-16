@@ -102,6 +102,8 @@
     <string name="pinned_apps_unpin_description">Unpin %1$s</string>
     <string name="pinned_apps_settings_hint_limit">Apps that don\'t fit in the pinned rows stay in the A-Z list. Move an app higher here to show it in the pinned rows.</string>
     <string name="pinned_apps_rows_title">Pinned apps layout</string>
+    <string name="drawer_card_style_title">Card layout</string>
+    <string name="drawer_card_style_summary">Show the app list on a card like the pinned apps</string>
     <string-array name="pinned_apps_rows_entries">
         <item>Show all</item>
         <item>One row, swipe sideways</item>

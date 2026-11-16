@@ -1696,6 +1696,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     new ViewGroupFocusHelper(mRecyclerView)) : new FocusedItemDecorator(
                     mRecyclerView);
             mRecyclerView.addItemDecoration(focusedItemDecorator);
+            if (!isSearch()) {
+                mRecyclerView.addItemDecoration(
+                        new AllAppsCardDecoration(mRecyclerView.getContext()));
+            }
             mOnFocusChangeListener = focusedItemDecorator.getFocusListener();
             mAdapter.setIconFocusListener(mOnFocusChangeListener);
             applyPadding();

@@ -62,6 +62,13 @@
         launcher:iconSpaceReserved="false" />
 
     <SwitchPreferenceCompat
+        android:key="pref_drawer_card_style"
+        android:title="@string/drawer_card_style_title"
+        android:summary="@string/drawer_card_style_summary"
+        android:defaultValue="false"
+        android:persistent="true" />
+
+    <SwitchPreferenceCompat
         android:key="pref_focus_mode"
         android:title="@string/pref_focus_mode_title"
         android:summary="@string/pref_focus_mode_summary"

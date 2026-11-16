@@ -282,6 +282,7 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
             backedUpItem("pref_all_apps_pinned_apps", emptySet<String>())
         @JvmField val PINNED_APPS_ORDER = backedUpItem("pref_all_apps_pinned_apps_order", "")
         @JvmField val PINNED_APPS_ROWS = backedUpItem("pref_all_apps_pinned_apps_rows", "all")
+        @JvmField val DRAWER_CARD_STYLE = backedUpItem("pref_drawer_card_style", false)
         @JvmField val WORKSPACE_LOCK = backedUpItem("pref_workspace_lock", false)
         @JvmField val ALLAPPS_THEMED_ICONS = backedUpItem("pref_allapps_themed_icons", false)
         @JvmField val ALLOW_WALLPAPER_ZOOMING = backedUpItem("pref_allow_wallpaper_zooming", true)
