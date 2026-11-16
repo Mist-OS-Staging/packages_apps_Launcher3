@@ -23,15 +23,23 @@ import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ROWS;
 import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_ALL_APPS;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Canvas;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,11 +51,13 @@ import com.android.launcher3.Flags;
 import com.android.launcher3.LauncherPrefChangeListener;
 import com.android.launcher3.LauncherPrefs;
 import com.android.launcher3.R;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.anim.AlphaUpdateListener;
 import com.android.launcher3.keyboard.FocusIndicatorHelper;
 import com.android.launcher3.keyboard.FocusIndicatorHelper.SimpleFocusIndicatorHelper;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.model.data.WorkspaceItemInfo;
+import com.android.launcher3.util.Themes;
 import com.android.launcher3.views.ActivityContext;
 
 import java.io.PrintWriter;
@@ -57,11 +67,23 @@ import java.util.List;
 public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileChangeListener,
         FloatingHeaderRow, AllAppsStore.OnUpdateListener, LauncherPrefChangeListener {
 
+    private static final int CARD_RADIUS_DP = 28;
+    private static final int CARD_INSET_TOP_DP = 4;
+    private static final int CARD_INSET_BOTTOM_DP = 8;
+    private static final int CARD_PADDING_HORIZONTAL_DP = 8;
+    private static final int CARD_PADDING_TOP_DP = 14;
+    private static final int CARD_PADDING_BOTTOM_DP = 4;
+    private static final int TITLE_TEXT_SIZE_SP = 14;
+    private static final int TITLE_ICON_SIZE_DP = 16;
+    private static final int TITLE_GAP_DP = 6;
+
     private final ActivityContext mActivityContext;
     private final AllAppsStore mAllAppsStore;
     private final FocusIndicatorHelper mFocusHelper;
     private final List<WorkspaceItemInfo> mPinnedApps = new ArrayList<>();
     private final List<LinearLayout> mIconRows = new ArrayList<>();
+    private final TextView mTitleView;
+    private final int mTitleHeight;
     private FloatingHeaderView mParent;
     @Nullable
     private HorizontalScrollView mScrollView;
@@ -84,8 +106,51 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         mFocusHelper = new SimpleFocusIndicatorHelper(this);
         mNumPinnedAppsPerRow =
                 mActivityContext.getDeviceProfile().getAllAppsProfile().getNumShownAllAppsColumns();
+
+        int insetTop = dp(CARD_INSET_TOP_DP);
+        int insetBottom = dp(CARD_INSET_BOTTOM_DP);
+        GradientDrawable card = new GradientDrawable();
+        card.setColor(Themes.getAttrColor(context, R.attr.allappsHeaderProtectionColor));
+        card.setCornerRadius(dp(CARD_RADIUS_DP));
+        setBackground(new InsetDrawable(card, 0, insetTop, 0, insetBottom));
+        setClipToOutline(true);
+        int paddingHorizontal = dp(CARD_PADDING_HORIZONTAL_DP);
+        setPadding(paddingHorizontal, insetTop + dp(CARD_PADDING_TOP_DP), paddingHorizontal,
+                insetBottom + dp(CARD_PADDING_BOTTOM_DP));
+
+        int textColor = Themes.getAttrColor(context, android.R.attr.textColorPrimary);
+        float titleTextSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                TITLE_TEXT_SIZE_SP, getResources().getDisplayMetrics());
+        int titleIconSize = dp(TITLE_ICON_SIZE_DP);
+        int titleGap = dp(TITLE_GAP_DP);
+        mTitleHeight = Math.max(Utilities.calculateTextHeight(titleTextSize), titleIconSize)
+                + titleGap;
+        mTitleView = new TextView(context);
+        mTitleView.setText(R.string.title_pinned_apps);
+        mTitleView.setTextColor(textColor);
+        mTitleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, TITLE_TEXT_SIZE_SP);
+        mTitleView.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        mTitleView.setSingleLine(true);
+        mTitleView.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+        mTitleView.setPaddingRelative(titleGap * 2, 0, titleGap * 2, titleGap);
+        mTitleView.setAccessibilityHeading(true);
+        Drawable pinIcon = context.getDrawable(R.drawable.ic_pin);
+        if (pinIcon != null) {
+            pinIcon = pinIcon.mutate();
+            pinIcon.setBounds(0, 0, titleIconSize, titleIconSize);
+            mTitleView.setCompoundDrawablesRelative(pinIcon, null, null, null);
+            mTitleView.setCompoundDrawablePadding(titleGap);
+            mTitleView.setCompoundDrawableTintList(ColorStateList.valueOf(textColor));
+        }
+        addView(mTitleView, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mTitleHeight));
+
         readLayoutPrefs();
         updateVisibility();
+    }
+
+    private int dp(int value) {
+        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value,
+                getResources().getDisplayMetrics()));
     }
 
     @Override
@@ -127,7 +192,7 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
     public int getExpectedHeight() {
         DeviceProfile deviceProfile = mActivityContext.getDeviceProfile();
         int perRowHeight = deviceProfile.getAllAppsProfile().getCellHeightPx();
-        int totalHeight = Math.max(1, mIconRows.size()) * perRowHeight;
+        int totalHeight = Math.max(1, mIconRows.size()) * perRowHeight + mTitleHeight;
         return getVisibility() == GONE ? 0 : totalHeight + getPaddingTop() + getPaddingBottom();
     }
 
@@ -344,9 +409,15 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         for (LinearLayout iconRow : mIconRows) {
             mAllAppsStore.unregisterIconContainer(iconRow);
         }
+        if (mScrollView != null) {
+            removeView(mScrollView);
+        } else {
+            for (LinearLayout iconRow : mIconRows) {
+                removeView(iconRow);
+            }
+        }
         mIconRows.clear();
         mScrollView = null;
-        removeAllViews();
     }
 
     private HorizontalScrollView createScrollRow() {
