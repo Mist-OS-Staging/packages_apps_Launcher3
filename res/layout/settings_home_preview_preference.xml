@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 MistOS
+     SPDX-License-Identifier: Apache-2.0
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="12dp">
+
+    <com.android.launcher3.settings.expressive.HomePreviewView
+        android:id="@+id/settings_preview_view"
+        android:layout_width="match_parent"
+        android:layout_height="168dp"
+        android:importantForAccessibility="no" />
+</FrameLayout>

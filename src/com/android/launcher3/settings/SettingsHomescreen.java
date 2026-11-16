@@ -46,6 +46,8 @@ import com.android.launcher3.LauncherFiles;
 import com.android.launcher3.LauncherPrefs;
 import com.android.launcher3.R;
 import com.android.launcher3.display.DisplayController;
+import com.android.launcher3.settings.expressive.ExpressiveSettingsActivity;
+import com.android.launcher3.settings.expressive.SettingsCategory;
 import com.android.launcher3.display.LauncherDisplayInfo;
 import com.android.launcher3.notification.NotificationListener;
 import com.android.launcher3.smartspace.SmartspaceEvent;
@@ -53,10 +55,9 @@ import com.android.launcher3.util.SafeCloseable;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.util.SettingsCache;
 
-import com.android.settingslib.collapsingtoolbar.CollapsingToolbarBaseActivity;
 import com.android.settingslib.widget.SettingsBasePreferenceFragment;
 
-public class SettingsHomescreen extends CollapsingToolbarBaseActivity
+public class SettingsHomescreen extends ExpressiveSettingsActivity
         implements OnPreferenceStartFragmentCallback, OnPreferenceStartScreenCallback,
         SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -75,9 +76,13 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
     public static final String SAVE_HIGHLIGHTED_KEY = "android:preference_highlighted";
 
     @Override
+    protected SettingsCategory getSettingsCategory() {
+        return SettingsCategory.HOME;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.settings_activity);
 
 
         Intent intent = getIntent();
@@ -101,7 +106,7 @@ public class SettingsHomescreen extends CollapsingToolbarBaseActivity
             final Fragment f = fm.getFragmentFactory().instantiate(getClassLoader(),
                     getString(R.string.home_screen_settings_fragment_name));
             f.setArguments(args);
-            fm.beginTransaction().replace(com.android.settingslib.collapsingtoolbar.R.id.content_frame, f).commit();
+            fm.beginTransaction().replace(CONTENT_ID, f).commit();
         }
         LauncherPrefs.getPrefs(this).registerOnSharedPreferenceChangeListener(this);
     }

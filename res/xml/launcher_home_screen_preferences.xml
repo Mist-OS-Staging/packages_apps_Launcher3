@@ -4,6 +4,9 @@
     xmlns:launcher="http://schemas.android.com/apk/res-auto"
     xmlns:settings="http://schemas.android.com/apk/res/com.android.launcher3">
 
+    <com.android.launcher3.settings.expressive.HomePreviewPreference
+        android:key="settings_home_preview" />
+
     <PreferenceCategory
         android:title="@string/general_category_title">
 

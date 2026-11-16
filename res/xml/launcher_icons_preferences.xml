@@ -4,6 +4,9 @@
     xmlns:launcher="http://schemas.android.com/apk/res-auto"
     xmlns:settings="http://schemas.android.com/apk/res/com.android.launcher3">
 
+    <com.android.launcher3.settings.expressive.HomePreviewPreference
+        android:key="settings_home_preview" />
+
     <Preference
         android:key="pref_icon_pack"
         android:title="@string/icon_pack_title"

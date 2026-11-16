@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 MistOS
+     SPDX-License-Identifier: Apache-2.0
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/settings_page_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/settings_expressive_background">
+
+    <FrameLayout
+        android:id="@+id/settings_page_header"
+        android:layout_width="match_parent"
+        android:layout_height="248dp">
+
+        <com.android.launcher3.settings.expressive.ExpressiveShapeView
+            android:id="@+id/settings_page_header_shape"
+            android:layout_width="210dp"
+            android:layout_height="210dp"
+            android:layout_gravity="end|top"
+            android:layout_marginTop="48dp"
+            android:layout_marginEnd="-44dp"
+            android:alpha="0.18" />
+
+        <TextView
+            android:id="@+id/settings_page_header_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="-0.01"
+            android:maxLines="2"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="28dp"
+            android:textSize="42sp" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/settings_page_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <FrameLayout
+        android:id="@+id/settings_page_bar"
+        android:layout_width="match_parent"
+        android:layout_height="64dp">
+
+        <View
+            android:id="@+id/settings_page_bar_background"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:background="@color/settings_expressive_surface_high" />
+
+        <ImageButton
+            android:id="@+id/settings_page_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="10dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/settings_expressive_circle_button"
+            android:contentDescription="@string/settings_back"
+            android:src="@drawable/ic_settings_expressive_back"
+            android:tint="@color/settings_expressive_on_surface" />
+
+        <TextView
+            android:id="@+id/settings_page_bar_title"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_gravity="bottom"
+            android:alpha="0"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:paddingStart="72dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/settings_expressive_on_surface"
+            android:textSize="20sp" />
+    </FrameLayout>
+</FrameLayout>

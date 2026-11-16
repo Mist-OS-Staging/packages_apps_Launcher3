@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 MistOS
+     SPDX-License-Identifier: Apache-2.0
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="10dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <com.android.launcher3.settings.expressive.RecentsStylePreviewView
+        android:id="@+id/recents_style_preview"
+        android:layout_width="124dp"
+        android:layout_height="218dp" />
+
+    <TextView
+        android:id="@+id/recents_style_label"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:layout_marginTop="8dp"
+        android:drawablePadding="4dp"
+        android:gravity="center"
+        android:paddingHorizontal="12dp"
+        android:textSize="13sp" />
+</LinearLayout>

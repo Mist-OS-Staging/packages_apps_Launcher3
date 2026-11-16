@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 MistOS
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <color name="settings_expressive_background">@android:color/system_surface_container_dark</color>
+    <color name="settings_expressive_card">@android:color/system_surface_bright_dark</color>
+    <color name="settings_expressive_surface_high">@android:color/system_surface_container_high_dark</color>
+    <color name="settings_expressive_surface_highest">@android:color/system_surface_container_highest_dark</color>
+    <color name="settings_expressive_on_surface">@android:color/system_on_surface_dark</color>
+    <color name="settings_expressive_on_surface_variant">@android:color/system_on_surface_variant_dark</color>
+    <color name="settings_expressive_primary">@android:color/system_primary_dark</color>
+    <color name="settings_expressive_on_primary">@android:color/system_on_primary_dark</color>
+    <color name="settings_expressive_primary_container">@android:color/system_primary_container_dark</color>
+    <color name="settings_expressive_on_primary_container">@android:color/system_on_primary_container_dark</color>
+    <color name="settings_expressive_preview">@android:color/system_secondary_container_dark</color>
+    <color name="settings_expressive_outline_variant">@android:color/system_outline_variant_dark</color>
+</resources>

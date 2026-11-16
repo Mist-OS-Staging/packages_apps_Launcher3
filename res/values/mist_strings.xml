@@ -31,6 +31,15 @@
     <string name="recents_category_summary">Customize the Recents screen</string>
     <string name="misc_category_title">Miscellaneous</string>
     <string name="misc_category_summary">Other launcher options</string>
+    <string name="settings_tile_icons_summary">Size, packs, dots</string>
+    <string name="settings_tile_home_summary">Grid, labels, layout</string>
+    <string name="settings_tile_app_drawer_summary">Search, rows, pinned apps</string>
+    <string name="settings_tile_recents_summary">Style, buttons</string>
+    <string name="settings_tile_misc_summary">Gestures, motion</string>
+    <string name="settings_search_hint">Search settings</string>
+    <string name="settings_search_empty">No settings match your search</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_preview_search">Search</string>
     <string name="general_category_title">General</string>
     <string name="interface_category_title">Interface</string>
     <string name="actions_category_title">Quick actions</string>

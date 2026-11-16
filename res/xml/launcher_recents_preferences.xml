@@ -7,12 +7,9 @@
     <PreferenceCategory
         android:title="@string/general_category_title">
 
-        <ListPreference
+        <com.android.launcher3.settings.expressive.RecentsStylePreference
             android:key="pref_recents_style"
             android:title="@string/recents_style_title"
-            android:summary="%s"
-            android:entries="@array/recents_style_entries"
-            android:entryValues="@array/recents_style_values"
             android:defaultValue="default"
             android:persistent="true"
             launcher:iconSpaceReserved="false" />
