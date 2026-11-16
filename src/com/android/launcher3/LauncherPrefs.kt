@@ -278,6 +278,8 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
         @JvmField val OVERSCROLL_VELOCITY_SCALE = backedUpItem("pref_overscroll_velocity_scale", 25)
         @JvmField val SHOW_DESKTOP_LABELS = backedUpItem("pref_desktop_show_labels", true)
         @JvmField val SHOW_DRAWER_LABELS = backedUpItem("pref_drawer_show_labels", true)
+        @JvmField val PINNED_APPS =
+            backedUpItem("pref_all_apps_pinned_apps", emptySet<String>())
         @JvmField val WORKSPACE_LOCK = backedUpItem("pref_workspace_lock", false)
         @JvmField val ALLAPPS_THEMED_ICONS = backedUpItem("pref_allapps_themed_icons", false)
         @JvmField val ALLOW_WALLPAPER_ZOOMING = backedUpItem("pref_allow_wallpaper_zooming", true)

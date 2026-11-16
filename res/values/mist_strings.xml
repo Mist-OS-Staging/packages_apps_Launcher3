@@ -78,6 +78,11 @@
     <string name="desktop_show_labels">Show icon labels on Home screen</string>
     <string name="drawer_show_labels">Show icon labels in app drawer</string>
 
+    <!-- Pinned apps -->
+    <string name="pin_to_drawer">Pin to drawer</string>
+    <string name="unpin_from_drawer">Unpin from drawer</string>
+    <string name="title_pinned_apps">Pinned apps</string>
+
     <!-- Trust apps -->
     <string name="trust_apps_manager_name">Hidden &amp; protected apps</string>
     <string name="trust_apps_auth_manager">Unlock to manage hidden and protected apps</string>
