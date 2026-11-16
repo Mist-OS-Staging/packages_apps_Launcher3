@@ -17,6 +17,7 @@ package com.android.launcher3.allapps;
 
 import static com.android.launcher3.LauncherPrefs.PINNED_APPS;
 import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ORDER;
+import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ROWS;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -35,6 +36,7 @@ import com.android.launcher3.pm.UserCache;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -42,6 +44,8 @@ import java.util.Map;
 import java.util.Set;
 
 public final class PinnedAppsStore {
+
+    public static final String ROWS_SCROLL = "scroll";
 
     private static final String ORDER_SEPARATOR = ",";
     private static final char USER_SEPARATOR = '#';
@@ -152,6 +156,50 @@ public final class PinnedAppsStore {
             return Integer.compare(leftIndex, rightIndex);
         });
         return appInfos;
+    }
+
+    public static boolean isScrollMode(Context context) {
+        return ROWS_SCROLL.equals(LauncherPrefs.get(context).get(PINNED_APPS_ROWS));
+    }
+
+    public static int getMaxRows(Context context) {
+        String value = LauncherPrefs.get(context).get(PINNED_APPS_ROWS);
+        if (ROWS_SCROLL.equals(value)) {
+            return 1;
+        }
+        try {
+            int rows = Integer.parseInt(value);
+            return rows > 0 ? rows : Integer.MAX_VALUE;
+        } catch (NumberFormatException e) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    public static boolean hasRowLimit(Context context) {
+        return !isScrollMode(context) && getMaxRows(context) != Integer.MAX_VALUE;
+    }
+
+    public static int getShownCount(int pinnedCount, int columns, boolean scrollMode,
+            int maxRows) {
+        if (scrollMode || maxRows == Integer.MAX_VALUE || columns <= 0) {
+            return pinnedCount;
+        }
+        return (int) Math.min(pinnedCount, (long) maxRows * columns);
+    }
+
+    public static Set<String> getShownPinnedKeys(Context context, List<AppInfo> apps,
+            int columns) {
+        List<AppInfo> pinnedApps = getPinnedApps(context, apps);
+        int shown = getShownCount(pinnedApps.size(), columns, isScrollMode(context),
+                getMaxRows(context));
+        Set<String> keys = new HashSet<>();
+        for (int i = 0; i < shown; i++) {
+            String key = encode(context, pinnedApps.get(i));
+            if (key != null) {
+                keys.add(key);
+            }
+        }
+        return keys;
     }
 
     @Nullable

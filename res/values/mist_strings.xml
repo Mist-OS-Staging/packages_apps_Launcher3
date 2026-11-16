@@ -91,6 +91,20 @@
     <string name="pinned_apps_settings_empty">No pinned apps yet. Long-press an app in the app drawer and tap Pin to drawer.</string>
     <string name="pinned_apps_drag_description">Drag to reorder</string>
     <string name="pinned_apps_unpin_description">Unpin %1$s</string>
+    <string name="pinned_apps_settings_hint_limit">Apps that don\'t fit in the pinned rows stay in the A-Z list. Move an app higher here to show it in the pinned rows.</string>
+    <string name="pinned_apps_rows_title">Pinned apps layout</string>
+    <string-array name="pinned_apps_rows_entries">
+        <item>Show all</item>
+        <item>One row, swipe sideways</item>
+        <item>Up to 2 rows</item>
+        <item>Up to 3 rows</item>
+    </string-array>
+    <string-array name="pinned_apps_rows_values" translatable="false">
+        <item>all</item>
+        <item>scroll</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
 
     <!-- Trust apps -->
     <string name="trust_apps_manager_name">Hidden &amp; protected apps</string>

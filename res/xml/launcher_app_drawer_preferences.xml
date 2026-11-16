@@ -42,6 +42,15 @@
             android:targetClass="com.android.launcher3.settings.PinnedAppsSettings" />
     </Preference>
 
+    <ListPreference
+        android:key="pref_all_apps_pinned_apps_rows"
+        android:title="@string/pinned_apps_rows_title"
+        android:summary="%s"
+        android:entries="@array/pinned_apps_rows_entries"
+        android:entryValues="@array/pinned_apps_rows_values"
+        android:defaultValue="all"
+        android:persistent="true" />
+
     <SwitchPreferenceCompat
         android:key="pref_focus_mode"
         android:title="@string/pref_focus_mode_title"

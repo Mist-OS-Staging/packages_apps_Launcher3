@@ -18,6 +18,8 @@ package com.android.launcher3.allapps;
 import static android.multiuser.Flags.enableMovingContentIntoPrivateSpace;
 
 import static com.android.launcher3.LauncherPrefs.PINNED_APPS;
+import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ORDER;
+import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ROWS;
 import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_PRIVATESPACE;
 import static com.android.launcher3.allapps.BaseAllAppsAdapter.VIEW_TYPE_BOTTOM_VIEW_TO_SCROLL_TO;
 import static com.android.launcher3.allapps.BaseAllAppsAdapter.VIEW_TYPE_MASK_PRIVATE_SPACE_HEADER;
@@ -49,10 +51,12 @@ import com.android.launcher3.views.ActivityContext;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -132,7 +136,8 @@ public class AlphabeticalAppsList implements AllAppsStore.OnUpdateListener,
                 mActivityContext.getDeviceProfile().getAllAppsProfile().getNumShownAllAppsColumns();
         if (mAllAppsStore != null) {
             mAllAppsStore.addUpdateListener(this);
-            LauncherPrefs.get(context).addListener(this, PINNED_APPS);
+            LauncherPrefs.get(context).addListener(this, PINNED_APPS, PINNED_APPS_ORDER,
+                    PINNED_APPS_ROWS);
         }
         mPrivateProfileAppScrollerBadge = new SpannableString(" ");
         mPrivateProfileAppScrollerBadge.setSpan(new ImageSpan(context, Flags.letterFastScroller()
@@ -151,7 +156,12 @@ public class AlphabeticalAppsList implements AllAppsStore.OnUpdateListener,
             return;
         }
         mNumAppsPerRowAllApps = numAppsPerRow;
-        updateAdapterItems();
+        if (mAllAppsStore != null
+                && PinnedAppsStore.hasRowLimit(mActivityContext.asContext())) {
+            onAppsUpdated();
+        } else {
+            updateAdapterItems();
+        }
     }
 
     public void updateItemFilter(Predicate<ItemInfo> itemFilter) {
@@ -240,7 +250,9 @@ public class AlphabeticalAppsList implements AllAppsStore.OnUpdateListener,
 
     @Override
     public void onPrefChanged(String key) {
-        if (PINNED_APPS.getSharedPrefKey().equals(key)) {
+        if (PINNED_APPS.getSharedPrefKey().equals(key)
+                || PINNED_APPS_ORDER.getSharedPrefKey().equals(key)
+                || PINNED_APPS_ROWS.getSharedPrefKey().equals(key)) {
             onAppsUpdated();
         }
     }
@@ -261,9 +273,12 @@ public class AlphabeticalAppsList implements AllAppsStore.OnUpdateListener,
         mPrivateApps.clear();
 
         // Filter against private space app that may show outside of Private Profile.
+        Context context = mActivityContext.asContext();
+        Set<String> shownPinnedKeys = PinnedAppsStore.getShownPinnedKeys(context,
+                Arrays.asList(mAllAppsStore.getApps()), mNumAppsPerRowAllApps);
         Stream<AppInfo> appSteam = Stream.of(mAllAppsStore.getApps()).filter(
-                info -> !isPrivateSpaceApp(info)
-                        && !PinnedAppsStore.isPinned(mActivityContext.asContext(), info));
+                info -> !isPrivateSpaceApp(info) && (shownPinnedKeys.isEmpty()
+                        || !shownPinnedKeys.contains(PinnedAppsStore.encode(context, info))));
         Stream<AppInfo> privateAppStream = Stream.of(mAllAppsStore.getApps());
 
         if (!hasSearchResults() && mItemFilter != null) {

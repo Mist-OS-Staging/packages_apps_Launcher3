@@ -237,9 +237,16 @@ public final class PinnedAppsSettings extends CollapsingToolbarBaseActivity {
             @Override
             public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
                 if (holder instanceof HeaderHolder header) {
-                    header.text.setText(mLoaded && mEntries.isEmpty()
-                            ? R.string.pinned_apps_settings_empty
-                            : R.string.pinned_apps_settings_hint);
+                    Context context = header.itemView.getContext();
+                    if (mLoaded && mEntries.isEmpty()) {
+                        header.text.setText(R.string.pinned_apps_settings_empty);
+                    } else if (PinnedAppsStore.hasRowLimit(context)) {
+                        header.text.setText(context.getString(R.string.pinned_apps_settings_hint)
+                                + "\n\n"
+                                + context.getString(R.string.pinned_apps_settings_hint_limit));
+                    } else {
+                        header.text.setText(R.string.pinned_apps_settings_hint);
+                    }
                 } else if (holder instanceof AppHolder app) {
                     app.bind(mEntries.get(position - 1));
                 }
