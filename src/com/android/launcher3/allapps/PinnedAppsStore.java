@@ -34,9 +34,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class PinnedApps {
+public final class PinnedAppsStore {
 
-    private PinnedApps() { }
+    private PinnedAppsStore() { }
 
     public static boolean isPinned(Context context, ItemInfo itemInfo) {
         String key = encode(context, itemInfo);
@@ -54,20 +54,15 @@ public final class PinnedApps {
         }
     }
 
+    public static Set<String> getPinnedKeys(Context context) {
+        return LauncherPrefs.get(context).get(PINNED_APPS);
+    }
+
     public static List<WorkspaceItemInfo> getPinnedWorkspaceItems(
             Context context, AllAppsStore allAppsStore) {
-        Set<String> pinnedApps = LauncherPrefs.get(context).get(PINNED_APPS);
-        if (pinnedApps.isEmpty()) {
-            return Collections.emptyList();
-        }
-
         List<AppInfo> appInfos = new ArrayList<>();
-        for (AppInfo appInfo : allAppsStore.getApps()) {
-            if (pinnedApps.contains(encode(context, appInfo))) {
-                appInfos.add(appInfo);
-            }
-        }
-        appInfos.sort(new AppInfoComparator(context));
+        Collections.addAll(appInfos, allAppsStore.getApps());
+        appInfos = getPinnedApps(context, appInfos);
 
         List<WorkspaceItemInfo> items = new ArrayList<>(appInfos.size());
         for (AppInfo appInfo : appInfos) {
@@ -76,8 +71,24 @@ public final class PinnedApps {
         return items;
     }
 
+    public static List<AppInfo> getPinnedApps(Context context, List<AppInfo> apps) {
+        Set<String> pinnedApps = getPinnedKeys(context);
+        if (pinnedApps.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<AppInfo> appInfos = new ArrayList<>();
+        for (AppInfo appInfo : apps) {
+            if (pinnedApps.contains(encode(context, appInfo))) {
+                appInfos.add(appInfo);
+            }
+        }
+        appInfos.sort(new AppInfoComparator(context));
+        return appInfos;
+    }
+
     @Nullable
-    static String encode(Context context, ItemInfo itemInfo) {
+    public static String encode(Context context, ItemInfo itemInfo) {
         ComponentName componentName = itemInfo.getTargetComponent();
         if (componentName == null || itemInfo.user == null) {
             return null;

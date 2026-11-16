@@ -50,7 +50,7 @@ import com.android.launcher3.R;
 import com.android.launcher3.SecondaryDropTarget;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
-import com.android.launcher3.allapps.PinnedApps;
+import com.android.launcher3.allapps.PinnedAppsStore;
 import com.android.launcher3.allapps.PrivateProfileManager;
 import com.android.launcher3.customization.InfoBottomSheet;
 import com.android.launcher3.dagger.LauncherComponentProvider;
@@ -357,7 +357,7 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
 
         public PinToDrawer(T target, ItemInfo itemInfo, @NonNull View originalView) {
             this(target, itemInfo, originalView,
-                    PinnedApps.isPinned(originalView.getContext(), itemInfo));
+                    PinnedAppsStore.isPinned(originalView.getContext(), itemInfo));
         }
 
         private PinToDrawer(T target, ItemInfo itemInfo, @NonNull View originalView,
@@ -370,7 +370,7 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
 
         @Override
         public void onClick(View view) {
-            PinnedApps.setPinned(view.getContext(), mItemInfo, !mIsPinned);
+            PinnedAppsStore.setPinned(view.getContext(), mItemInfo, !mIsPinned);
             AbstractFloatingView.closeAllOpenViews(mTarget);
         }
     }

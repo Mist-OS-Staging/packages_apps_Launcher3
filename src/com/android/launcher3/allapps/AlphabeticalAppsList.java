@@ -259,7 +259,7 @@ public class AlphabeticalAppsList implements AllAppsStore.OnUpdateListener,
         // Filter against private space app that may show outside of Private Profile.
         Stream<AppInfo> appSteam = Stream.of(mAllAppsStore.getApps()).filter(
                 info -> !isPrivateSpaceApp(info)
-                        && !PinnedApps.isPinned(mActivityContext.asContext(), info));
+                        && !PinnedAppsStore.isPinned(mActivityContext.asContext(), info));
         Stream<AppInfo> privateAppStream = Stream.of(mAllAppsStore.getApps());
 
         if (!hasSearchResults() && mItemFilter != null) {

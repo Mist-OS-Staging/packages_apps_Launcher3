@@ -209,7 +209,7 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
 
     private void updatePinnedApps() {
         mPinnedApps.clear();
-        mPinnedApps.addAll(PinnedApps.getPinnedWorkspaceItems(getContext(), mAllAppsStore));
+        mPinnedApps.addAll(PinnedAppsStore.getPinnedWorkspaceItems(getContext(), mAllAppsStore));
         applyPinnedApps();
     }
 
@@ -239,11 +239,8 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
             }
         }
 
-        boolean pinnedAppsVisible = pinnedCount > 0;
-        if (pinnedAppsVisible != mPinnedAppsVisible) {
-            mPinnedAppsVisible = pinnedAppsVisible;
-            updateVisibility();
-        }
+        mPinnedAppsVisible = pinnedCount > 0;
+        updateVisibility();
         if (mParent != null) {
             mParent.onHeightUpdated();
         }
@@ -287,7 +284,6 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
             lp.weight = 1;
             iconRow.addView(icon);
         }
-        mAllAppsStore.registerIconContainer(iconRow);
         return iconRow;
     }
 
