@@ -48,6 +48,9 @@ import com.android.launcher3.taskbar.TaskbarUiState;
 import com.android.launcher3.taskbar.allapps.TaskbarAllAppsViewController.TaskbarAllAppsCallbacks;
 import com.android.launcher3.taskbar.overlay.TaskbarOverlayContext;
 import com.android.launcher3.util.Themes;
+import com.android.launcher3.LauncherPrefs;
+
+import androidx.core.graphics.ColorUtils;
 import com.android.launcher3.views.AbstractSlideInView;
 
 import java.util.function.Consumer;
@@ -264,7 +267,9 @@ public class TaskbarAllAppsSlideInView extends AbstractSlideInView<TaskbarOverla
 
     @Override
     protected int getScrimColor(Context context) {
-        return Themes.getAttrColor(context, R.attr.allAppsScrimColor);
+        return ColorUtils.setAlphaComponent(
+                Themes.getAttrColor(context, R.attr.allAppsScrimColor),
+                LauncherPrefs.APP_DRAWER_OPACITY.get(context) * 255 / 100);
     }
 
     @Override

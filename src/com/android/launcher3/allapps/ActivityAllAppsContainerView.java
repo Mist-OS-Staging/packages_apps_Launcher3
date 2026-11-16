@@ -880,15 +880,25 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     protected int getHeaderColor(float blendRatio) {
+        int opacity = getDrawerOpacity();
         return isBackgroundBlurEnabled()
-                ? ColorUtils.setAlphaComponent(mHeaderProtectionColor, (int) (blendRatio * 255))
-                : ColorUtils.blendARGB(getBackgroundColor(), mHeaderProtectionColor, blendRatio);
+                ? ColorUtils.setAlphaComponent(mHeaderProtectionColor,
+                        (int) (blendRatio * opacity * 255 / 100))
+                : ColorUtils.setAlphaComponent(
+                        ColorUtils.blendARGB(getBackgroundColor(), mHeaderProtectionColor,
+                                blendRatio),
+                        opacity * 255 / 100);
     }
 
     int getBackgroundColor() {
-        return isBackgroundBlurEnabled()
+        int color = isBackgroundBlurEnabled()
                 ? mBottomSheetBackgroundColorOverBlur
                 : mBottomSheetBackgroundColorBlurFallback;
+        return ColorUtils.setAlphaComponent(color, getDrawerOpacity() * 255 / 100);
+    }
+
+    private int getDrawerOpacity() {
+        return Math.max(0, Math.min(100, LauncherPrefs.APP_DRAWER_OPACITY.get(getContext())));
     }
 
     boolean isBackgroundBlurEnabled() {
