@@ -101,6 +101,15 @@ public class AppsDividerView extends View implements FloatingHeaderRow {
 
     /** {@code true} if all apps label should be shown in place of divider. */
     public void setShowAllAppsLabel(boolean showAllAppsLabel) {
+        for (FloatingHeaderRow row : mRows) {
+            if (row != this && row instanceof AppsDividerView divider) {
+                divider.applyShowAllAppsLabel(showAllAppsLabel);
+            }
+        }
+        applyShowAllAppsLabel(showAllAppsLabel);
+    }
+
+    private void applyShowAllAppsLabel(boolean showAllAppsLabel) {
         if (mAccessibilityManager.isEnabled() && !Utilities.isRunningInTestHarness()) {
             showAllAppsLabel = true;
         }
@@ -130,22 +139,30 @@ public class AppsDividerView extends View implements FloatingHeaderRow {
         if (!mTabsHidden) {
             dividerType = DividerType.NONE;
         } else {
-            // Check how many sections above me.
-            int sectionCount = 0;
-            for (FloatingHeaderRow row : mRows) {
-                if (row == this) {
+            FloatingHeaderRow previousRow = null;
+            int dividerIndex = 0;
+            for (int i = 0; i < mRows.length; i++) {
+                if (mRows[i] == this) {
+                    dividerIndex = i;
                     break;
-                } else if (row.shouldDraw()) {
-                    sectionCount++;
                 }
+                previousRow = mRows[i];
             }
-
-            if (mShowAllAppsLabel && sectionCount > 0) {
-                dividerType = DividerType.ALL_APPS_LABEL;
-            } else if (sectionCount == 1) {
-                dividerType = DividerType.LINE;
-            } else {
+            if (previousRow == null || !previousRow.shouldDraw()) {
                 dividerType = DividerType.NONE;
+            } else {
+                boolean aboveAppGrid = true;
+                for (int i = dividerIndex + 1; i < mRows.length; i++) {
+                    if (!(mRows[i] instanceof AppsDividerView) && mRows[i].shouldDraw()) {
+                        aboveAppGrid = false;
+                        break;
+                    }
+                }
+                if (mShowAllAppsLabel && aboveAppGrid) {
+                    dividerType = DividerType.ALL_APPS_LABEL;
+                } else {
+                    dividerType = DividerType.LINE;
+                }
             }
         }
 
