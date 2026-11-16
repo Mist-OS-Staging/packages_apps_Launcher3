@@ -34,8 +34,11 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -422,7 +425,7 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
 
     private HorizontalScrollView createScrollRow() {
         int cellHeight = mActivityContext.getDeviceProfile().getAllAppsProfile().getCellHeightPx();
-        HorizontalScrollView scrollView = new HorizontalScrollView(getContext());
+        HorizontalScrollView scrollView = new PinnedAppsScrollView(getContext());
         scrollView.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 cellHeight));
         scrollView.setHorizontalScrollBarEnabled(false);
@@ -485,6 +488,56 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
                 mAllAppsStore.registerIconContainer(iconRow);
             } else {
                 mAllAppsStore.unregisterIconContainer(iconRow);
+            }
+        }
+    }
+
+    private static final class PinnedAppsScrollView extends HorizontalScrollView {
+
+        private final int mTouchSlop;
+        private float mDownX;
+        private float mDownY;
+        private boolean mDirectionDecided;
+
+        PinnedAppsScrollView(Context context) {
+            super(context);
+            mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        }
+
+        @Override
+        public boolean dispatchTouchEvent(MotionEvent ev) {
+            switch (ev.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    mDownX = ev.getX();
+                    mDownY = ev.getY();
+                    mDirectionDecided = false;
+                    disallowParentIntercept(canScrollHorizontally(1)
+                            || canScrollHorizontally(-1));
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (!mDirectionDecided) {
+                        float dx = Math.abs(ev.getX() - mDownX);
+                        float dy = Math.abs(ev.getY() - mDownY);
+                        if (dx > mTouchSlop || dy > mTouchSlop) {
+                            mDirectionDecided = true;
+                            disallowParentIntercept(dx > dy);
+                        }
+                    }
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    disallowParentIntercept(false);
+                    break;
+                default:
+                    break;
+            }
+            return super.dispatchTouchEvent(ev);
+        }
+
+        private void disallowParentIntercept(boolean disallow) {
+            ViewParent parent = getParent();
+            if (parent != null) {
+                parent.requestDisallowInterceptTouchEvent(disallow);
             }
         }
     }
