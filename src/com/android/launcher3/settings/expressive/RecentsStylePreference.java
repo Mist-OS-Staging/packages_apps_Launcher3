@@ -26,7 +26,6 @@ public class RecentsStylePreference extends Preference {
     private final CharSequence[] mEntries;
     private final CharSequence[] mValues;
     private String mValue = RecentsStylePreviewView.STYLE_DEFAULT;
-    private boolean mDemoPlayed;
 
     public RecentsStylePreference(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -63,6 +62,7 @@ public class RecentsStylePreference extends Preference {
             preview.setShowClearAll(showClearAll);
             boolean chosen = value.equals(mValue);
             preview.setChosen(chosen, false);
+            preview.setLoopDelay(450L + i * 220L);
             TextView label = option.findViewById(R.id.recents_style_label);
             label.setText(mEntries[i]);
             styleLabel(label, chosen);
@@ -71,11 +71,7 @@ public class RecentsStylePreference extends Preference {
             option.setOnClickListener(v -> select(value, options));
             ExpressiveMotion.attachPress(option, null, 0, 0, 0.95f, null, 0);
             options.addView(option);
-            if (!mDemoPlayed) {
-                preview.postDelayed(preview::playDemo, 450L + i * 160L);
-            }
         }
-        mDemoPlayed = true;
     }
 
     private void select(String value, LinearLayout options) {

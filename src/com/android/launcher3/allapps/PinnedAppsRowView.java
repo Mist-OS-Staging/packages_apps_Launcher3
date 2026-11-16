@@ -23,10 +23,8 @@ import static com.android.launcher3.LauncherPrefs.PINNED_APPS_ROWS;
 import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_ALL_APPS;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
@@ -77,7 +75,6 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
     private static final int CARD_PADDING_TOP_DP = 14;
     private static final int CARD_PADDING_BOTTOM_DP = 4;
     private static final int TITLE_TEXT_SIZE_SP = 14;
-    private static final int TITLE_ICON_SIZE_DP = 16;
     private static final int TITLE_GAP_DP = 6;
 
     private final ActivityContext mActivityContext;
@@ -124,10 +121,8 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         int textColor = Themes.getAttrColor(context, android.R.attr.textColorPrimary);
         float titleTextSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
                 TITLE_TEXT_SIZE_SP, getResources().getDisplayMetrics());
-        int titleIconSize = dp(TITLE_ICON_SIZE_DP);
         int titleGap = dp(TITLE_GAP_DP);
-        mTitleHeight = Math.max(Utilities.calculateTextHeight(titleTextSize), titleIconSize)
-                + titleGap;
+        mTitleHeight = Utilities.calculateTextHeight(titleTextSize) + titleGap;
         mTitleView = new TextView(context);
         mTitleView.setText(R.string.title_pinned_apps);
         mTitleView.setTextColor(textColor);
@@ -137,14 +132,6 @@ public class PinnedAppsRowView extends LinearLayout implements OnDeviceProfileCh
         mTitleView.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
         mTitleView.setPaddingRelative(titleGap * 2, 0, titleGap * 2, titleGap);
         mTitleView.setAccessibilityHeading(true);
-        Drawable pinIcon = context.getDrawable(R.drawable.ic_pin);
-        if (pinIcon != null) {
-            pinIcon = pinIcon.mutate();
-            pinIcon.setBounds(0, 0, titleIconSize, titleIconSize);
-            mTitleView.setCompoundDrawablesRelative(pinIcon, null, null, null);
-            mTitleView.setCompoundDrawablePadding(titleGap);
-            mTitleView.setCompoundDrawableTintList(ColorStateList.valueOf(textColor));
-        }
         addView(mTitleView, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mTitleHeight));
 
         readLayoutPrefs();

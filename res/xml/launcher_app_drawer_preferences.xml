@@ -49,7 +49,8 @@
         android:entries="@array/pinned_apps_rows_entries"
         android:entryValues="@array/pinned_apps_rows_values"
         android:defaultValue="all"
-        android:persistent="true" />
+        android:persistent="true"
+        launcher:iconSpaceReserved="false" />
 
     <SwitchPreferenceCompat
         android:key="pref_focus_mode"

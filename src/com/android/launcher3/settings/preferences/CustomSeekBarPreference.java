@@ -33,6 +33,7 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceViewHolder;
 
 import com.android.launcher3.R;
+import com.android.launcher3.settings.expressive.LivePreviewValues;
 import com.android.settingslib.widget.SliderPreference;
 
 import com.google.android.material.slider.LabelFormatter;
@@ -266,6 +267,24 @@ public class CustomSeekBarPreference extends SliderPreference {
                     mInUserDrag = false;
                     applyUserValue(Math.round(s.getValue()), s);
                     updatePlusMinusEnabledStates(holder);
+                }
+            });
+        }
+
+        if (slider != null) {
+            slider.addOnChangeListener((s, value, fromUser) -> {
+                if (fromUser && mInUserDrag) {
+                    LivePreviewValues.set(getKey(), Math.round(value));
+                }
+            });
+            slider.addOnSliderTouchListener(new Slider.OnSliderTouchListener() {
+                @Override
+                public void onStartTrackingTouch(@NonNull Slider s) {
+                }
+
+                @Override
+                public void onStopTrackingTouch(@NonNull Slider s) {
+                    LivePreviewValues.clear(getKey());
                 }
             });
         }

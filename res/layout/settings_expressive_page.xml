@@ -42,6 +42,22 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <View
+        android:id="@+id/settings_page_preview_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:background="@color/settings_expressive_surface_high"
+        android:visibility="gone" />
+
+    <com.android.launcher3.settings.expressive.HomePreviewView
+        android:id="@+id/settings_page_preview"
+        android:layout_width="match_parent"
+        android:layout_height="236dp"
+        android:layout_marginHorizontal="16dp"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
     <FrameLayout
         android:id="@+id/settings_page_bar"
         android:layout_width="match_parent"

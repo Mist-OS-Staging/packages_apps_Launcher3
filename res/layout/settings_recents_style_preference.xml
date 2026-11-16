@@ -18,7 +18,7 @@
         android:textColor="@color/settings_expressive_on_surface"
         android:textSize="16sp" />
 
-    <HorizontalScrollView
+    <com.android.launcher3.settings.expressive.SmoothHorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
@@ -32,5 +32,5 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal" />
-    </HorizontalScrollView>
+    </com.android.launcher3.settings.expressive.SmoothHorizontalScrollView>
 </LinearLayout>

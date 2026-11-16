@@ -15,6 +15,7 @@ import android.util.TypedValue;
 import android.view.View;
 
 import androidx.annotation.Nullable;
+import androidx.dynamicanimation.animation.DynamicAnimation;
 import androidx.dynamicanimation.animation.FloatValueHolder;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
@@ -33,6 +34,8 @@ public class RecentsStylePreviewView extends View {
     public static final String STYLE_HORIZONTAL = "miui_horizontal";
 
     private static final int CARD_COUNT = 6;
+    private static final long LOOP_PERIOD_MS = 3400L;
+    private static final long LOOP_RETURN_MS = 1500L;
     private static final int[] HEADER_COLORS = {
             R.color.homepage_blue_bg, R.color.homepage_orange_bg, R.color.homepage_yellow_bg,
             R.color.homepage_red_bg, R.color.homepage_cyan_bg, R.color.homepage_blue_bg,
@@ -51,12 +54,32 @@ public class RecentsStylePreviewView extends View {
     private final Path mCardClip = new Path();
     private final float[][] mTransforms = new float[CARD_COUNT][6];
     private final Integer[] mOrder = new Integer[CARD_COUNT];
+    private final FloatValueHolder mScrollHolder = new FloatValueHolder(0f);
     private final SpringAnimation mScrollSpring;
     private final SpringAnimation mSelectSpring;
     private String mStyle = STYLE_DEFAULT;
     private float mScroll;
     private float mSelectProgress;
     private boolean mShowClearAll = true;
+    private long mLoopDelay;
+    private boolean mLooping;
+    private final Runnable mReturn = new Runnable() {
+        @Override
+        public void run() {
+            mScrollSpring.animateToFinalPosition(0f);
+        }
+    };
+    private final Runnable mLoop = new Runnable() {
+        @Override
+        public void run() {
+            if (!mLooping) {
+                return;
+            }
+            mScrollSpring.animateToFinalPosition(STYLE_GRID.equals(mStyle) ? 1f : -1.15f);
+            postDelayed(mReturn, LOOP_RETURN_MS);
+            postDelayed(this, LOOP_PERIOD_MS);
+        }
+    };
 
     public RecentsStylePreviewView(Context context) {
         this(context, null);
@@ -79,9 +102,9 @@ public class RecentsStylePreviewView extends View {
             mOrder[i] = i;
         }
 
-        FloatValueHolder scroll = new FloatValueHolder(0f);
-        mScrollSpring = new SpringAnimation(scroll);
-        mScrollSpring.setSpring(new SpringForce(0f).setStiffness(90f).setDampingRatio(0.7f));
+        mScrollSpring = new SpringAnimation(mScrollHolder);
+        mScrollSpring.setMinimumVisibleChange(DynamicAnimation.MIN_VISIBLE_CHANGE_SCALE);
+        mScrollSpring.setSpring(new SpringForce(0f).setStiffness(110f).setDampingRatio(0.78f));
         mScrollSpring.addUpdateListener((a, value, velocity) -> {
             mScroll = value;
             invalidate();
@@ -89,6 +112,7 @@ public class RecentsStylePreviewView extends View {
 
         FloatValueHolder select = new FloatValueHolder(0f);
         mSelectSpring = new SpringAnimation(select);
+        mSelectSpring.setMinimumVisibleChange(DynamicAnimation.MIN_VISIBLE_CHANGE_SCALE);
         mSelectSpring.setSpring(new SpringForce(0f)
                 .setStiffness(ExpressiveMotion.SPATIAL_STIFFNESS).setDampingRatio(0.6f));
         mSelectSpring.addUpdateListener((a, value, velocity) -> {
@@ -117,10 +141,50 @@ public class RecentsStylePreviewView extends View {
         }
     }
 
+    public void setLoopDelay(long delayMs) {
+        mLoopDelay = delayMs;
+    }
+
     public void playDemo() {
-        float target = STYLE_GRID.equals(mStyle) ? 1f : -1.15f;
-        mScrollSpring.animateToFinalPosition(target);
-        postDelayed(() -> mScrollSpring.animateToFinalPosition(0f), 900);
+        stopLoop();
+        mLooping = isAttachedToWindow() && isShown();
+        if (mLooping) {
+            mLoop.run();
+        }
+    }
+
+    private void startLoop(long delayMs) {
+        if (mLooping) {
+            return;
+        }
+        mLooping = true;
+        postDelayed(mLoop, delayMs);
+    }
+
+    private void stopLoop() {
+        mLooping = false;
+        removeCallbacks(mLoop);
+        removeCallbacks(mReturn);
+    }
+
+    @Override
+    public void onVisibilityAggregated(boolean isVisible) {
+        super.onVisibilityAggregated(isVisible);
+        if (isVisible && isAttachedToWindow()) {
+            startLoop(mLoopDelay);
+        } else {
+            stopLoop();
+            mScrollSpring.animateToFinalPosition(0f);
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        stopLoop();
+        mScrollSpring.cancel();
+        mScrollHolder.setValue(0f);
+        mScroll = 0f;
+        super.onDetachedFromWindow();
     }
 
     @Override

@@ -22,7 +22,6 @@ import android.widget.TextView;
 import androidx.dynamicanimation.animation.DynamicAnimation;
 
 import com.android.launcher3.R;
-import com.android.launcher3.settings.SettingsHomescreen;
 
 public class HomeSettingsActivity extends Activity {
 
@@ -41,7 +40,6 @@ public class HomeSettingsActivity extends Activity {
             SettingsCategory.MISC,
     };
 
-    private HomePreviewView mPreview;
     private View mBar;
     private View mTitle;
     private boolean mBarShown;
@@ -56,7 +54,6 @@ public class HomeSettingsActivity extends Activity {
         View content = findViewById(R.id.settings_home_content);
         mBar = findViewById(R.id.settings_home_bar);
         mTitle = findViewById(R.id.settings_home_title);
-        mPreview = findViewById(R.id.settings_home_preview);
 
         int titleTop = mTitle.getPaddingTop();
         int contentBottom = content.getPaddingBottom();
@@ -77,9 +74,6 @@ public class HomeSettingsActivity extends Activity {
         scroll.setOnScrollChangeListener((v, x, y, oldX, oldY) ->
                 setBarShown(y > mTitle.getHeight() - mBar.getHeight()));
 
-        mPreview.setOnClickListener(v -> openCategory(v, SettingsHomescreen.class));
-        ExpressiveMotion.attachPress(mPreview, null, 0, 0, 0.97f, null, 0);
-
         View search = findViewById(R.id.settings_home_search);
         search.setOnClickListener(v -> startActivity(
                 new Intent(this, SettingsSearchActivity.class)));
@@ -95,12 +89,6 @@ public class HomeSettingsActivity extends Activity {
                 ExpressiveMotion.enter(group.getChildAt(i), dp(48), 40L * i);
             }
         }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mPreview.refresh();
     }
 
     private void bindTile(View tile, SettingsCategory category, boolean tall) {
