@@ -37,8 +37,8 @@ public abstract class ExpressiveSettingsActivity extends FragmentActivity {
 
     private static final int HEADER_HEIGHT_DP = 248;
     private static final int BAR_HEIGHT_DP = 64;
-    private static final int PREVIEW_HEIGHT_DP = 236;
-    private static final float PREVIEW_MIN_SCALE = 0.7f;
+    private static final int PREVIEW_HEIGHT_DP = 320;
+    private static final float PREVIEW_MIN_SCALE = 0.6f;
 
     private View mHeader;
     private ExpressiveShapeView mHeaderShape;

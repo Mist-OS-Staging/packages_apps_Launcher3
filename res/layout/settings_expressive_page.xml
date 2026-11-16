@@ -53,7 +53,7 @@
     <com.android.launcher3.settings.expressive.HomePreviewView
         android:id="@+id/settings_page_preview"
         android:layout_width="match_parent"
-        android:layout_height="236dp"
+        android:layout_height="320dp"
         android:layout_marginHorizontal="16dp"
         android:importantForAccessibility="no"
         android:visibility="gone" />
