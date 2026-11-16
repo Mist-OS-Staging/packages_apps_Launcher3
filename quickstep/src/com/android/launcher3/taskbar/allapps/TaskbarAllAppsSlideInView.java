@@ -49,6 +49,7 @@ import com.android.launcher3.taskbar.allapps.TaskbarAllAppsViewController.Taskba
 import com.android.launcher3.taskbar.overlay.TaskbarOverlayContext;
 import com.android.launcher3.util.Themes;
 import com.android.launcher3.LauncherPrefs;
+import com.android.quickstep.util.BaseDepthControllerImpl;
 
 import androidx.core.graphics.ColorUtils;
 import com.android.launcher3.views.AbstractSlideInView;
@@ -83,7 +84,7 @@ public class TaskbarAllAppsSlideInView extends AbstractSlideInView<TaskbarOverla
         mHandler = new Handler(Looper.myLooper());
         mMaxBlurRadius = shouldReduceWorkspaceBlurUsage(context)
                 ? 0
-                : getResources().getDimensionPixelSize(R.dimen.max_depth_blur_radius_enhanced);
+                : BaseDepthControllerImpl.getMaxBlurRadius(context);
     }
 
     void init(TaskbarAllAppsCallbacks callbacks, TaskbarUiState taskbarUiState) {

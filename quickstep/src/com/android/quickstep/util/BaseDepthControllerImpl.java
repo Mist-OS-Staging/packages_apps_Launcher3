@@ -32,8 +32,8 @@ import androidx.annotation.Nullable;
 
 import com.android.app.animation.Interpolators;
 import com.android.launcher3.Flags;
+import com.android.launcher3.LauncherPrefChangeListener;
 import com.android.launcher3.LauncherPrefs;
-import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.anim.AnimatedFloat;
 import com.android.launcher3.statehandlers.BaseDepthController;
@@ -89,7 +89,7 @@ public class BaseDepthControllerImpl<
     /**
      * Blur radius when completely zoomed out, in pixels.
      */
-    protected final int mMaxBlurRadius;
+    protected int mMaxBlurRadius;
     protected final WallpaperManager mWallpaperManager;
     protected boolean mCrossWindowBlursEnabled;
 
@@ -128,6 +128,17 @@ public class BaseDepthControllerImpl<
     protected boolean mWaitingOnSurfaceValidity;
 
     private SurfaceControl mBlurSurface = null;
+
+    private final LauncherPrefChangeListener mBlurDepthListener =
+            new LauncherPrefChangeListener() {
+                @Override
+                public void onPrefChanged(String key) {
+                    if (LauncherPrefs.BLUR_DEPTH.getSharedPrefKey().equals(key)) {
+                        mMaxBlurRadius = getMaxBlurRadius(mContainer);
+                        applyDepthAndBlur();
+                    }
+                }
+            };
     /**
      * Info for early wakeup requests to SurfaceFlinger.
      */
@@ -136,8 +147,7 @@ public class BaseDepthControllerImpl<
     public BaseDepthControllerImpl(CONTAINER container, ListenableRef<Boolean> blurState) {
         mContainer = container;
         mCrossWindowBlursEnabled = blurState.getValue();
-        mMaxBlurRadius = container.getResources().getDimensionPixelSize(
-                R.dimen.max_depth_blur_radius_enhanced);
+        mMaxBlurRadius = getMaxBlurRadius(container);
         mWallpaperManager = container.getSystemService(WallpaperManager.class);
 
         MultiPropertyFactory<BaseDepthControllerImpl<?, ?>> depthProperty =
@@ -157,6 +167,10 @@ public class BaseDepthControllerImpl<
         mEarlyWakeupInfo.token = new Binder();
         mEarlyWakeupInfo.trace = BaseDepthControllerImpl.class.getName();
 
+        LauncherPrefs.get(container).addListener(mBlurDepthListener, LauncherPrefs.BLUR_DEPTH);
+        mContainer.closeOnDestroy(() -> LauncherPrefs.get(container)
+                .removeListener(mBlurDepthListener, LauncherPrefs.BLUR_DEPTH));
+
         mContainer.closeOnDestroy(blurState.forEach(mContainer.getUiExecutor(), blurEnabled -> {
             if (mCrossWindowBlursEnabled == blurEnabled) {
                 return null;
@@ -166,6 +180,12 @@ public class BaseDepthControllerImpl<
             applyDepthAndBlur();
             return null;
         }));
+    }
+
+    /** Max blur radius in pixels, from the background blur depth setting (in dp). */
+    public static int getMaxBlurRadius(Context context) {
+        int depth = Math.max(0, LauncherPrefs.BLUR_DEPTH.get(context));
+        return Utilities.dpToPx(depth, context);
     }
 
     @Override

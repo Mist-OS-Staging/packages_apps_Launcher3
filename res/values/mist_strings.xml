@@ -155,6 +155,8 @@
 
     <!-- Background opacity -->
     <string name="background_opacity_title">Background opacity</string>
+    <string name="background_blur_title">Background blur depth</string>
+    <string name="background_blur_summary">Set blur depth level for recents and app drawer</string>
 
     <!-- Search bar -->
     <string name="pref_show_hotseat_qsb_title">Show search bar</string>

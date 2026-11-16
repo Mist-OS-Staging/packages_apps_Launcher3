@@ -20,6 +20,7 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -70,6 +71,7 @@ public class SettingsMisc extends ExpressiveSettingsActivity
     public static final String SAVE_HIGHLIGHTED_KEY = "android:preference_highlighted";
 
     public static final String KEY_TRUST_APPS = "pref_trust_apps";
+    public static final String KEY_BLUR_DEPTH = "pref_blur_depth";
 
     @Override
     protected SettingsCategory getSettingsCategory() {
@@ -274,6 +276,10 @@ public class SettingsMisc extends ExpressiveSettingsActivity
                 return true;
             }
             switch (key) {
+                case KEY_BLUR_DEPTH: {
+                    WindowManager wm = getContext().getSystemService(WindowManager.class);
+                    return wm != null && wm.isCrossWindowBlurEnabled();
+                }
                 case DEVELOPER_OPTIONS_KEY:
                     if (IS_STUDIO_BUILD) {
                         preference.setOrder(0);
