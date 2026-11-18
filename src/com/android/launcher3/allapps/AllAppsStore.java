@@ -27,10 +27,13 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.dagger.ActivityContextSingleton;
+import com.android.launcher3.graphics.ThemeManager;
 import com.android.launcher3.icons.FastBitmapDrawable;
+import com.android.launcher3.icons.IconShape;
 import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.model.data.AppsListData;
 import com.android.launcher3.model.data.ItemInfo;
@@ -38,6 +41,7 @@ import com.android.launcher3.model.data.ItemInfoWithIcon;
 import com.android.launcher3.model.repository.AppsListRepository;
 import com.android.launcher3.popup.PopupContainer;
 import com.android.launcher3.util.ComponentKey;
+import com.android.launcher3.util.ListenableRef;
 import com.android.launcher3.util.PackageUserKey;
 import com.android.launcher3.views.ActivityContext;
 
@@ -82,6 +86,7 @@ public class AllAppsStore {
     private int mModelFlags;
     private int mDeferUpdatesFlags = 0;
     private boolean mUpdatePending = false;
+    private IconShape mIconShape;
 
     public AppInfo[] getApps() {
         return mApps;
@@ -90,6 +95,16 @@ public class AllAppsStore {
     @Inject
     AllAppsStore(AppsListRepository repo, ActivityContext context) {
         mActivityContext = context;
+        ListenableRef<IconShape> iconShapeData =
+                ThemeManager.INSTANCE.get(context.asContext()).getIconShapeData();
+        mIconShape = iconShapeData.getValue();
+        context.closeOnDestroy(iconShapeData.forEach(context.getUiExecutor(), shape -> {
+            if (shape != mIconShape) {
+                mIconShape = shape;
+                updateIconShapes();
+            }
+            return Unit.INSTANCE;
+        }));
         if (useModelRepositoryBinding()) {
             context.closeOnDestroy(repo.getAppsListStateRef()
                     .forEach(context.getUiExecutor(), this::setAppsListData));
@@ -240,6 +255,19 @@ public class AllAppsStore {
             }
         });
         return Unit.INSTANCE;
+    }
+
+    private void updateIconShapes() {
+        for (int i = mIconContainers.size() - 1; i >= 0; i--) {
+            if (mIconContainers.get(i) instanceof RecyclerView rv && rv.getAdapter() != null) {
+                rv.getAdapter().notifyDataSetChanged();
+            }
+        }
+        updateAllIcons((child) -> {
+            if (child.getTag() instanceof ItemInfoWithIcon info) {
+                child.reapplyItemInfo(info);
+            }
+        });
     }
 
     private void updateAllIcons(Consumer<BubbleTextView> action) {
